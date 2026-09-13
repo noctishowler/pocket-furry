@@ -132,21 +132,9 @@ const MAX_STAT =
   100;
 
 
-/*
-   ENERGY
-
-   100 -> 0 over 16 waking hours.
-*/
-
 const ENERGY_DRAIN_PER_MINUTE =
   100 / (16 * 60);
 
-
-/*
-   SLEEP
-
-   0 -> 100 over 10 minutes.
-*/
 
 const ENERGY_RECOVERY_PER_MINUTE =
   100 / 10;
@@ -248,11 +236,6 @@ const LONG_PRESS_TIME =
    SAVE DATA
 ============================================================ */
 
-/*
-   Keep v5 so current player data remains compatible.
-   Missing fields are filled from defaultState.
-*/
-
 const SAVE_VERSION =
   5;
 
@@ -300,15 +283,6 @@ const defaultState = {
 
   sitStartedAt:
     null,
-
-  /*
-     Resentment/recovery state.
-
-     happy   = normal behavior
-     neutral = recovering
-     sad     = stronger penalty
-     angry   = strongest penalty
-  */
 
   recoveryMood:
     "happy",
@@ -374,6 +348,12 @@ const message =
 const statusCard =
   document.getElementById(
     "statusCard"
+  );
+
+
+const moodEmoji =
+  document.getElementById(
+    "moodEmoji"
   );
 
 
@@ -835,15 +815,113 @@ function updateFoodFromClock() {
 
 
 /* ============================================================
+   MOOD HUD
+============================================================ */
+
+function getMoodEmoji() {
+
+  if (
+    !state.alive
+  ) {
+
+    return "😵";
+  }
+
+
+  /*
+     Forced sit stays visually neutral.
+     Consequence isn't shown until release.
+  */
+
+  if (
+    state.forcedSit
+  ) {
+
+    return "😐";
+  }
+
+
+  /*
+     Recovery state can temporarily override
+     raw happiness.
+  */
+
+  if (
+    state.recoveryMood ===
+    "angry"
+  ) {
+
+    return "😠";
+  }
+
+
+  if (
+    state.recoveryMood ===
+    "sad"
+  ) {
+
+    return "😢";
+  }
+
+
+  if (
+    state.recoveryMood ===
+    "neutral"
+  ) {
+
+    return "😐";
+  }
+
+
+  /*
+     Normal happiness scale.
+  */
+
+  if (
+    state.happiness >=
+    85
+  ) {
+
+    return "🥰";
+  }
+
+
+  if (
+    state.happiness >=
+    60
+  ) {
+
+    return "😊";
+  }
+
+
+  if (
+    state.happiness >=
+    35
+  ) {
+
+    return "😐";
+  }
+
+
+  if (
+    state.happiness >=
+    15
+  ) {
+
+    return "😢";
+  }
+
+
+  return "😠";
+}
+
+
+/* ============================================================
    POSITIVE INTERACTION / RECOVERY
 ============================================================ */
 
 function applyPositiveInteraction() {
-
-  /*
-     Positive interactions while forced sitting
-     do not erase the consequence before release.
-  */
 
   if (
     state.forcedSit
@@ -942,6 +1020,9 @@ function startForcedSit() {
   );
 
 
+  updateStatusDisplay();
+
+
   saveState();
 }
 
@@ -966,11 +1047,6 @@ function applySitPenalty(
     elapsed >=
     SIT_SAD_MS
   ) {
-
-    /*
-       Don't improve an already-angry recovery
-       state just because a shorter sit occurred.
-    */
 
     if (
       state.recoveryMood !==
@@ -1020,6 +1096,9 @@ function releaseForcedSit(
 
   state.sitStartedAt =
     null;
+
+
+  updateStatusDisplay();
 
 
   saveState();
@@ -1105,10 +1184,6 @@ function updatePersistentTime() {
     60000;
 
 
-  /* --------------------------------------------------------
-     SLEEPING
-  --------------------------------------------------------- */
-
   if (
     state.sleeping
   ) {
@@ -1138,14 +1213,7 @@ function updatePersistentTime() {
         false;
     }
 
-  }
-
-
-  /* --------------------------------------------------------
-     AWAKE
-  --------------------------------------------------------- */
-
-  else {
+  } else {
 
     state.energy =
       clamp(
@@ -1163,13 +1231,6 @@ function updatePersistentTime() {
       state.energy =
         0;
 
-
-      /*
-         Forced sleep releases a forced sit.
-
-         The elapsed sit time still counts toward
-         the post-release penalty.
-      */
 
       if (
         state.forcedSit
@@ -1239,6 +1300,10 @@ function updateStatusDisplay() {
     rounded(
       state.cleanliness
     );
+
+
+  moodEmoji.textContent =
+    getMoodEmoji();
 
 
   happinessBar.style.width =
@@ -1358,8 +1423,6 @@ function updateMoodAnimation() {
   }
 
 
-  /* DEAD */
-
   if (
     !state.alive
   ) {
@@ -1372,8 +1435,6 @@ function updateMoodAnimation() {
   }
 
 
-  /* SLEEP */
-
   if (
     state.sleeping
   ) {
@@ -1385,14 +1446,6 @@ function updateMoodAnimation() {
     return;
   }
 
-
-  /*
-     FORCED SIT
-
-     It remains visually bored regardless of the
-     elapsed sit penalty. The penalty isn't shown
-     until release.
-  */
 
   if (
     state.forcedSit
@@ -1407,8 +1460,6 @@ function updateMoodAnimation() {
   }
 
 
-  /* STARVATION */
-
   if (
     getHungerStage() ===
     "critical"
@@ -1421,8 +1472,6 @@ function updateMoodAnimation() {
     return;
   }
 
-
-  /* DAY TWO WITHOUT FOOD */
 
   if (
     getHungerStage() ===
@@ -1437,8 +1486,6 @@ function updateMoodAnimation() {
   }
 
 
-  /* LOW FOOD */
-
   if (
     state.hunger <
     20
@@ -1451,8 +1498,6 @@ function updateMoodAnimation() {
     return;
   }
 
-
-  /* EXHAUSTED */
 
   if (
     state.energy <=
@@ -1467,8 +1512,6 @@ function updateMoodAnimation() {
   }
 
 
-  /* VERY LOW GENERAL HAPPINESS */
-
   if (
     state.happiness <
     25
@@ -1481,13 +1524,6 @@ function updateMoodAnimation() {
     return;
   }
 
-
-  /*
-     Post-sit resentment is intentionally not
-     a permanent idle pose.
-
-     It gets sprinkled into roaming instead.
-  */
 
   setAnimation(
     "idle",
@@ -1537,10 +1573,6 @@ function playTemporaryAnimation(
 
         updateMoodAnimation();
 
-
-        /*
-           Forced sit does not resume roaming.
-        */
 
         if (
           !state.forcedSit &&
@@ -1642,10 +1674,6 @@ function getNextRoamTarget() {
 
   let travelFraction;
 
-
-  /*
-     Frequently stop somewhere in the middle.
-  */
 
   if (
     Math.random() <
@@ -1794,10 +1822,6 @@ function walkAcrossScreen() {
         characterMover.style.transition =
           "none";
 
-
-        /*
-           Maintain alternating left/right tendency.
-        */
 
         nextWalkDirection =
 
@@ -1952,10 +1976,6 @@ function beginRestPeriod() {
     );
 
 
-  /*
-     Physical condition states take priority.
-  */
-
   if (
     getHungerStage() !==
     "normal"
@@ -1997,13 +2017,6 @@ function beginRestPeriod() {
     BOUND_CHANCE;
 
 
-  /* --------------------------------------------------------
-     POST-SIT ANGRY
-
-     The slots that would normally produce
-     happy or bound instead produce angry.
-  --------------------------------------------------------- */
-
   if (
     state.recoveryMood ===
     "angry"
@@ -2023,12 +2036,6 @@ function beginRestPeriod() {
   }
 
 
-  /* --------------------------------------------------------
-     POST-SIT SAD
-
-     Happy/bound slots become sad.
-  --------------------------------------------------------- */
-
   if (
     state.recoveryMood ===
     "sad"
@@ -2047,13 +2054,6 @@ function beginRestPeriod() {
     return;
   }
 
-
-  /* --------------------------------------------------------
-     RECOVERY NEUTRAL
-
-     No happy/bound flourishes yet.
-     Those opportunities simply become idle.
-  --------------------------------------------------------- */
 
   if (
     state.recoveryMood ===
@@ -2079,10 +2079,6 @@ function beginRestPeriod() {
   }
 
 
-  /* --------------------------------------------------------
-     HAPPY / NORMAL RANDOM REACTION
-  --------------------------------------------------------- */
-
   if (
     state.recoveryMood ===
     "happy"
@@ -2092,11 +2088,6 @@ function beginRestPeriod() {
     roll <
     MOOD_REACTION_CHANCE
   ) {
-
-    /*
-       Actual happiness still determines whether
-       the emotional reaction reads happy or sad.
-    */
 
     const moodAnimation =
 
@@ -2117,10 +2108,6 @@ function beginRestPeriod() {
   }
 
 
-  /* --------------------------------------------------------
-     HAPPY / NORMAL RANDOM BOUND
-  --------------------------------------------------------- */
-
   if (
     state.recoveryMood ===
     "happy"
@@ -2131,11 +2118,6 @@ function beginRestPeriod() {
     positiveBehaviorEnd
   ) {
 
-    /*
-       Uses current facing direction:
-       bound-left.gif or bound-right.gif.
-    */
-
     playAmbientReaction(
       "bound",
       1600
@@ -2144,10 +2126,6 @@ function beginRestPeriod() {
     return;
   }
 
-
-  /* --------------------------------------------------------
-     BORED SIT
-  --------------------------------------------------------- */
 
   if (
     roll <
@@ -2168,10 +2146,6 @@ function beginRestPeriod() {
     return;
   }
 
-
-  /* --------------------------------------------------------
-     NORMAL IDLE
-  --------------------------------------------------------- */
 
   setAnimation(
     "idle",
@@ -2603,13 +2577,6 @@ function performAction(action) {
     Date.now();
 
 
-  /*
-     Once SIT has been forced, Noctis stays sitting
-     until SIT is selected again.
-
-     Other actions don't interrupt the forced sit.
-  */
-
   if (
     state.forcedSit &&
     action !==
@@ -2619,6 +2586,7 @@ function performAction(action) {
     showMessage(
       "Still sitting."
     );
+
 
     setAnimation(
       "bored",
@@ -2631,10 +2599,6 @@ function performAction(action) {
 
   switch (action) {
 
-
-    /* --------------------------------------------------------
-       FEED
-    --------------------------------------------------------- */
 
     case "feed":
 
@@ -2666,6 +2630,9 @@ function performAction(action) {
       applyPositiveInteraction();
 
 
+      updateStatusDisplay();
+
+
       playTemporaryAnimation(
         "eat",
         2200
@@ -2678,10 +2645,6 @@ function performAction(action) {
 
       break;
 
-
-    /* --------------------------------------------------------
-       PLAY
-    --------------------------------------------------------- */
 
     case "play":
 
@@ -2729,6 +2692,9 @@ function performAction(action) {
       applyPositiveInteraction();
 
 
+      updateStatusDisplay();
+
+
       playTemporaryAnimation(
 
         Math.random() <
@@ -2745,10 +2711,6 @@ function performAction(action) {
 
       break;
 
-
-    /* --------------------------------------------------------
-       PET
-    --------------------------------------------------------- */
 
     case "pet":
 
@@ -2770,6 +2732,9 @@ function performAction(action) {
       applyPositiveInteraction();
 
 
+      updateStatusDisplay();
+
+
       playTemporaryAnimation(
         "happy",
         1500
@@ -2778,14 +2743,13 @@ function performAction(action) {
       break;
 
 
-    /* --------------------------------------------------------
-       CLEAN
-    --------------------------------------------------------- */
-
     case "clean":
 
       state.cleanliness =
         100;
+
+
+      updateStatusDisplay();
 
 
       playTemporaryAnimation(
@@ -2796,20 +2760,12 @@ function performAction(action) {
       break;
 
 
-    /* --------------------------------------------------------
-       SIT / RELEASE
-    --------------------------------------------------------- */
-
     case "sit":
 
       toggleForcedSit();
 
       break;
 
-
-    /* --------------------------------------------------------
-       SLEEP
-    --------------------------------------------------------- */
 
     case "sleep":
 
@@ -2828,10 +2784,6 @@ function performAction(action) {
 
       break;
 
-
-    /* --------------------------------------------------------
-       MEDICINE
-    --------------------------------------------------------- */
 
     case "medicine":
 
@@ -2853,6 +2805,9 @@ function performAction(action) {
           state.health +
           25
         );
+
+
+      updateStatusDisplay();
 
 
       playTemporaryAnimation(
@@ -3025,8 +2980,6 @@ document.addEventListener(
       Math.abs(dy);
 
 
-    /* LEFT / RIGHT */
-
     if (
       ax >
       SWIPE_DISTANCE
@@ -3058,8 +3011,6 @@ document.addEventListener(
       return;
     }
 
-
-    /* DOWN / UP */
 
     if (
       ay >
@@ -3104,8 +3055,6 @@ document.addEventListener(
     }
 
 
-    /* TAP WHILE MENU OPEN */
-
     if (
       interactionMode
 
@@ -3138,11 +3087,6 @@ function gameTick() {
 
   updatePersistentTime();
 
-
-  /*
-     If he hit zero while awake,
-     run the forced-sleep transition.
-  */
 
   if (
     !wasSleeping &&
@@ -3272,11 +3216,6 @@ function init() {
     0;
 
 
-  /*
-     Apply all real time that passed
-     while the app was closed.
-  */
-
   updatePersistentTime();
 
 
@@ -3297,10 +3236,6 @@ function init() {
       event.preventDefault()
   );
 
-
-  /*
-     Persistent forced sit survives reload.
-  */
 
   if (
     state.forcedSit
