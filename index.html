@@ -19,55 +19,43 @@
 
   <main id="app">
 
-    <!-- =========================
-         STATUS BAR
-    ========================== -->
+    <!-- ============================================
+         COMPACT STATUS HUD
+    ============================================= -->
 
-    <section id="statusBar" class="status-bar">
+    <section id="statusHud" class="status-hud">
 
-      <div class="stat">
-        <span>FOOD</span>
+      <div class="mini-stat" data-stat="happiness">
+        <span class="mini-icon">♥</span>
 
-        <div class="meter">
-          <div
-            id="hungerBar"
-            class="meter-fill">
-          </div>
-        </div>
-      </div>
-
-
-      <div class="stat">
-        <span>MOOD</span>
-
-        <div class="meter">
+        <div class="mini-meter">
           <div
             id="happinessBar"
-            class="meter-fill">
+            class="mini-fill">
           </div>
         </div>
       </div>
 
 
-      <div class="stat">
-        <span>ENERGY</span>
+      <div class="mini-stat" data-stat="hunger">
+        <span class="mini-icon">◆</span>
 
-        <div class="meter">
+        <div class="mini-meter">
+          <div
+            id="hungerBar"
+            class="mini-fill">
+          </div>
+        </div>
+      </div>
+
+
+      <div class="mini-stat" data-stat="energy">
+        <span class="mini-icon">☾</span>
+
+        <div class="mini-meter">
           <div
             id="energyBar"
-            class="meter-fill">
-          </div>
-        </div>
-      </div>
-
-
-      <div class="stat">
-        <span>HEALTH</span>
-
-        <div class="meter">
-          <div
-            id="healthBar"
-            class="meter-fill">
+            class="mini-fill">
           </div>
         </div>
       </div>
@@ -75,9 +63,9 @@
     </section>
 
 
-    <!-- =========================
-         CHARACTER STAGE
-    ========================== -->
+    <!-- ============================================
+         CHARACTER AREA
+    ============================================= -->
 
     <section id="petStage" class="pet-stage">
 
@@ -88,31 +76,95 @@
         draggable="false"
       />
 
+
       <div
         id="message"
         class="message hidden">
       </div>
 
+
+      <!-- ========================================
+           DETAILED STATUS CARD
+      ========================================= -->
+
+      <section
+        id="statusCard"
+        class="status-card hidden">
+
+        <div class="status-card-title">
+          NOCTIS
+        </div>
+
+
+        <div class="detail-stat">
+          <span>HAPPINESS</span>
+          <span id="happinessValue">0</span>
+        </div>
+
+        <div class="detail-meter">
+          <div id="detailHappiness"></div>
+        </div>
+
+
+        <div class="detail-stat">
+          <span>HUNGER</span>
+          <span id="hungerValue">0</span>
+        </div>
+
+        <div class="detail-meter">
+          <div id="detailHunger"></div>
+        </div>
+
+
+        <div class="detail-stat">
+          <span>ENERGY</span>
+          <span id="energyValue">0</span>
+        </div>
+
+        <div class="detail-meter">
+          <div id="detailEnergy"></div>
+        </div>
+
+
+        <div class="detail-stat">
+          <span>HEALTH</span>
+          <span id="healthValue">0</span>
+        </div>
+
+        <div class="detail-meter">
+          <div id="detailHealth"></div>
+        </div>
+
+
+        <div class="detail-stat">
+          <span>CLEAN</span>
+          <span id="cleanValue">0</span>
+        </div>
+
+        <div class="detail-meter">
+          <div id="detailClean"></div>
+        </div>
+
+      </section>
+
     </section>
 
 
-    <!-- =========================
-         ACTION BAR
-    ========================== -->
+    <!-- ============================================
+         INTERACTION TRAY
+    ============================================= -->
 
-    <section id="actionBar" class="action-bar">
+    <section
+      id="actionTray"
+      class="action-tray hidden-tray">
 
       <button
         class="action selected"
         data-action="feed">
 
-        <span class="action-icon">
-          ◆
-        </span>
+        <span class="action-icon">◆</span>
+        <span class="action-label">FEED</span>
 
-        <span class="action-label">
-          FEED
-        </span>
       </button>
 
 
@@ -120,13 +172,9 @@
         class="action"
         data-action="play">
 
-        <span class="action-icon">
-          ▲
-        </span>
+        <span class="action-icon">▲</span>
+        <span class="action-label">PLAY</span>
 
-        <span class="action-label">
-          PLAY
-        </span>
       </button>
 
 
@@ -134,13 +182,9 @@
         class="action"
         data-action="pet">
 
-        <span class="action-icon">
-          ♥
-        </span>
+        <span class="action-icon">♥</span>
+        <span class="action-label">PET</span>
 
-        <span class="action-label">
-          PET
-        </span>
       </button>
 
 
@@ -148,13 +192,9 @@
         class="action"
         data-action="clean">
 
-        <span class="action-icon">
-          ✦
-        </span>
+        <span class="action-icon">✦</span>
+        <span class="action-label">CLEAN</span>
 
-        <span class="action-label">
-          CLEAN
-        </span>
       </button>
 
 
@@ -162,13 +202,9 @@
         class="action"
         data-action="sleep">
 
-        <span class="action-icon">
-          ☾
-        </span>
+        <span class="action-icon">☾</span>
+        <span class="action-label">SLEEP</span>
 
-        <span class="action-label">
-          SLEEP
-        </span>
       </button>
 
 
@@ -176,24 +212,20 @@
         class="action"
         data-action="medicine">
 
-        <span class="action-icon">
-          +
-        </span>
+        <span class="action-icon">+</span>
+        <span class="action-label">MED</span>
 
-        <span class="action-label">
-          MED
-        </span>
       </button>
 
     </section>
 
 
-    <!-- =========================
-         CONTROL HINT
-    ========================== -->
+    <div
+      id="controlHint"
+      class="control-hint">
 
-    <div id="hint" class="hint">
-      ◀ ▶ SELECT &nbsp;&nbsp; TAP ACTIVATE
+      SWIPE DOWN TO INTERACT
+
     </div>
 
   </main>
