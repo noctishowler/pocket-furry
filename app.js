@@ -24,6 +24,11 @@ const characters = {
         left: "chase-ball.gif"
       },
 
+      clean: {
+        right: "clean.gif",
+        left: "clean.gif"
+      },
+
       happy: {
         right: "happy.gif",
         left: "happy-left.gif"
@@ -108,6 +113,7 @@ let activeCharacterId = "noctis";
 let activeDirection = "right";
 
 const FETCH_DURATION_MS = 3030;
+const CLEAN_DURATION_MS = 5390;
 
 function getActiveCharacter() {
   return characters[activeCharacterId];
@@ -365,7 +371,7 @@ function setAnimation(
   currentAnimationDirection = direction;
   activeDirection = direction;
 
-  // Restart the one-shot fetch GIF on every Play action.
+  // Restart one-shot GIFs on every Play or Clean action.
   characterSprite.src = restart
     ? `${path}?play=${++animationPlayId}`
     : path;
@@ -850,7 +856,7 @@ function playTemporaryAnimation(
   setAnimation(
     name,
     direction,
-    name === "chaseBall"
+    name === "chaseBall" || name === "clean"
   );
 
   animationTimer = setTimeout(() => {
@@ -1216,6 +1222,15 @@ function openInteractionTray() {
   interactionMode = true;
   actionTray.classList.remove("hidden-tray");
 
+  if (
+    state.alive &&
+    !state.sleeping &&
+    !state.forcedSit &&
+    !temporaryAnimation
+  ) {
+    setAnimation("idleFront", activeDirection);
+  }
+
   controlHint.textContent =
     "◀ ▶ SELECT • TAP • ↑ CLOSE";
 }
@@ -1430,7 +1445,11 @@ function performAction(action) {
       state.cleanliness = 100;
 
       updateStatusDisplay();
-      playTemporaryAnimation("lieDown", 1700);
+
+      playTemporaryAnimation(
+        "clean",
+        CLEAN_DURATION_MS
+      );
       break;
 
     case "sit":
