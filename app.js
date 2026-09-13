@@ -162,10 +162,11 @@ const GAME_TICK_INTERVAL =
 const WALK_SPEED = 38;
 
 /*
-   No extra artificial margin.
-   The visible character itself determines
-   how close he can get to the edge.
+   Bounding is intentionally much faster
+   than normal walking.
 */
+const BOUND_SPEED = 92;
+
 const WALK_MARGIN = 0;
 
 const MIN_PAUSE_MS = 2200;
@@ -173,25 +174,22 @@ const MAX_PAUSE_MS = 6200;
 
 const MIN_TRAVEL_DISTANCE = 35;
 
-/*
-   Less frequent mid-screen stopping.
-   Most walks now head much farther across.
-*/
 const MIDSCREEN_STOP_CHANCE = 0.30;
 
-/*
-   If there is enough room left after
-   finishing a walk, Noctis has a chance
-   to keep going in the same direction.
-*/
 const CONTINUE_DIRECTION_CHANCE = 0.60;
+
+/* AMBIENT BEHAVIOR */
 
 const MOOD_REACTION_CHANCE = 0.07;
 const BOUND_CHANCE = 0.12;
 const BORED_CHANCE = 0.22;
 
+/* INPUT */
+
 const SWIPE_DISTANCE = 28;
 const LONG_PRESS_TIME = 700;
+
+/* SAVE */
 
 const SAVE_VERSION = 5;
 
@@ -325,7 +323,7 @@ let temporaryAnimation = false;
 let animationTimer = null;
 let sleepTimer = null;
 
-/* WALKING STATE */
+/* MOVEMENT STATE */
 
 let walking = false;
 let walkTimer = null;
@@ -484,7 +482,7 @@ function setAnimation(
       : path;
 }
 
-/* FOOD STATE */
+/* FOOD */
 
 function getFoodAge() {
   return (
@@ -662,29 +660,25 @@ function getMoodEmoji() {
   }
 
   if (
-    state.happiness >=
-    85
+    state.happiness >= 85
   ) {
     return "🥰";
   }
 
   if (
-    state.happiness >=
-    60
+    state.happiness >= 60
   ) {
     return "😊";
   }
 
   if (
-    state.happiness >=
-    35
+    state.happiness >= 35
   ) {
     return "😐";
   }
 
   if (
-    state.happiness >=
-    15
+    state.happiness >= 15
   ) {
     return "😢";
   }
@@ -692,7 +686,7 @@ function getMoodEmoji() {
   return "😠";
 }
 
-/* POSITIVE INTERACTION / RECOVERY */
+/* POSITIVE INTERACTION */
 
 function applyPositiveInteraction() {
   if (
@@ -926,8 +920,7 @@ function updatePersistentTime() {
       );
 
     if (
-      state.energy >=
-      100
+      state.energy >= 100
     ) {
       state.energy =
         100;
@@ -948,8 +941,7 @@ function updatePersistentTime() {
       );
 
     if (
-      state.energy <=
-      0
+      state.energy <= 0
     ) {
       state.energy =
         0;
@@ -1242,8 +1234,7 @@ function updateMoodAnimation() {
   }
 
   if (
-    state.hunger <
-    20
+    state.hunger < 20
   ) {
     setAnimation(
       "hungry"
@@ -1262,8 +1253,7 @@ function updateMoodAnimation() {
   }
 
   if (
-    state.happiness <
-    25
+    state.happiness < 25
   ) {
     setAnimation(
       "sad"
@@ -1332,15 +1322,6 @@ function getHorizontalLimits() {
   const characterWidth =
     characterMover.offsetWidth;
 
-  /*
-     Let the character center travel farther
-     toward each edge.
-
-     Using 28% of the sprite width rather
-     than half of it lets the visible body
-     approach the edge much more closely.
-  */
-
   const halfAvailable =
     Math.max(
       0,
@@ -1391,12 +1372,6 @@ function getNextRoamTarget() {
 
   let travelFraction;
 
-  /*
-     Sometimes stop partway through,
-     but most walks now head nearly
-     all the way toward the edge.
-  */
-
   if (
     Math.random() <
     MIDSCREEN_STOP_CHANCE
@@ -1430,6 +1405,42 @@ function getNextRoamTarget() {
     );
 
   return target;
+}
+
+/* DIRECTION DECISION */
+
+function chooseNextWalkDirection() {
+  const limits =
+    getHorizontalLimits();
+
+  const roomAhead =
+    activeDirection ===
+    "right"
+      ? limits.max -
+        currentX
+      : currentX -
+        limits.min;
+
+  if (
+    roomAhead >
+      MIN_TRAVEL_DISTANCE *
+      1.5
+
+    &&
+
+    Math.random() <
+      CONTINUE_DIRECTION_CHANCE
+  ) {
+    nextWalkDirection =
+      activeDirection;
+
+  } else {
+    nextWalkDirection =
+      activeDirection ===
+      "right"
+        ? "left"
+        : "right";
+  }
 }
 
 /* WALK / ROAM */
@@ -1515,51 +1526,113 @@ function walkAcrossScreen() {
         characterMover.style.transition =
           "none";
 
+        chooseNextWalkDirection();
 
-        /*
-           Decide whether to keep going
-           in the same direction.
+        beginRestPeriod();
 
-           He only does this if there's
-           still enough room ahead.
-        */
+      },
+      duration + 25
+    );
+}
 
-        const limits =
-          getHorizontalLimits();
+/* BOUND / FAST ROAM */
 
+function boundAcrossScreen() {
+  if (
+    walking ||
+    temporaryAnimation ||
+    interactionMode ||
+    statusCardVisible ||
+    state.sleeping ||
+    state.forcedSit ||
+    !state.alive
+  ) {
+    return;
+  }
 
-        const roomAhead =
-          activeDirection ===
-          "right"
-            ? limits.max -
-              currentX
-            : currentX -
-              limits.min;
+  const targetX =
+    getNextRoamTarget();
 
+  const distance =
+    targetX -
+    currentX;
 
-        if (
-          roomAhead >
-            MIN_TRAVEL_DISTANCE *
-            1.5
+  if (
+    Math.abs(
+      distance
+    ) <
+    MIN_TRAVEL_DISTANCE
+  ) {
+    beginRestPeriod();
+    return;
+  }
 
-          &&
+  activeDirection =
+    distance > 0
+      ? "right"
+      : "left";
 
-          Math.random() <
-            CONTINUE_DIRECTION_CHANCE
-        ) {
+  /*
+     We use both flags because the character
+     is physically moving AND performing
+     a special one-shot behavior.
+  */
 
-          nextWalkDirection =
-            activeDirection;
+  walking =
+    true;
 
-        } else {
+  temporaryAnimation =
+    true;
 
-          nextWalkDirection =
-            activeDirection ===
-            "right"
-              ? "left"
-              : "right";
-        }
+  setAnimation(
+    "bound",
+    activeDirection
+  );
 
+  const duration =
+    Math.max(
+      450,
+      (
+        Math.abs(distance) /
+        BOUND_SPEED
+      ) *
+      1000
+    );
+
+  characterMover.style.transition =
+    "none";
+
+  void characterMover.offsetWidth;
+
+  characterMover.style.transition =
+    `left ${duration}ms linear`;
+
+  characterMover.style.left =
+    `calc(50% + ${targetX}px)`;
+
+  clearTimeout(
+    walkTimer
+  );
+
+  walkTimer =
+    setTimeout(
+      () => {
+
+        currentX =
+          targetX;
+
+        walking =
+          false;
+
+        temporaryAnimation =
+          false;
+
+        characterMover.style.transition =
+          "none";
+
+        chooseNextWalkDirection();
+
+        updateMoodAnimation();
 
         beginRestPeriod();
 
@@ -1605,6 +1678,20 @@ function stopWalking() {
 
   walking =
     false;
+
+  /*
+     If a fast bound was interrupted by
+     user input, don't leave the special
+     animation flag stuck.
+  */
+
+  if (
+    currentAnimation ===
+    "bound"
+  ) {
+    temporaryAnimation =
+      false;
+  }
 }
 
 /* AMBIENT SPECIAL REACTION */
@@ -1770,6 +1857,14 @@ function beginRestPeriod() {
     return;
   }
 
+  /*
+     Happy spontaneous bound:
+
+     Instead of playing the GIF in place,
+     Noctis actually travels across the
+     screen at BOUND_SPEED.
+  */
+
   if (
     state.recoveryMood ===
       "happy" &&
@@ -1777,11 +1872,7 @@ function beginRestPeriod() {
     roll <
       positiveBehaviorEnd
   ) {
-    playAmbientReaction(
-      "bound",
-      1600
-    );
-
+    boundAcrossScreen();
     return;
   }
 
@@ -2136,8 +2227,7 @@ function wakeCharacter() {
 
   if (
     state.forcedSleep &&
-    state.energy <
-    20
+    state.energy < 20
   ) {
     showMessage(
       "Too tired"
@@ -2211,8 +2301,7 @@ function performAction(
 
   if (
     state.forcedSit &&
-    action !==
-    "sit"
+    action !== "sit"
   ) {
     showMessage(
       "Still sitting."
