@@ -108,6 +108,7 @@ const characters = {
 };
 
 let animationPlayId = 0;
+
 let activeCharacterId = "noctis";
 let activeDirection = "right";
 
@@ -170,9 +171,10 @@ const MAX_PAUSE_MS = 6200;
 const MIN_TRAVEL_DISTANCE = 35;
 
 const MIDSCREEN_STOP_CHANCE = 0.30;
+
 const CONTINUE_DIRECTION_CHANCE = 0.60;
 
-/* AMBIENT BEHAVIOR */
+/* AMBIENT */
 
 const MOOD_REACTION_CHANCE = 0.07;
 const BOUND_CHANCE = 0.12;
@@ -207,10 +209,12 @@ const defaultState = {
 
   sleeping: false,
   forcedSleep: false,
+
   forcedSit: false,
   sitStartedAt: null,
 
   recoveryMood: "happy",
+
   alive: true,
 
   lastUpdate: Date.now(),
@@ -221,6 +225,9 @@ const defaultState = {
 let state = loadState();
 
 /* DOM */
+
+const app =
+  document.getElementById("app");
 
 const characterSprite =
   document.getElementById("character");
@@ -305,33 +312,43 @@ const actions = [
 ];
 
 let selectedAction = 0;
+
 let interactionMode = false;
+
 let statusCardVisible = false;
 
 /* ANIMATION STATE */
 
 let currentAnimation = "";
+
 let currentAnimationDirection = "";
+
 let temporaryAnimation = false;
 
 let animationTimer = null;
+
 let sleepTimer = null;
 
 /* MOVEMENT STATE */
 
 let walking = false;
+
 let walkTimer = null;
+
 let ambientTimer = null;
 
 let currentX = 0;
+
 let nextWalkDirection = "right";
 
 /* POINTER STATE */
 
 let pointerStartX = 0;
+
 let pointerStartY = 0;
 
 let longPressTimer = null;
+
 let longPressTriggered = false;
 
 let messageTimer = null;
@@ -341,7 +358,10 @@ let messageTimer = null;
 function clamp(value) {
   return Math.max(
     0,
-    Math.min(MAX_STAT, value)
+    Math.min(
+      MAX_STAT,
+      value
+    )
   );
 }
 
@@ -351,7 +371,10 @@ function rounded(value) {
   );
 }
 
-function randomBetween(min, max) {
+function randomBetween(
+  min,
+  max
+) {
   return (
     min +
     Math.random() *
@@ -460,15 +483,22 @@ function setAnimation(
 
   if (
     !restart &&
-    currentAnimation === name &&
-    currentAnimationDirection === direction
+    currentAnimation ===
+      name &&
+    currentAnimationDirection ===
+      direction
   ) {
     return;
   }
 
-  currentAnimation = name;
-  currentAnimationDirection = direction;
-  activeDirection = direction;
+  currentAnimation =
+    name;
+
+  currentAnimationDirection =
+    direction;
+
+  activeDirection =
+    direction;
 
   characterSprite.src =
     restart
@@ -513,11 +543,12 @@ function updateFoodFromClock() {
   const remaining =
     1 -
     elapsed /
-    FOOD_DURATION_MS;
+      FOOD_DURATION_MS;
 
   state.hunger =
     clamp(
-      remaining * 100
+      remaining *
+      100
     );
 }
 
@@ -552,8 +583,10 @@ function updateHealthFromClock(
     getHungerStage();
 
   if (
-    hungerStage === "sick" ||
-    hungerStage === "critical"
+    hungerStage ===
+      "sick" ||
+    hungerStage ===
+      "critical"
   ) {
     state.health =
       clamp(
@@ -574,7 +607,8 @@ function updateHealthFromClock(
   }
 
   if (
-    state.health <= 0
+    state.health <=
+    0
   ) {
     killCharacter();
   }
@@ -589,14 +623,26 @@ function killCharacter() {
     return;
   }
 
-  state.health = 0;
-  state.alive = false;
-  state.sleeping = false;
-  state.forcedSleep = false;
-  state.forcedSit = false;
-  state.sitStartedAt = null;
+  state.health =
+    0;
 
-  temporaryAnimation = false;
+  state.alive =
+    false;
+
+  state.sleeping =
+    false;
+
+  state.forcedSleep =
+    false;
+
+  state.forcedSit =
+    false;
+
+  state.sitStartedAt =
+    null;
+
+  temporaryAnimation =
+    false;
 
   clearTimeout(
     animationTimer
@@ -607,6 +653,7 @@ function killCharacter() {
   );
 
   pauseAmbient();
+
   stopWalking();
 
   setAnimation(
@@ -654,25 +701,29 @@ function getMoodEmoji() {
   }
 
   if (
-    state.happiness >= 85
+    state.happiness >=
+    85
   ) {
     return "🥰";
   }
 
   if (
-    state.happiness >= 60
+    state.happiness >=
+    60
   ) {
     return "😊";
   }
 
   if (
-    state.happiness >= 35
+    state.happiness >=
+    35
   ) {
     return "😐";
   }
 
   if (
-    state.happiness >= 15
+    state.happiness >=
+    15
   ) {
     return "😢";
   }
@@ -692,7 +743,6 @@ function applyPositiveInteraction() {
   switch (
     state.recoveryMood
   ) {
-
     case "angry":
       state.recoveryMood =
         "sad";
@@ -726,6 +776,7 @@ function startForcedSit() {
   }
 
   pauseAmbient();
+
   stopWalking();
 
   clearTimeout(
@@ -751,6 +802,7 @@ function startForcedSit() {
   );
 
   updateStatusDisplay();
+
   saveState();
 }
 
@@ -769,9 +821,9 @@ function applySitPenalty(
 
   if (
     elapsed >=
-    SIT_SAD_MS &&
+      SIT_SAD_MS &&
     state.recoveryMood !==
-    "angry"
+      "angry"
   ) {
     state.recoveryMood =
       "sad";
@@ -818,6 +870,7 @@ function releaseForcedSit(
   saveState();
 
   updateMoodAnimation();
+
   updateStatusDisplay();
 
   if (
@@ -847,6 +900,7 @@ function releaseForcedSit(
     interactionMode
   ) {
     closeInteractionTray();
+
     return;
   }
 
@@ -1133,7 +1187,8 @@ function updateCriticalIndicators() {
   ) {
     healthNode.classList.toggle(
       "critical",
-      state.health < 25
+      state.health <
+      25
     );
   }
 
@@ -1168,7 +1223,7 @@ function updateCriticalIndicators() {
   }
 }
 
-/* RESTING / MOOD STATE */
+/* RESTING / MOOD */
 
 function updateMoodAnimation() {
   if (
@@ -1209,11 +1264,14 @@ function updateMoodAnimation() {
     return;
   }
 
+  const hungerStage =
+    getHungerStage();
+
   if (
-    getHungerStage() ===
-    "critical" ||
-    getHungerStage() ===
-    "sick"
+    hungerStage ===
+      "critical" ||
+    hungerStage ===
+      "sick"
   ) {
     setAnimation(
       "sick"
@@ -1269,6 +1327,7 @@ function playTemporaryAnimation(
   direction = activeDirection
 ) {
   pauseAmbient();
+
   stopWalking();
 
   clearTimeout(
@@ -1322,7 +1381,8 @@ function getHorizontalLimits() {
     Math.max(
       0,
       stageWidth / 2 -
-      characterWidth * 0.28 -
+      characterWidth *
+      0.28 -
       WALK_MARGIN
     );
 
@@ -1335,7 +1395,7 @@ function getHorizontalLimits() {
   };
 }
 
-/* PICK NEXT ROAM DESTINATION */
+/* NEXT DESTINATION */
 
 function getNextRoamTarget() {
   const limits =
@@ -1420,9 +1480,7 @@ function chooseNextWalkDirection() {
   if (
     roomAhead >
       MIN_TRAVEL_DISTANCE *
-      1.5
-
-    &&
+      1.5 &&
 
     Math.random() <
       CONTINUE_DIRECTION_CHANCE
@@ -1439,7 +1497,7 @@ function chooseNextWalkDirection() {
   }
 }
 
-/* WALK / ROAM */
+/* WALK */
 
 function walkAcrossScreen() {
   if (
@@ -1473,7 +1531,8 @@ function walkAcrossScreen() {
   }
 
   activeDirection =
-    distance > 0
+    distance >
+    0
       ? "right"
       : "left";
 
@@ -1532,7 +1591,7 @@ function walkAcrossScreen() {
     );
 }
 
-/* BOUND / FAST ROAM */
+/* BOUND */
 
 function boundAcrossScreen() {
   if (
@@ -1566,7 +1625,8 @@ function boundAcrossScreen() {
   }
 
   activeDirection =
-    distance > 0
+    distance >
+    0
       ? "right"
       : "left";
 
@@ -1680,7 +1740,7 @@ function stopWalking() {
   }
 }
 
-/* AMBIENT SPECIAL REACTION */
+/* AMBIENT REACTION */
 
 function playAmbientReaction(
   animation,
@@ -1725,7 +1785,7 @@ function playAmbientReaction(
     );
 }
 
-/* REST / AMBIENT BEHAVIOR */
+/* REST / AMBIENT */
 
 function beginRestPeriod() {
   if (
@@ -1776,7 +1836,6 @@ function beginRestPeriod() {
   if (
     state.recoveryMood ===
       "angry" &&
-
     roll <
       positiveBehaviorEnd
   ) {
@@ -1791,7 +1850,6 @@ function beginRestPeriod() {
   if (
     state.recoveryMood ===
       "sad" &&
-
     roll <
       positiveBehaviorEnd
   ) {
@@ -1806,7 +1864,6 @@ function beginRestPeriod() {
   if (
     state.recoveryMood ===
       "neutral" &&
-
     roll <
       positiveBehaviorEnd
   ) {
@@ -1825,7 +1882,6 @@ function beginRestPeriod() {
   if (
     state.recoveryMood ===
       "happy" &&
-
     roll <
       MOOD_REACTION_CHANCE
   ) {
@@ -1846,7 +1902,6 @@ function beginRestPeriod() {
   if (
     state.recoveryMood ===
       "happy" &&
-
     roll <
       positiveBehaviorEnd
   ) {
@@ -1980,6 +2035,7 @@ function showMessage(
 
 function showStatusCard() {
   pauseAmbient();
+
   stopWalking();
 
   statusCardVisible =
@@ -2000,6 +2056,8 @@ function hideStatusCard() {
     "hidden"
   );
 
+  focusApp();
+
   if (
     !interactionMode &&
     !state.sleeping &&
@@ -2012,10 +2070,42 @@ function hideStatusCard() {
   }
 }
 
+/* FOCUS HELPERS */
+
+function focusApp() {
+  if (
+    app &&
+    typeof app.focus ===
+    "function"
+  ) {
+    app.focus({
+      preventScroll: true
+    });
+  }
+}
+
+function focusSelectedAction() {
+  const button =
+    actionButtons[
+      selectedAction
+    ];
+
+  if (
+    button &&
+    typeof button.focus ===
+    "function"
+  ) {
+    button.focus({
+      preventScroll: true
+    });
+  }
+}
+
 /* INTERACTION TRAY */
 
 function openInteractionTray() {
   pauseAmbient();
+
   stopWalking();
 
   statusCardVisible =
@@ -2045,7 +2135,16 @@ function openInteractionTray() {
   }
 
   controlHint.textContent =
-    "◀ ▶ SELECT • TAP • ↑ CLOSE";
+    "◀ ▶ SELECT • PINCH • ↑ CLOSE";
+
+  /*
+     Important for Meta Display:
+     move actual DOM focus into the tray.
+  */
+
+  requestAnimationFrame(
+    focusSelectedAction
+  );
 }
 
 function closeInteractionTray() {
@@ -2058,6 +2157,16 @@ function closeInteractionTray() {
 
   controlHint.textContent =
     "SWIPE DOWN TO INTERACT";
+
+  /*
+     Return focus to the main app so
+     subsequent Neural Band input still
+     has somewhere to land.
+  */
+
+  requestAnimationFrame(
+    focusApp
+  );
 
   if (
     !state.sleeping &&
@@ -2073,7 +2182,8 @@ function closeInteractionTray() {
 /* ACTION SELECTION */
 
 function selectAction(
-  index
+  index,
+  moveFocus = true
 ) {
   selectedAction =
     (
@@ -2095,6 +2205,13 @@ function selectAction(
       );
     }
   );
+
+  if (
+    interactionMode &&
+    moveFocus
+  ) {
+    focusSelectedAction();
+  }
 }
 
 function nextAction() {
@@ -2123,6 +2240,7 @@ function putCharacterToSleep(
   }
 
   pauseAmbient();
+
   stopWalking();
 
   if (
@@ -2332,6 +2450,7 @@ function performAction(
         );
 
       applyPositiveInteraction();
+
       updateStatusDisplay();
 
       playTemporaryAnimation(
@@ -2383,6 +2502,7 @@ function performAction(
         );
 
       applyPositiveInteraction();
+
       updateStatusDisplay();
 
       playTemporaryAnimation(
@@ -2409,6 +2529,7 @@ function performAction(
         );
 
       applyPositiveInteraction();
+
       updateStatusDisplay();
 
       playTemporaryAnimation(
@@ -2487,6 +2608,7 @@ function performAction(
   }
 
   updateStatusDisplay();
+
   saveState();
 }
 
@@ -2498,6 +2620,27 @@ actionButtons.forEach(
     index
   ) => {
 
+    /*
+       Keep our own selection in sync
+       with whichever button Meta/browser
+       focus lands on.
+    */
+
+    button.addEventListener(
+      "focus",
+      () => {
+
+        if (
+          interactionMode
+        ) {
+          selectAction(
+            index,
+            false
+          );
+        }
+      }
+    );
+
     button.addEventListener(
       "click",
       event => {
@@ -2505,7 +2648,8 @@ actionButtons.forEach(
         event.stopPropagation();
 
         selectAction(
-          index
+          index,
+          false
         );
 
         performAction(
@@ -2538,7 +2682,6 @@ document.addEventListener(
     if (
       event.target ===
       characterSprite &&
-
       !interactionMode
     ) {
       longPressTimer =
@@ -2615,7 +2758,6 @@ document.addEventListener(
     if (
       ax >
       SWIPE_DISTANCE &&
-
       ax >
       ay
     ) {
@@ -2638,7 +2780,6 @@ document.addEventListener(
     if (
       ay >
       SWIPE_DISTANCE &&
-
       ay >
       ax
     ) {
@@ -2669,7 +2810,6 @@ document.addEventListener(
 
     if (
       interactionMode &&
-
       !event.target.closest(
         ".action"
       )
@@ -2683,92 +2823,166 @@ document.addEventListener(
   }
 );
 
-/* META NEURAL BAND / KEYBOARD INPUT */
+/* META / KEYBOARD INPUT */
 
-document.addEventListener(
-  "keydown",
-  event => {
+/*
+   We accept both event.key and event.code
+   forms because embedded browsers and
+   hardware input layers do not always
+   report them identically.
+*/
 
-    switch (
-      event.key
-    ) {
+function getNavigationKey(
+  event
+) {
+  const key =
+    event.key;
 
-      case "ArrowLeft":
+  const code =
+    event.code;
 
-        event.preventDefault();
-
-        if (
-          interactionMode
-        ) {
-          previousAction();
-        }
-
-        break;
-
-
-      case "ArrowRight":
-
-        event.preventDefault();
-
-        if (
-          interactionMode
-        ) {
-          nextAction();
-        }
-
-        break;
-
-
-      case "ArrowDown":
-
-        event.preventDefault();
-
-        if (
-          !interactionMode
-        ) {
-          openInteractionTray();
-        }
-
-        break;
-
-
-      case "ArrowUp":
-
-        event.preventDefault();
-
-        if (
-          interactionMode
-        ) {
-          closeInteractionTray();
-
-        } else if (
-          statusCardVisible
-        ) {
-          hideStatusCard();
-        }
-
-        break;
-
-
-      case "Enter":
-
-      case " ":
-
-        event.preventDefault();
-
-        if (
-          interactionMode
-        ) {
-          performAction(
-            actions[
-              selectedAction
-            ]
-          );
-        }
-
-        break;
-    }
+  if (
+    key === "ArrowLeft" ||
+    key === "Left" ||
+    code === "ArrowLeft"
+  ) {
+    return "left";
   }
+
+  if (
+    key === "ArrowRight" ||
+    key === "Right" ||
+    code === "ArrowRight"
+  ) {
+    return "right";
+  }
+
+  if (
+    key === "ArrowUp" ||
+    key === "Up" ||
+    code === "ArrowUp"
+  ) {
+    return "up";
+  }
+
+  if (
+    key === "ArrowDown" ||
+    key === "Down" ||
+    code === "ArrowDown"
+  ) {
+    return "down";
+  }
+
+  if (
+    key === "Enter" ||
+    code === "Enter" ||
+    code === "NumpadEnter" ||
+    key === " " ||
+    code === "Space"
+  ) {
+    return "activate";
+  }
+
+  return null;
+}
+
+function handleNavigationInput(
+  event
+) {
+  const input =
+    getNavigationKey(
+      event
+    );
+
+  if (
+    !input
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+
+  event.stopPropagation();
+
+  switch (
+    input
+  ) {
+
+    case "left":
+
+      if (
+        interactionMode
+      ) {
+        previousAction();
+      }
+
+      break;
+
+
+    case "right":
+
+      if (
+        interactionMode
+      ) {
+        nextAction();
+      }
+
+      break;
+
+
+    case "down":
+
+      if (
+        !interactionMode
+      ) {
+        openInteractionTray();
+      }
+
+      break;
+
+
+    case "up":
+
+      if (
+        interactionMode
+      ) {
+        closeInteractionTray();
+
+      } else if (
+        statusCardVisible
+      ) {
+        hideStatusCard();
+      }
+
+      break;
+
+
+    case "activate":
+
+      if (
+        interactionMode
+      ) {
+        performAction(
+          actions[
+            selectedAction
+          ]
+        );
+      }
+
+      break;
+  }
+}
+
+/*
+   Capture phase lets us see the event
+   before a focused button/browser default
+   navigation consumes it.
+*/
+
+window.addEventListener(
+  "keydown",
+  handleNavigationInput,
+  true
 );
 
 /* GAME TICK */
@@ -2783,6 +2997,7 @@ function gameTick() {
     !state.alive
   ) {
     updateStatusDisplay();
+
     updateMoodAnimation();
 
     return;
@@ -2800,6 +3015,7 @@ function gameTick() {
   }
 
   updateStatusDisplay();
+
   updateMoodAnimation();
 }
 
@@ -2819,13 +3035,35 @@ document.addEventListener(
       "hidden"
     ) {
       pauseAmbient();
+
       stopWalking();
+
       saveState();
 
     } else {
       updatePersistentTime();
+
       updateStatusDisplay();
+
       updateMoodAnimation();
+
+      /*
+         Regain a focus target when the
+         display/webview becomes active.
+      */
+
+      if (
+        interactionMode
+      ) {
+        requestAnimationFrame(
+          focusSelectedAction
+        );
+
+      } else {
+        requestAnimationFrame(
+          focusApp
+        );
+      }
 
       if (
         !state.sleeping &&
@@ -2836,6 +3074,27 @@ document.addEventListener(
           1500
         );
       }
+    }
+  }
+);
+
+/* WINDOW FOCUS */
+
+window.addEventListener(
+  "focus",
+  () => {
+
+    if (
+      interactionMode
+    ) {
+      requestAnimationFrame(
+        focusSelectedAction
+      );
+
+    } else {
+      requestAnimationFrame(
+        focusApp
+      );
     }
   }
 );
@@ -2882,17 +3141,30 @@ function init() {
   updatePersistentTime();
 
   selectAction(
-    0
+    0,
+    false
   );
 
   updateStatusDisplay();
+
   updateMoodAnimation();
 
   characterSprite.addEventListener(
     "dragstart",
     event => {
+
       event.preventDefault();
+
     }
+  );
+
+  /*
+     Give the Meta Display webview an
+     explicit focus target immediately.
+  */
+
+  requestAnimationFrame(
+    focusApp
   );
 
   if (
