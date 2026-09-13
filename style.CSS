@@ -1,0 +1,600 @@
+:root {
+
+  --bg:
+    #09090d;
+
+  --panel:
+    rgba(10, 10, 16, 0.78);
+
+  --purple:
+    #8a35ff;
+
+  --purple-soft:
+    #b26aff;
+
+  --purple-dark:
+    #42117c;
+
+  --white:
+    #f4efff;
+
+  --dim:
+    #8b8498;
+
+  --danger:
+    #ff4d78;
+}
+
+
+/* ============================================================
+   GLOBAL
+============================================================ */
+
+* {
+
+  box-sizing:
+    border-box;
+
+  user-select:
+    none;
+
+  -webkit-user-select:
+    none;
+}
+
+
+html,
+body {
+
+  margin:
+    0;
+
+  padding:
+    0;
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+  overflow:
+    hidden;
+
+  background:
+    var(--bg);
+
+  color:
+    var(--white);
+
+  font-family:
+    "Courier New",
+    monospace;
+
+  touch-action:
+    none;
+}
+
+
+body {
+
+  display:
+    flex;
+
+  justify-content:
+    center;
+
+  align-items:
+    center;
+}
+
+
+/* ============================================================
+   APP
+============================================================ */
+
+#app {
+
+  position:
+    relative;
+
+  width:
+    100vw;
+
+  height:
+    100vh;
+
+  min-height:
+    100%;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  background:
+
+    radial-gradient(
+      circle at 50% 55%,
+      rgba(90, 32, 145, 0.13),
+      transparent 38%
+    ),
+
+    #09090d;
+}
+
+
+/* ============================================================
+   STATUS BAR
+============================================================ */
+
+.status-bar {
+
+  z-index:
+    5;
+
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(4, 1fr);
+
+  gap:
+    8px;
+
+  padding:
+
+    max(
+      8px,
+      env(safe-area-inset-top)
+    )
+
+    12px
+
+    8px;
+
+  background:
+
+    linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.85),
+      transparent
+    );
+
+  transition:
+
+    opacity 180ms ease,
+
+    transform 180ms ease;
+}
+
+
+.status-bar.hidden-ui {
+
+  opacity:
+    0;
+
+  transform:
+    translateY(-20px);
+
+  pointer-events:
+    none;
+}
+
+
+.stat {
+
+  min-width:
+    0;
+}
+
+
+.stat span {
+
+  display:
+    block;
+
+  margin-bottom:
+    3px;
+
+  color:
+    var(--purple-soft);
+
+  font-size:
+    10px;
+
+  letter-spacing:
+    1px;
+
+  text-align:
+    center;
+}
+
+
+.meter {
+
+  height:
+    7px;
+
+  border:
+    1px solid
+    var(--purple-dark);
+
+  background:
+    rgba(0, 0, 0, 0.65);
+}
+
+
+.meter-fill {
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+  background:
+    var(--purple);
+
+  transition:
+    width 300ms ease;
+}
+
+
+/* ============================================================
+   CHARACTER STAGE
+============================================================ */
+
+.pet-stage {
+
+  position:
+    relative;
+
+  flex:
+    1;
+
+  display:
+    flex;
+
+  justify-content:
+    center;
+
+  align-items:
+    flex-end;
+
+  min-height:
+    0;
+
+  padding-bottom:
+    12px;
+}
+
+
+/* ============================================================
+   CHARACTER
+============================================================ */
+
+#character {
+
+  display:
+    block;
+
+  width:
+    auto;
+
+  height:
+    min(
+      55vh,
+      250px
+    );
+
+  max-width:
+    80vw;
+
+  object-fit:
+    contain;
+
+  image-rendering:
+    pixelated;
+
+  image-rendering:
+    crisp-edges;
+
+  filter:
+
+    drop-shadow(
+      0 0 7px
+      rgba(125, 53, 255, 0.16)
+    );
+
+  transform-origin:
+    center bottom;
+}
+
+
+/* ============================================================
+   MESSAGE
+============================================================ */
+
+.message {
+
+  position:
+    absolute;
+
+  top:
+    12%;
+
+  padding:
+    5px 10px;
+
+  border:
+
+    1px solid
+    rgba(
+      138,
+      53,
+      255,
+      0.45
+    );
+
+  background:
+
+    rgba(
+      5,
+      5,
+      8,
+      0.82
+    );
+
+  color:
+    var(--white);
+
+  font-size:
+    11px;
+
+  letter-spacing:
+    0.5px;
+
+  pointer-events:
+    none;
+
+  transition:
+
+    opacity 180ms ease,
+
+    transform 180ms ease;
+}
+
+
+.message.hidden {
+
+  opacity:
+    0;
+
+  transform:
+    translateY(4px);
+}
+
+
+/* ============================================================
+   ACTION BAR
+============================================================ */
+
+.action-bar {
+
+  z-index:
+    5;
+
+  display:
+    flex;
+
+  justify-content:
+    center;
+
+  align-items:
+    center;
+
+  gap:
+    5px;
+
+  padding:
+    6px 8px;
+
+  background:
+
+    linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.94),
+      rgba(0, 0, 0, 0.5)
+    );
+
+  transition:
+
+    opacity 180ms ease,
+
+    transform 180ms ease;
+}
+
+
+.action-bar.hidden-ui {
+
+  opacity:
+    0;
+
+  transform:
+    translateY(20px);
+
+  pointer-events:
+    none;
+}
+
+
+/* ============================================================
+   ACTION BUTTON
+============================================================ */
+
+.action {
+
+  min-width:
+    45px;
+
+  padding:
+    5px 4px;
+
+  border:
+    1px solid
+    transparent;
+
+  background:
+    transparent;
+
+  color:
+    var(--dim);
+
+  font-family:
+    inherit;
+
+  text-align:
+    center;
+
+  outline:
+    none;
+
+  transition:
+
+    color 120ms ease,
+
+    border-color 120ms ease,
+
+    background 120ms ease;
+}
+
+
+.action.selected {
+
+  color:
+    var(--white);
+
+  border-color:
+    var(--purple);
+
+  background:
+
+    rgba(
+      138,
+      53,
+      255,
+      0.15
+    );
+}
+
+
+.action-icon {
+
+  display:
+    block;
+
+  font-size:
+    14px;
+
+  color:
+    var(--purple-soft);
+}
+
+
+.action-label {
+
+  display:
+    block;
+
+  margin-top:
+    2px;
+
+  font-size:
+    8px;
+
+  letter-spacing:
+    0.5px;
+}
+
+
+/* ============================================================
+   CONTROL HINT
+============================================================ */
+
+.hint {
+
+  position:
+    absolute;
+
+  right:
+    7px;
+
+  bottom:
+    2px;
+
+  color:
+
+    rgba(
+      180,
+      160,
+      210,
+      0.38
+    );
+
+  font-size:
+    7px;
+
+  pointer-events:
+    none;
+}
+
+
+/* ============================================================
+   SMALL DISPLAY
+============================================================ */
+
+@media (
+  max-height:
+  400px
+) {
+
+  .status-bar {
+
+    padding-top:
+      5px;
+  }
+
+
+  #character {
+
+    height:
+
+      min(
+        50vh,
+        190px
+      );
+  }
+
+
+  .action-bar {
+
+    padding:
+      4px 5px;
+  }
+
+
+  .action {
+
+    padding:
+      3px;
+  }
+
+
+  .hint {
+
+    display:
+      none;
+  }
+}
