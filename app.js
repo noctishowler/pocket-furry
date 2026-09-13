@@ -1,6 +1,8 @@
 "use strict";
 
-/* CHARACTER PACK */
+/* ============================================================
+   CHARACTER PACK
+============================================================ */
 
 const characters = {
   noctis: {
@@ -107,21 +109,28 @@ const characters = {
   }
 };
 
-let animationPlayId = 0;
+let activeCharacterId =
+  "noctis";
 
-let activeCharacterId = "noctis";
-let activeDirection = "right";
+let activeDirection =
+  "right";
 
-const FETCH_DURATION_MS = 3030;
-const CLEAN_DURATION_MS = 5390;
+let animationPlayId =
+  0;
 
 function getActiveCharacter() {
-  return characters[activeCharacterId];
+  return characters[
+    activeCharacterId
+  ];
 }
 
-/* GAME CONSTANTS */
 
-const MAX_STAT = 100;
+/* ============================================================
+   GAME CONSTANTS
+============================================================ */
+
+const MAX_STAT =
+  100;
 
 const ENERGY_DRAIN_PER_MINUTE =
   100 / (16 * 60);
@@ -129,7 +138,8 @@ const ENERGY_DRAIN_PER_MINUTE =
 const ENERGY_RECOVERY_PER_MINUTE =
   100 / 10;
 
-const EXHAUSTED_THRESHOLD = 10;
+const EXHAUSTED_THRESHOLD =
+  10;
 
 const HEALTH_RECOVERY_PER_MINUTE =
   100 / (24 * 60);
@@ -137,11 +147,17 @@ const HEALTH_RECOVERY_PER_MINUTE =
 const HEALTH_DRAIN_PER_MINUTE =
   100 / (24 * 60);
 
-const FOOD_HEALTH_RECOVERY = 25;
+const FOOD_HEALTH_RECOVERY =
+  25;
 
-const HEALTH_MIN_HUNGER = 20;
-const HEALTH_MIN_HAPPINESS = 25;
-const HEALTH_MIN_CLEANLINESS = 25;
+const HEALTH_MIN_HUNGER =
+  20;
+
+const HEALTH_MIN_HAPPINESS =
+  25;
+
+const HEALTH_MIN_CLEANLINESS =
+  25;
 
 const FOOD_DURATION_MS =
   24 * 60 * 60 * 1000;
@@ -158,36 +174,73 @@ const SIT_ANGRY_MS =
 const GAME_TICK_INTERVAL =
   30 * 1000;
 
-/* MOVEMENT */
+const FETCH_DURATION_MS =
+  3030;
 
-const WALK_SPEED = 38;
-const BOUND_SPEED = 120;
+const CLEAN_DURATION_MS =
+  5390;
 
-const WALK_MARGIN = 0;
 
-const MIN_PAUSE_MS = 2200;
-const MAX_PAUSE_MS = 6200;
+/* ============================================================
+   MOVEMENT
+============================================================ */
 
-const MIN_TRAVEL_DISTANCE = 35;
+const WALK_SPEED =
+  38;
 
-const MIDSCREEN_STOP_CHANCE = 0.30;
+const BOUND_SPEED =
+  120;
 
-const CONTINUE_DIRECTION_CHANCE = 0.60;
+const WALK_MARGIN =
+  0;
 
-/* AMBIENT */
+const MIN_PAUSE_MS =
+  2200;
 
-const MOOD_REACTION_CHANCE = 0.07;
-const BOUND_CHANCE = 0.12;
-const BORED_CHANCE = 0.22;
+const MAX_PAUSE_MS =
+  6200;
 
-/* INPUT */
+const MIN_TRAVEL_DISTANCE =
+  35;
 
-const SWIPE_DISTANCE = 28;
-const LONG_PRESS_TIME = 700;
+const MIDSCREEN_STOP_CHANCE =
+  0.30;
 
-/* SAVE */
+const CONTINUE_DIRECTION_CHANCE =
+  0.60;
 
-const SAVE_VERSION = 5;
+
+/* ============================================================
+   AMBIENT BEHAVIOR
+============================================================ */
+
+const MOOD_REACTION_CHANCE =
+  0.07;
+
+const BOUND_CHANCE =
+  0.12;
+
+const BORED_CHANCE =
+  0.22;
+
+
+/* ============================================================
+   INPUT
+============================================================ */
+
+const SWIPE_DISTANCE =
+  28;
+
+const LONG_PRESS_TIME =
+  700;
+
+
+/* ============================================================
+   SAVE
+============================================================ */
+
+const SAVE_VERSION =
+  5;
 
 function getSaveKey() {
   return (
@@ -198,7 +251,10 @@ function getSaveKey() {
   );
 }
 
-/* DEFAULT STATE */
+
+/* ============================================================
+   DEFAULT STATE
+============================================================ */
 
 const defaultState = {
   hunger: 100,
@@ -222,84 +278,139 @@ const defaultState = {
   lastInteraction: Date.now()
 };
 
-let state = loadState();
+let state =
+  loadState();
 
-/* DOM */
+
+/* ============================================================
+   DOM
+============================================================ */
 
 const app =
-  document.getElementById("app");
+  document.getElementById(
+    "app"
+  );
 
 const characterSprite =
-  document.getElementById("character");
+  document.getElementById(
+    "character"
+  );
 
 const characterMover =
-  document.getElementById("characterMover");
+  document.getElementById(
+    "characterMover"
+  );
 
 const petStage =
-  document.getElementById("petStage");
+  document.getElementById(
+    "petStage"
+  );
 
 const actionTray =
-  document.getElementById("actionTray");
+  document.getElementById(
+    "actionTray"
+  );
 
 const controlHint =
-  document.getElementById("controlHint");
+  document.getElementById(
+    "controlHint"
+  );
 
 const message =
-  document.getElementById("message");
+  document.getElementById(
+    "message"
+  );
 
 const statusCard =
-  document.getElementById("statusCard");
+  document.getElementById(
+    "statusCard"
+  );
 
 const moodEmoji =
-  document.getElementById("moodEmoji");
+  document.getElementById(
+    "moodEmoji"
+  );
 
 const healthBar =
-  document.getElementById("healthBar");
+  document.getElementById(
+    "healthBar"
+  );
 
 const hungerBar =
-  document.getElementById("hungerBar");
+  document.getElementById(
+    "hungerBar"
+  );
 
 const cleanlinessBar =
-  document.getElementById("cleanlinessBar");
+  document.getElementById(
+    "cleanlinessBar"
+  );
 
 const energyBar =
-  document.getElementById("energyBar");
+  document.getElementById(
+    "energyBar"
+  );
 
 const happinessValue =
-  document.getElementById("happinessValue");
+  document.getElementById(
+    "happinessValue"
+  );
 
 const hungerValue =
-  document.getElementById("hungerValue");
+  document.getElementById(
+    "hungerValue"
+  );
 
 const energyValue =
-  document.getElementById("energyValue");
+  document.getElementById(
+    "energyValue"
+  );
 
 const healthValue =
-  document.getElementById("healthValue");
+  document.getElementById(
+    "healthValue"
+  );
 
 const cleanValue =
-  document.getElementById("cleanValue");
+  document.getElementById(
+    "cleanValue"
+  );
 
 const detailHappiness =
-  document.getElementById("detailHappiness");
+  document.getElementById(
+    "detailHappiness"
+  );
 
 const detailHunger =
-  document.getElementById("detailHunger");
+  document.getElementById(
+    "detailHunger"
+  );
 
 const detailEnergy =
-  document.getElementById("detailEnergy");
+  document.getElementById(
+    "detailEnergy"
+  );
 
 const detailHealth =
-  document.getElementById("detailHealth");
+  document.getElementById(
+    "detailHealth"
+  );
 
 const detailClean =
-  document.getElementById("detailClean");
+  document.getElementById(
+    "detailClean"
+  );
 
 const actionButtons = [
-  ...document.querySelectorAll(".action")
+  ...document.querySelectorAll(
+    ".action"
+  )
 ];
 
-/* ACTION MENU */
+
+/* ============================================================
+   ACTION MENU
+============================================================ */
 
 const actions = [
   "feed",
@@ -311,49 +422,79 @@ const actions = [
   "medicine"
 ];
 
-let selectedAction = 0;
+let selectedAction =
+  0;
 
-let interactionMode = false;
+let interactionMode =
+  false;
 
-let statusCardVisible = false;
+let statusCardVisible =
+  false;
 
-/* ANIMATION STATE */
 
-let currentAnimation = "";
+/* ============================================================
+   ANIMATION STATE
+============================================================ */
 
-let currentAnimationDirection = "";
+let currentAnimation =
+  "";
 
-let temporaryAnimation = false;
+let currentAnimationDirection =
+  "";
 
-let animationTimer = null;
+let temporaryAnimation =
+  false;
 
-let sleepTimer = null;
+let animationTimer =
+  null;
 
-/* MOVEMENT STATE */
+let sleepTimer =
+  null;
 
-let walking = false;
 
-let walkTimer = null;
+/* ============================================================
+   MOVEMENT STATE
+============================================================ */
 
-let ambientTimer = null;
+let walking =
+  false;
 
-let currentX = 0;
+let walkTimer =
+  null;
 
-let nextWalkDirection = "right";
+let ambientTimer =
+  null;
 
-/* POINTER STATE */
+let currentX =
+  0;
 
-let pointerStartX = 0;
+let nextWalkDirection =
+  "right";
 
-let pointerStartY = 0;
 
-let longPressTimer = null;
+/* ============================================================
+   POINTER STATE
+============================================================ */
 
-let longPressTriggered = false;
+let pointerStartX =
+  0;
 
-let messageTimer = null;
+let pointerStartY =
+  0;
 
-/* UTILITIES */
+let longPressTimer =
+  null;
+
+let longPressTriggered =
+  false;
+
+let messageTimer =
+  null;
+
+
+/* ============================================================
+   UTILITIES
+============================================================ */
 
 function clamp(value) {
   return Math.max(
@@ -382,7 +523,10 @@ function randomBetween(
   );
 }
 
-/* SAVE / LOAD */
+
+/* ============================================================
+   SAVE / LOAD
+============================================================ */
 
 function saveState() {
   state.lastUpdate =
@@ -430,7 +574,10 @@ function loadState() {
   }
 }
 
-/* ANIMATION PATH */
+
+/* ============================================================
+   ANIMATIONS
+============================================================ */
 
 function getAnimationPath(
   name,
@@ -459,8 +606,6 @@ function getAnimationPath(
   );
 }
 
-/* SET ANIMATION */
-
 function setAnimation(
   name,
   direction = activeDirection,
@@ -483,8 +628,7 @@ function setAnimation(
 
   if (
     !restart &&
-    currentAnimation ===
-      name &&
+    currentAnimation === name &&
     currentAnimationDirection ===
       direction
   ) {
@@ -506,7 +650,10 @@ function setAnimation(
       : path;
 }
 
-/* FOOD */
+
+/* ============================================================
+   FOOD
+============================================================ */
 
 function getFoodAge() {
   return (
@@ -537,12 +684,9 @@ function getHungerStage() {
 }
 
 function updateFoodFromClock() {
-  const elapsed =
-    getFoodAge();
-
   const remaining =
     1 -
-    elapsed /
+    getFoodAge() /
       FOOD_DURATION_MS;
 
   state.hunger =
@@ -552,7 +696,10 @@ function updateFoodFromClock() {
     );
 }
 
-/* HEALTH */
+
+/* ============================================================
+   HEALTH
+============================================================ */
 
 function areHealthNeedsMet() {
   return (
@@ -583,10 +730,8 @@ function updateHealthFromClock(
     getHungerStage();
 
   if (
-    hungerStage ===
-      "sick" ||
-    hungerStage ===
-      "critical"
+    hungerStage === "sick" ||
+    hungerStage === "critical"
   ) {
     state.health =
       clamp(
@@ -614,7 +759,10 @@ function updateHealthFromClock(
   }
 }
 
-/* DEATH */
+
+/* ============================================================
+   DEATH
+============================================================ */
 
 function killCharacter() {
   if (
@@ -653,7 +801,6 @@ function killCharacter() {
   );
 
   pauseAmbient();
-
   stopWalking();
 
   setAnimation(
@@ -664,7 +811,10 @@ function killCharacter() {
   saveState();
 }
 
-/* MOOD HUD */
+
+/* ============================================================
+   MOOD
+============================================================ */
 
 function getMoodEmoji() {
   if (
@@ -731,8 +881,6 @@ function getMoodEmoji() {
   return "😠";
 }
 
-/* POSITIVE INTERACTION */
-
 function applyPositiveInteraction() {
   if (
     state.forcedSit
@@ -765,7 +913,10 @@ function applyPositiveInteraction() {
   }
 }
 
-/* FORCED SIT */
+
+/* ============================================================
+   FORCED SIT
+============================================================ */
 
 function startForcedSit() {
   if (
@@ -776,7 +927,6 @@ function startForcedSit() {
   }
 
   pauseAmbient();
-
   stopWalking();
 
   clearTimeout(
@@ -926,7 +1076,10 @@ function toggleForcedSit() {
   }
 }
 
-/* PERSISTENT TIME */
+
+/* ============================================================
+   PERSISTENT TIME
+============================================================ */
 
 function updatePersistentTime() {
   const now =
@@ -1023,7 +1176,10 @@ function updatePersistentTime() {
   saveState();
 }
 
-/* STATUS DISPLAY */
+
+/* ============================================================
+   STATUS DISPLAY
+============================================================ */
 
 function updateStatusDisplay() {
   const happiness =
@@ -1159,8 +1315,6 @@ function updateStatusDisplay() {
   updateCriticalIndicators();
 }
 
-/* HUD WARNING STATES */
-
 function updateCriticalIndicators() {
   const healthNode =
     document.querySelector(
@@ -1223,7 +1377,10 @@ function updateCriticalIndicators() {
   }
 }
 
-/* RESTING / MOOD */
+
+/* ============================================================
+   MOOD ANIMATION
+============================================================ */
 
 function updateMoodAnimation() {
   if (
@@ -1319,7 +1476,10 @@ function updateMoodAnimation() {
   );
 }
 
-/* TEMPORARY ANIMATION */
+
+/* ============================================================
+   TEMPORARY ANIMATION
+============================================================ */
 
 function playTemporaryAnimation(
   name,
@@ -1327,7 +1487,6 @@ function playTemporaryAnimation(
   direction = activeDirection
 ) {
   pauseAmbient();
-
   stopWalking();
 
   clearTimeout(
@@ -1368,7 +1527,10 @@ function playTemporaryAnimation(
     );
 }
 
-/* WALKING LIMITS */
+
+/* ============================================================
+   MOVEMENT
+============================================================ */
 
 function getHorizontalLimits() {
   const stageWidth =
@@ -1394,8 +1556,6 @@ function getHorizontalLimits() {
       halfAvailable
   };
 }
-
-/* NEXT DESTINATION */
 
 function getNextRoamTarget() {
   const limits =
@@ -1426,44 +1586,31 @@ function getNextRoamTarget() {
     return getNextRoamTarget();
   }
 
-  let travelFraction;
-
-  if (
+  const travelFraction =
     Math.random() <
-    MIDSCREEN_STOP_CHANCE
-  ) {
-    travelFraction =
-      randomBetween(
-        0.45,
-        0.75
-      );
+      MIDSCREEN_STOP_CHANCE
+      ? randomBetween(
+          0.45,
+          0.75
+        )
+      : randomBetween(
+          0.94,
+          1.0
+        );
 
-  } else {
-    travelFraction =
-      randomBetween(
-        0.94,
-        1.0
-      );
-  }
-
-  let target =
+  const target =
     currentX +
     remainingDistance *
     travelFraction;
 
-  target =
-    Math.max(
-      limits.min,
-      Math.min(
-        limits.max,
-        target
-      )
-    );
-
-  return target;
+  return Math.max(
+    limits.min,
+    Math.min(
+      limits.max,
+      target
+    )
+  );
 }
-
-/* DIRECTION DECISION */
 
 function chooseNextWalkDirection() {
   const limits =
@@ -1481,7 +1628,6 @@ function chooseNextWalkDirection() {
     roomAhead >
       MIN_TRAVEL_DISTANCE *
       1.5 &&
-
     Math.random() <
       CONTINUE_DIRECTION_CHANCE
   ) {
@@ -1497,103 +1643,12 @@ function chooseNextWalkDirection() {
   }
 }
 
-/* WALK */
-
-function walkAcrossScreen() {
-  if (
-    walking ||
-    temporaryAnimation ||
-    interactionMode ||
-    statusCardVisible ||
-    state.sleeping ||
-    state.forcedSit ||
-    !state.alive
-  ) {
-    return;
-  }
-
-  const targetX =
-    getNextRoamTarget();
-
-  const distance =
-    targetX -
-    currentX;
-
-  if (
-    Math.abs(
-      distance
-    ) <
-    MIN_TRAVEL_DISTANCE
-  ) {
-    beginRestPeriod();
-
-    return;
-  }
-
-  activeDirection =
-    distance >
-    0
-      ? "right"
-      : "left";
-
-  walking =
-    true;
-
-  setAnimation(
-    "walk",
-    activeDirection
-  );
-
-  const duration =
-    Math.max(
-      700,
-      (
-        Math.abs(distance) /
-        WALK_SPEED
-      ) *
-      1000
-    );
-
-  characterMover.style.transition =
-    "none";
-
-  void characterMover.offsetWidth;
-
-  characterMover.style.transition =
-    `left ${duration}ms linear`;
-
-  characterMover.style.left =
-    `calc(50% + ${targetX}px)`;
-
-  clearTimeout(
-    walkTimer
-  );
-
-  walkTimer =
-    setTimeout(
-      () => {
-
-        currentX =
-          targetX;
-
-        walking =
-          false;
-
-        characterMover.style.transition =
-          "none";
-
-        chooseNextWalkDirection();
-
-        beginRestPeriod();
-
-      },
-      duration + 25
-    );
-}
-
-/* BOUND */
-
-function boundAcrossScreen() {
+function moveCharacter(
+  animation,
+  speed,
+  minimumDuration,
+  special = false
+) {
   if (
     walking ||
     temporaryAnimation ||
@@ -1634,19 +1689,19 @@ function boundAcrossScreen() {
     true;
 
   temporaryAnimation =
-    true;
+    special;
 
   setAnimation(
-    "bound",
+    animation,
     activeDirection
   );
 
   const duration =
     Math.max(
-      300,
+      minimumDuration,
       (
         Math.abs(distance) /
-        BOUND_SPEED
+        speed
       ) *
       1000
     );
@@ -1693,7 +1748,23 @@ function boundAcrossScreen() {
     );
 }
 
-/* STOP MOVEMENT */
+function walkAcrossScreen() {
+  moveCharacter(
+    "walk",
+    WALK_SPEED,
+    700,
+    false
+  );
+}
+
+function boundAcrossScreen() {
+  moveCharacter(
+    "bound",
+    BOUND_SPEED,
+    300,
+    true
+  );
+}
 
 function stopWalking() {
   if (
@@ -1740,7 +1811,10 @@ function stopWalking() {
   }
 }
 
-/* AMBIENT REACTION */
+
+/* ============================================================
+   AMBIENT
+============================================================ */
 
 function playAmbientReaction(
   animation,
@@ -1785,8 +1859,6 @@ function playAmbientReaction(
     );
 }
 
-/* REST / AMBIENT */
-
 function beginRestPeriod() {
   if (
     state.sleeping ||
@@ -1807,13 +1879,10 @@ function beginRestPeriod() {
   if (
     getHungerStage() !==
       "normal" ||
-
     state.energy <=
       EXHAUSTED_THRESHOLD ||
-
     state.hunger <
       20 ||
-
     state.happiness <
       25
   ) {
@@ -1885,14 +1954,11 @@ function beginRestPeriod() {
     roll <
       MOOD_REACTION_CHANCE
   ) {
-    const moodAnimation =
-      state.happiness >=
-      50
-        ? "happy"
-        : "sad";
-
     playAmbientReaction(
-      moodAnimation,
+      state.happiness >=
+        50
+        ? "happy"
+        : "sad",
       1500
     );
 
@@ -1913,7 +1979,7 @@ function beginRestPeriod() {
   if (
     roll <
     positiveBehaviorEnd +
-    BORED_CHANCE
+      BORED_CHANCE
   ) {
     setAnimation(
       "bored",
@@ -1936,8 +2002,6 @@ function beginRestPeriod() {
     pauseDuration
   );
 }
-
-/* AMBIENT LOOP */
 
 function pauseAmbient() {
   clearTimeout(
@@ -2001,7 +2065,10 @@ function resumeAmbient(
     );
 }
 
-/* MESSAGE */
+
+/* ============================================================
+   MESSAGE
+============================================================ */
 
 function showMessage(
   text,
@@ -2031,11 +2098,13 @@ function showMessage(
     );
 }
 
-/* STATUS CARD */
+
+/* ============================================================
+   STATUS CARD
+============================================================ */
 
 function showStatusCard() {
   pauseAmbient();
-
   stopWalking();
 
   statusCardVisible =
@@ -2070,18 +2139,37 @@ function hideStatusCard() {
   }
 }
 
-/* FOCUS HELPERS */
+
+/* ============================================================
+   FOCUS
+============================================================ */
 
 function focusApp() {
   if (
-    app &&
-    typeof app.focus ===
-    "function"
+    !app ||
+    typeof app.focus !==
+      "function"
   ) {
-    app.focus({
-      preventScroll: true
-    });
+    return;
   }
+
+  app.focus({
+    preventScroll: true
+  });
+}
+
+function setActionButtonsFocusable(
+  enabled
+) {
+  actionButtons.forEach(
+    button => {
+
+      button.tabIndex =
+        enabled
+          ? 0
+          : -1;
+    }
+  );
 }
 
 function focusSelectedAction() {
@@ -2091,21 +2179,31 @@ function focusSelectedAction() {
     ];
 
   if (
-    button &&
-    typeof button.focus ===
-    "function"
+    !button ||
+    typeof button.focus !==
+      "function"
   ) {
-    button.focus({
-      preventScroll: true
-    });
+    return;
   }
+
+  button.focus({
+    preventScroll: true
+  });
 }
 
-/* INTERACTION TRAY */
+
+/* ============================================================
+   INTERACTION TRAY
+============================================================ */
 
 function openInteractionTray() {
-  pauseAmbient();
+  if (
+    interactionMode
+  ) {
+    return;
+  }
 
+  pauseAmbient();
   stopWalking();
 
   statusCardVisible =
@@ -2120,6 +2218,15 @@ function openInteractionTray() {
 
   actionTray.classList.remove(
     "hidden-tray"
+  );
+
+  actionTray.setAttribute(
+    "aria-hidden",
+    "false"
+  );
+
+  setActionButtonsFocusable(
+    true
   );
 
   if (
@@ -2137,17 +2244,18 @@ function openInteractionTray() {
   controlHint.textContent =
     "◀ ▶ SELECT • PINCH • ↑ CLOSE";
 
-  /*
-     Important for Meta Display:
-     move actual DOM focus into the tray.
-  */
-
   requestAnimationFrame(
     focusSelectedAction
   );
 }
 
 function closeInteractionTray() {
+  if (
+    !interactionMode
+  ) {
+    return;
+  }
+
   interactionMode =
     false;
 
@@ -2155,18 +2263,27 @@ function closeInteractionTray() {
     "hidden-tray"
   );
 
+  actionTray.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+
+  setActionButtonsFocusable(
+    false
+  );
+
   controlHint.textContent =
     "SWIPE DOWN TO INTERACT";
-
-  /*
-     Return focus to the main app so
-     subsequent Neural Band input still
-     has somewhere to land.
-  */
 
   requestAnimationFrame(
     focusApp
   );
+
+  /*
+     Deliberately do nothing to sleep
+     state here. Closing the menu must
+     never wake Noctis.
+  */
 
   if (
     !state.sleeping &&
@@ -2179,7 +2296,10 @@ function closeInteractionTray() {
   }
 }
 
-/* ACTION SELECTION */
+
+/* ============================================================
+   ACTION SELECTION
+============================================================ */
 
 function selectAction(
   index,
@@ -2228,20 +2348,31 @@ function previousAction() {
   );
 }
 
-/* SLEEP */
+
+/* ============================================================
+   SLEEP
+============================================================ */
 
 function putCharacterToSleep(
   forced = false
 ) {
   if (
-    !state.alive
+    !state.alive ||
+    state.sleeping
   ) {
     return;
   }
 
   pauseAmbient();
-
   stopWalking();
+
+  clearTimeout(
+    sleepTimer
+  );
+
+  clearTimeout(
+    animationTimer
+  );
 
   if (
     state.forcedSit
@@ -2270,16 +2401,15 @@ function putCharacterToSleep(
       : "Sleepy..."
   );
 
-  clearTimeout(
-    sleepTimer
-  );
+  saveState();
 
   sleepTimer =
     setTimeout(
       () => {
 
         if (
-          !state.alive
+          !state.alive ||
+          !state.sleeping
         ) {
           return;
         }
@@ -2293,7 +2423,8 @@ function putCharacterToSleep(
             () => {
 
               if (
-                !state.alive
+                !state.alive ||
+                !state.sleeping
               ) {
                 return;
               }
@@ -2316,11 +2447,10 @@ function putCharacterToSleep(
     );
 }
 
-/* WAKE */
-
 function wakeCharacter() {
   if (
-    !state.alive
+    !state.alive ||
+    !state.sleeping
   ) {
     return;
   }
@@ -2328,7 +2458,7 @@ function wakeCharacter() {
   if (
     state.forcedSleep &&
     state.energy <
-    20
+      20
   ) {
     showMessage(
       "Too tired"
@@ -2337,11 +2467,18 @@ function wakeCharacter() {
     return;
   }
 
-  if (
-    !state.sleeping
-  ) {
-    return;
-  }
+  /*
+     Cancel any pending sleepy /
+     lie-down transition before waking.
+  */
+
+  clearTimeout(
+    sleepTimer
+  );
+
+  clearTimeout(
+    animationTimer
+  );
 
   state.sleeping =
     false;
@@ -2356,16 +2493,13 @@ function wakeCharacter() {
     "wakeUp"
   );
 
-  clearTimeout(
-    animationTimer
-  );
-
   animationTimer =
     setTimeout(
       () => {
 
         if (
-          !state.alive
+          !state.alive ||
+          state.sleeping
         ) {
           return;
         }
@@ -2386,7 +2520,10 @@ function wakeCharacter() {
   saveState();
 }
 
-/* ACTIONS */
+
+/* ============================================================
+   ACTIONS
+============================================================ */
 
 function performAction(
   action
@@ -2403,7 +2540,7 @@ function performAction(
   if (
     state.forcedSit &&
     action !==
-    "sit"
+      "sit"
   ) {
     showMessage(
       "Still sitting."
@@ -2612,19 +2749,16 @@ function performAction(
   saveState();
 }
 
-/* BUTTON INPUT */
+
+/* ============================================================
+   ACTION BUTTON INPUT
+============================================================ */
 
 actionButtons.forEach(
   (
     button,
     index
   ) => {
-
-    /*
-       Keep our own selection in sync
-       with whichever button Meta/browser
-       focus lands on.
-    */
 
     button.addEventListener(
       "focus",
@@ -2647,10 +2781,21 @@ actionButtons.forEach(
 
         event.stopPropagation();
 
+        if (
+          !interactionMode
+        ) {
+          return;
+        }
+
         selectAction(
           index,
           false
         );
+
+        /*
+           This is the single activation
+           path for a focused menu button.
+        */
 
         performAction(
           actions[index]
@@ -2660,7 +2805,10 @@ actionButtons.forEach(
   }
 );
 
-/* TOUCH / POINTER SWIPE INPUT */
+
+/* ============================================================
+   TOUCH / POINTER INPUT
+============================================================ */
 
 document.addEventListener(
   "pointerdown",
@@ -2681,7 +2829,7 @@ document.addEventListener(
 
     if (
       event.target ===
-      characterSprite &&
+        characterSprite &&
       !interactionMode
     ) {
       longPressTimer =
@@ -2717,8 +2865,10 @@ document.addEventListener(
       );
 
     if (
-      dx > 12 ||
-      dy > 12
+      dx >
+        12 ||
+      dy >
+        12
     ) {
       clearTimeout(
         longPressTimer
@@ -2757,15 +2907,16 @@ document.addEventListener(
 
     if (
       ax >
-      SWIPE_DISTANCE &&
+        SWIPE_DISTANCE &&
       ax >
-      ay
+        ay
     ) {
       if (
         interactionMode
       ) {
         if (
-          dx > 0
+          dx >
+          0
         ) {
           previousAction();
 
@@ -2779,12 +2930,13 @@ document.addEventListener(
 
     if (
       ay >
-      SWIPE_DISTANCE &&
+        SWIPE_DISTANCE &&
       ay >
-      ax
+        ax
     ) {
       if (
-        dy > 0
+        dy >
+        0
       ) {
         if (
           !interactionMode
@@ -2823,14 +2975,10 @@ document.addEventListener(
   }
 );
 
-/* META / KEYBOARD INPUT */
 
-/*
-   We accept both event.key and event.code
-   forms because embedded browsers and
-   hardware input layers do not always
-   report them identically.
-*/
+/* ============================================================
+   META / NEURAL BAND / KEYBOARD INPUT
+============================================================ */
 
 function getNavigationKey(
   event
@@ -2895,7 +3043,34 @@ function handleNavigationInput(
     );
 
   if (
-    !input
+    !input ||
+    event.repeat
+  ) {
+    return;
+  }
+
+  /*
+     When a real action button has focus,
+     Enter/Space must be allowed through.
+
+     The browser will generate the normal
+     button click exactly once.
+
+     Intercepting it here as well would
+     perform the action twice — which is
+     particularly bad for SLEEP because
+     the second call immediately wakes him.
+  */
+
+  if (
+    input ===
+      "activate" &&
+    interactionMode &&
+    document.activeElement
+      ?.classList
+      ?.contains(
+        "action"
+      )
   ) {
     return;
   }
@@ -2959,6 +3134,12 @@ function handleNavigationInput(
 
     case "activate":
 
+      /*
+         Fallback only for an environment
+         where activation arrives but an
+         action button somehow lacks focus.
+      */
+
       if (
         interactionMode
       ) {
@@ -2973,19 +3154,16 @@ function handleNavigationInput(
   }
 }
 
-/*
-   Capture phase lets us see the event
-   before a focused button/browser default
-   navigation consumes it.
-*/
-
 window.addEventListener(
   "keydown",
   handleNavigationInput,
   true
 );
 
-/* GAME TICK */
+
+/* ============================================================
+   GAME TICK
+============================================================ */
 
 function gameTick() {
   const wasSleeping =
@@ -3007,7 +3185,7 @@ function gameTick() {
     !wasSleeping &&
     state.sleeping &&
     state.energy <=
-    0
+      0
   ) {
     putCharacterToSleep(
       true
@@ -3024,7 +3202,10 @@ setInterval(
   GAME_TICK_INTERVAL
 );
 
-/* APP VISIBILITY */
+
+/* ============================================================
+   VISIBILITY / FOCUS
+============================================================ */
 
 document.addEventListener(
   "visibilitychange",
@@ -3040,45 +3221,39 @@ document.addEventListener(
 
       saveState();
 
+      return;
+    }
+
+    updatePersistentTime();
+
+    updateStatusDisplay();
+
+    updateMoodAnimation();
+
+    if (
+      interactionMode
+    ) {
+      requestAnimationFrame(
+        focusSelectedAction
+      );
+
     } else {
-      updatePersistentTime();
+      requestAnimationFrame(
+        focusApp
+      );
+    }
 
-      updateStatusDisplay();
-
-      updateMoodAnimation();
-
-      /*
-         Regain a focus target when the
-         display/webview becomes active.
-      */
-
-      if (
-        interactionMode
-      ) {
-        requestAnimationFrame(
-          focusSelectedAction
-        );
-
-      } else {
-        requestAnimationFrame(
-          focusApp
-        );
-      }
-
-      if (
-        !state.sleeping &&
-        !state.forcedSit &&
-        state.alive
-      ) {
-        resumeAmbient(
-          1500
-        );
-      }
+    if (
+      !state.sleeping &&
+      !state.forcedSit &&
+      state.alive
+    ) {
+      resumeAmbient(
+        1500
+      );
     }
   }
 );
-
-/* WINDOW FOCUS */
 
 window.addEventListener(
   "focus",
@@ -3099,11 +3274,17 @@ window.addEventListener(
   }
 );
 
-/* PRELOAD */
+
+/* ============================================================
+   PRELOAD
+============================================================ */
 
 function preloadAnimations() {
   const character =
     getActiveCharacter();
+
+  const filenames =
+    new Set();
 
   Object.values(
     character.animations
@@ -3115,19 +3296,31 @@ function preloadAnimations() {
       ).forEach(
         filename => {
 
-          const img =
-            new Image();
-
-          img.src =
-            character.path +
-            filename;
+          filenames.add(
+            filename
+          );
         }
       );
     }
   );
+
+  filenames.forEach(
+    filename => {
+
+      const img =
+        new Image();
+
+      img.src =
+        character.path +
+        filename;
+    }
+  );
 }
 
-/* INIT */
+
+/* ============================================================
+   INIT
+============================================================ */
 
 function init() {
   preloadAnimations();
@@ -3137,6 +3330,15 @@ function init() {
 
   currentX =
     0;
+
+  setActionButtonsFocusable(
+    false
+  );
+
+  actionTray.setAttribute(
+    "aria-hidden",
+    "true"
+  );
 
   updatePersistentTime();
 
@@ -3157,11 +3359,6 @@ function init() {
 
     }
   );
-
-  /*
-     Give the Meta Display webview an
-     explicit focus target immediately.
-  */
 
   requestAnimationFrame(
     focusApp
@@ -3195,6 +3392,9 @@ function init() {
   if (
     state.sleeping
   ) {
+    temporaryAnimation =
+      false;
+
     setAnimation(
       "sleep",
       activeDirection
