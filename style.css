@@ -9,6 +9,11 @@
   --critical: #ff4d78;
 }
 
+
+/* ============================================================
+   BASE
+============================================================ */
+
 * {
   box-sizing: border-box;
 
@@ -57,7 +62,7 @@ body {
 
 
 /* ============================================================
-   META DISPLAY STATUS HUD
+   STATUS HUD
 ============================================================ */
 
 .status-hud {
@@ -71,10 +76,9 @@ body {
   transform: translateX(-50%);
 
   display: flex;
+  align-items: center;
 
   gap: 8px;
-
-  align-items: center;
 
   padding: 4px 8px;
 
@@ -88,7 +92,6 @@ body {
 
 .mini-stat {
   display: flex;
-
   align-items: center;
 
   gap: 4px;
@@ -137,7 +140,7 @@ body {
 
 
 /* ============================================================
-   MOOD HUD
+   MOOD
 ============================================================ */
 
 .mood-stat {
@@ -178,7 +181,7 @@ body {
 
 
 /* ============================================================
-   CHARACTER MOVEMENT
+   CHARACTER
 ============================================================ */
 
 #characterMover {
@@ -253,11 +256,9 @@ body {
   color:
     var(--white);
 
-  font-size:
-    8px;
+  font-size: 8px;
 
-  pointer-events:
-    none;
+  pointer-events: none;
 }
 
 .message.hidden {
@@ -277,11 +278,9 @@ body {
   top: 50%;
   left: 50%;
 
-  width:
-    180px;
+  width: 180px;
 
-  padding:
-    9px;
+  padding: 9px;
 
   transform:
     translate(-50%, -50%);
@@ -299,20 +298,16 @@ body {
 }
 
 .status-card-title {
-  margin-bottom:
-    7px;
+  margin-bottom: 7px;
 
   color:
     var(--purple-soft);
 
-  font-size:
-    9px;
+  font-size: 9px;
 
-  letter-spacing:
-    1px;
+  letter-spacing: 1px;
 
-  text-align:
-    center;
+  text-align: center;
 }
 
 .detail-stat {
@@ -321,22 +316,18 @@ body {
   justify-content:
     space-between;
 
-  margin-top:
-    4px;
+  margin-top: 4px;
 
   color:
     var(--dim);
 
-  font-size:
-    7px;
+  font-size: 7px;
 }
 
 .detail-meter {
-  height:
-    4px;
+  height: 4px;
 
-  margin-top:
-    1px;
+  margin-top: 1px;
 
   border:
     1px solid
@@ -347,11 +338,8 @@ body {
 }
 
 .detail-meter > div {
-  width:
-    100%;
-
-  height:
-    100%;
+  width: 100%;
+  height: 100%;
 
   background:
     var(--purple);
@@ -375,11 +363,9 @@ body {
 
   display: flex;
 
-  gap:
-    2px;
+  gap: 2px;
 
-  padding:
-    4px;
+  padding: 4px;
 
   border:
     1px solid
@@ -399,19 +385,18 @@ body {
   transform:
     translate(-50%, 18px);
 
-  pointer-events:
-    none;
+  pointer-events: none;
 }
 
 .action {
-  min-width:
-    34px;
+  min-width: 34px;
 
   padding:
     3px 2px;
 
   border:
-    1px solid transparent;
+    1px solid
+    transparent;
 
   background:
     transparent;
@@ -421,9 +406,6 @@ body {
 
   font-family:
     inherit;
-
-  outline:
-    none;
 }
 
 .action.selected {
@@ -438,31 +420,24 @@ body {
 }
 
 .action-icon {
-  display:
-    block;
+  display: block;
 
   color:
     var(--purple-soft);
 
-  font-size:
-    11px;
+  font-size: 11px;
 
-  text-align:
-    center;
+  text-align: center;
 }
 
 .action-label {
-  display:
-    block;
+  display: block;
 
-  margin-top:
-    1px;
+  margin-top: 1px;
 
-  font-size:
-    6px;
+  font-size: 6px;
 
-  text-align:
-    center;
+  text-align: center;
 }
 
 
@@ -484,59 +459,35 @@ body {
   color:
     rgba(180, 160, 210, 0.30);
 
-  font-size:
-    5px;
+  font-size: 5px;
 
-  white-space:
-    nowrap;
+  white-space: nowrap;
 
-  pointer-events:
-    none;
+  pointer-events: none;
 }
 
 
 /* ============================================================
-   META DISPLAY FOCUS CLEANUP
+   META / BROWSER FOCUS
 ============================================================ */
 
 /*
-   #app needs to remain focusable for
-   Meta Display / Neural Band input,
-   but the browser's native focus ring
-   should not be visible.
+   Focus remains functional for the
+   Neural Band, but native browser focus
+   rings are hidden. Pocket Furry uses
+   the purple .selected state instead.
 */
 
-#app,
 #app:focus,
 #app:focus-visible,
-#app.focusable:focus,
-#app.focusable:focus-visible {
+.action:focus,
+.action:focus-visible {
   outline: none !important;
-
   box-shadow: none !important;
-
-  border-color:
-    transparent;
-
-  -webkit-tap-highlight-color:
-    transparent;
 }
 
-/*
-   Action buttons use Pocket Furry's
-   purple .selected state instead of
-   the browser/Meta native focus ring.
-*/
-
-.action,
-.action:focus,
-.action:focus-visible,
-.action.focusable:focus,
-.action.focusable:focus-visible {
-  outline: none !important;
-
-  box-shadow: none !important;
-
+#app,
+.action {
   -webkit-tap-highlight-color:
     transparent;
 }
