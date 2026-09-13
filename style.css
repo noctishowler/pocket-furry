@@ -3,9 +3,6 @@
   --bg:
     #09090d;
 
-  --panel:
-    rgba(10, 10, 16, 0.78);
-
   --purple:
     #8a35ff;
 
@@ -19,9 +16,12 @@
     #f4efff;
 
   --dim:
-    #8b8498;
+    #8d8799;
 
-  --danger:
+  --panel:
+    rgba(8, 8, 13, 0.92);
+
+  --critical:
     #ff4d78;
 }
 
@@ -104,8 +104,8 @@ body {
   height:
     100vh;
 
-  min-height:
-    100%;
+  overflow:
+    hidden;
 
   display:
     flex;
@@ -116,9 +116,9 @@ body {
   background:
 
     radial-gradient(
-      circle at 50% 55%,
-      rgba(90, 32, 145, 0.13),
-      transparent 38%
+      circle at 50% 58%,
+      rgba(90, 32, 145, 0.14),
+      transparent 42%
     ),
 
     #09090d;
@@ -126,107 +126,108 @@ body {
 
 
 /* ============================================================
-   STATUS BAR
+   COMPACT STATUS HUD
 ============================================================ */
 
-.status-bar {
+.status-hud {
+
+  position:
+    absolute;
 
   z-index:
-    5;
+    20;
 
-  display:
-    grid;
-
-  grid-template-columns:
-    repeat(4, 1fr);
-
-  gap:
-    8px;
-
-  padding:
-
+  top:
     max(
       8px,
       env(safe-area-inset-top)
-    )
+    );
 
-    12px
+  left:
+    50%;
 
-    8px;
+  transform:
+    translateX(-50%);
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    12px;
+
+  padding:
+    6px 10px;
+
+  border:
+
+    1px solid
+    rgba(138, 53, 255, 0.22);
 
   background:
 
-    linear-gradient(
-      to bottom,
-      rgba(0, 0, 0, 0.85),
-      transparent
+    rgba(
+      0,
+      0,
+      0,
+      0.48
     );
 
-  transition:
-
-    opacity 180ms ease,
-
-    transform 180ms ease;
+  backdrop-filter:
+    blur(4px);
 }
 
 
-.status-bar.hidden-ui {
-
-  opacity:
-    0;
-
-  transform:
-    translateY(-20px);
-
-  pointer-events:
-    none;
-}
-
-
-.stat {
-
-  min-width:
-    0;
-}
-
-
-.stat span {
+.mini-stat {
 
   display:
-    block;
+    flex;
 
-  margin-bottom:
-    3px;
+  align-items:
+    center;
+
+  gap:
+    5px;
+}
+
+
+.mini-icon {
+
+  width:
+    12px;
 
   color:
     var(--purple-soft);
 
   font-size:
-    10px;
-
-  letter-spacing:
-    1px;
+    11px;
 
   text-align:
     center;
 }
 
 
-.meter {
+.mini-meter {
+
+  width:
+    42px;
 
   height:
-    7px;
+    5px;
 
   border:
+
     1px solid
-    var(--purple-dark);
+    rgba(138, 53, 255, 0.35);
 
   background:
     rgba(0, 0, 0, 0.65);
 }
 
 
-.meter-fill {
+.mini-fill {
 
   width:
     100%;
@@ -238,12 +239,51 @@ body {
     var(--purple);
 
   transition:
-    width 300ms ease;
+    width 250ms ease;
+}
+
+
+.mini-stat.critical
+.mini-icon {
+
+  color:
+    var(--critical);
+}
+
+
+.mini-stat.critical
+.mini-fill {
+
+  background:
+    var(--critical);
+
+  animation:
+    pulseCritical
+    900ms
+    ease-in-out
+    infinite;
+}
+
+
+@keyframes pulseCritical {
+
+  0%,
+  100% {
+
+    opacity:
+      1;
+  }
+
+  50% {
+
+    opacity:
+      0.45;
+  }
 }
 
 
 /* ============================================================
-   CHARACTER STAGE
+   PET STAGE
 ============================================================ */
 
 .pet-stage {
@@ -254,20 +294,23 @@ body {
   flex:
     1;
 
+  min-height:
+    0;
+
   display:
     flex;
-
-  justify-content:
-    center;
 
   align-items:
     flex-end;
 
-  min-height:
-    0;
+  justify-content:
+    center;
 
-  padding-bottom:
-    12px;
+  padding:
+
+    45px
+    20px
+    20px;
 }
 
 
@@ -285,12 +328,12 @@ body {
 
   height:
     min(
-      55vh,
-      250px
+      60vh,
+      265px
     );
 
   max-width:
-    80vw;
+    84vw;
 
   object-fit:
     contain;
@@ -304,12 +347,15 @@ body {
   filter:
 
     drop-shadow(
-      0 0 7px
-      rgba(125, 53, 255, 0.16)
+      0 0 6px
+      rgba(138, 53, 255, 0.14)
     );
 
   transform-origin:
     center bottom;
+
+  cursor:
+    pointer;
 }
 
 
@@ -323,35 +369,33 @@ body {
     absolute;
 
   top:
-    12%;
+    22%;
+
+  left:
+    50%;
+
+  transform:
+    translateX(-50%);
 
   padding:
-    5px 10px;
+    6px 11px;
+
+  white-space:
+    nowrap;
 
   border:
 
     1px solid
-    rgba(
-      138,
-      53,
-      255,
-      0.45
-    );
+    rgba(138, 53, 255, 0.4);
 
   background:
-
-    rgba(
-      5,
-      5,
-      8,
-      0.82
-    );
+    rgba(0, 0, 0, 0.80);
 
   color:
     var(--white);
 
   font-size:
-    11px;
+    10px;
 
   letter-spacing:
     0.5px;
@@ -360,10 +404,7 @@ body {
     none;
 
   transition:
-
-    opacity 180ms ease,
-
-    transform 180ms ease;
+    opacity 160ms ease;
 }
 
 
@@ -371,59 +412,196 @@ body {
 
   opacity:
     0;
-
-  transform:
-    translateY(4px);
 }
 
 
 /* ============================================================
-   ACTION BAR
+   DETAILED STATUS CARD
 ============================================================ */
 
-.action-bar {
+.status-card {
+
+  position:
+    absolute;
 
   z-index:
-    5;
+    30;
+
+  top:
+    50%;
+
+  left:
+    50%;
+
+  width:
+    min(
+      230px,
+      78vw
+    );
+
+  padding:
+    12px;
+
+  transform:
+    translate(
+      -50%,
+      -50%
+    );
+
+  border:
+
+    1px solid
+    rgba(138, 53, 255, 0.7);
+
+  background:
+    rgba(5, 5, 9, 0.94);
+
+  box-shadow:
+
+    0 0 18px
+    rgba(90, 20, 180, 0.18);
+}
+
+
+.status-card.hidden {
+
+  display:
+    none;
+}
+
+
+.status-card-title {
+
+  margin-bottom:
+    10px;
+
+  color:
+    var(--purple-soft);
+
+  font-size:
+    11px;
+
+  letter-spacing:
+    2px;
+
+  text-align:
+    center;
+}
+
+
+.detail-stat {
 
   display:
     flex;
 
   justify-content:
-    center;
+    space-between;
+
+  margin-top:
+    6px;
+
+  color:
+    var(--dim);
+
+  font-size:
+    8px;
+
+  letter-spacing:
+    0.7px;
+}
+
+
+.detail-meter {
+
+  height:
+    5px;
+
+  margin-top:
+    2px;
+
+  background:
+    #15131a;
+
+  border:
+    1px solid var(--purple-dark);
+}
+
+
+.detail-meter > div {
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+  background:
+    var(--purple);
+}
+
+
+/* ============================================================
+   ACTION TRAY
+============================================================ */
+
+.action-tray {
+
+  position:
+    absolute;
+
+  z-index:
+    25;
+
+  left:
+    50%;
+
+  bottom:
+    max(
+      12px,
+      env(safe-area-inset-bottom)
+    );
+
+  transform:
+    translateX(-50%);
+
+  display:
+    flex;
 
   align-items:
     center;
 
   gap:
-    5px;
+    4px;
 
   padding:
-    6px 8px;
+    6px;
+
+  border:
+
+    1px solid
+    rgba(138, 53, 255, 0.38);
 
   background:
-
-    linear-gradient(
-      to top,
-      rgba(0, 0, 0, 0.94),
-      rgba(0, 0, 0, 0.5)
-    );
+    var(--panel);
 
   transition:
 
-    opacity 180ms ease,
+    opacity 160ms ease,
 
-    transform 180ms ease;
+    transform 160ms ease;
 }
 
 
-.action-bar.hidden-ui {
+.action-tray.hidden-tray {
 
   opacity:
     0;
 
   transform:
-    translateY(20px);
+    translate(
+      -50%,
+      30px
+    );
 
   pointer-events:
     none;
@@ -431,20 +609,22 @@ body {
 
 
 /* ============================================================
-   ACTION BUTTON
+   ACTION BUTTONS
 ============================================================ */
 
 .action {
 
   min-width:
-    45px;
+    44px;
 
   padding:
     5px 4px;
 
   border:
-    1px solid
-    transparent;
+    1px solid transparent;
+
+  outline:
+    none;
 
   background:
     transparent;
@@ -457,27 +637,16 @@ body {
 
   text-align:
     center;
-
-  outline:
-    none;
-
-  transition:
-
-    color 120ms ease,
-
-    border-color 120ms ease,
-
-    background 120ms ease;
 }
 
 
 .action.selected {
 
-  color:
-    var(--white);
-
   border-color:
     var(--purple);
+
+  color:
+    var(--white);
 
   background:
 
@@ -495,11 +664,11 @@ body {
   display:
     block;
 
-  font-size:
-    14px;
-
   color:
     var(--purple-soft);
+
+  font-size:
+    14px;
 }
 
 
@@ -512,10 +681,7 @@ body {
     2px;
 
   font-size:
-    8px;
-
-  letter-spacing:
-    0.5px;
+    7px;
 }
 
 
@@ -523,16 +689,22 @@ body {
    CONTROL HINT
 ============================================================ */
 
-.hint {
+.control-hint {
 
   position:
     absolute;
 
-  right:
-    7px;
+  z-index:
+    10;
+
+  left:
+    50%;
 
   bottom:
-    2px;
+    5px;
+
+  transform:
+    translateX(-50%);
 
   color:
 
@@ -545,6 +717,12 @@ body {
 
   font-size:
     7px;
+
+  letter-spacing:
+    0.5px;
+
+  white-space:
+    nowrap;
 
   pointer-events:
     none;
@@ -560,39 +738,31 @@ body {
   400px
 ) {
 
-  .status-bar {
-
-    padding-top:
-      5px;
-  }
-
-
   #character {
 
     height:
-
       min(
-        50vh,
-        190px
+        54vh,
+        185px
       );
   }
 
 
-  .action-bar {
+  .status-hud {
 
-    padding:
-      4px 5px;
+    top:
+      4px;
   }
 
 
-  .action {
+  .action-tray {
 
-    padding:
-      3px;
+    bottom:
+      5px;
   }
 
 
-  .hint {
+  .control-hint {
 
     display:
       none;
