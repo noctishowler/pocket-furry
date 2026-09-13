@@ -160,11 +160,6 @@ const GAME_TICK_INTERVAL =
 /* MOVEMENT */
 
 const WALK_SPEED = 38;
-
-/*
-   Bounding should visibly feel faster
-   than normal walking.
-*/
 const BOUND_SPEED = 120;
 
 const WALK_MARGIN = 0;
@@ -175,7 +170,6 @@ const MAX_PAUSE_MS = 6200;
 const MIN_TRAVEL_DISTANCE = 35;
 
 const MIDSCREEN_STOP_CHANCE = 0.30;
-
 const CONTINUE_DIRECTION_CHANCE = 0.60;
 
 /* AMBIENT BEHAVIOR */
@@ -698,6 +692,7 @@ function applyPositiveInteraction() {
   switch (
     state.recoveryMood
   ) {
+
     case "angry":
       state.recoveryMood =
         "sad";
@@ -713,7 +708,6 @@ function applyPositiveInteraction() {
         "happy";
       break;
 
-    case "happy":
     default:
       state.recoveryMood =
         "happy";
@@ -775,15 +769,12 @@ function applySitPenalty(
 
   if (
     elapsed >=
-    SIT_SAD_MS
+    SIT_SAD_MS &&
+    state.recoveryMood !==
+    "angry"
   ) {
-    if (
-      state.recoveryMood !==
-      "angry"
-    ) {
-      state.recoveryMood =
-        "sad";
-    }
+    state.recoveryMood =
+      "sad";
   }
 }
 
@@ -942,7 +933,8 @@ function updatePersistentTime() {
       );
 
     if (
-      state.energy <= 0
+      state.energy <=
+      0
     ) {
       state.energy =
         0;
@@ -1192,6 +1184,7 @@ function updateMoodAnimation() {
     setAnimation(
       "death"
     );
+
     return;
   }
 
@@ -1201,6 +1194,7 @@ function updateMoodAnimation() {
     setAnimation(
       "sleep"
     );
+
     return;
   }
 
@@ -1211,35 +1205,31 @@ function updateMoodAnimation() {
       "bored",
       activeDirection
     );
+
     return;
   }
 
   if (
     getHungerStage() ===
-    "critical"
-  ) {
-    setAnimation(
-      "sick"
-    );
-    return;
-  }
-
-  if (
+    "critical" ||
     getHungerStage() ===
     "sick"
   ) {
     setAnimation(
       "sick"
     );
+
     return;
   }
 
   if (
-    state.hunger < 20
+    state.hunger <
+    20
   ) {
     setAnimation(
       "hungry"
     );
+
     return;
   }
 
@@ -1250,15 +1240,18 @@ function updateMoodAnimation() {
     setAnimation(
       "angry"
     );
+
     return;
   }
 
   if (
-    state.happiness < 25
+    state.happiness <
+    25
   ) {
     setAnimation(
       "sad"
     );
+
     return;
   }
 
@@ -1295,6 +1288,7 @@ function playTemporaryAnimation(
   animationTimer =
     setTimeout(
       () => {
+
         temporaryAnimation =
           false;
 
@@ -1309,6 +1303,7 @@ function playTemporaryAnimation(
             1500
           );
         }
+
       },
       duration
     );
@@ -1473,6 +1468,7 @@ function walkAcrossScreen() {
     MIN_TRAVEL_DISTANCE
   ) {
     beginRestPeriod();
+
     return;
   }
 
@@ -1565,6 +1561,7 @@ function boundAcrossScreen() {
     MIN_TRAVEL_DISTANCE
   ) {
     beginRestPeriod();
+
     return;
   }
 
@@ -1584,11 +1581,6 @@ function boundAcrossScreen() {
     activeDirection
   );
 
-  /*
-     Reduced minimum duration and higher
-     movement speed make bounds feel
-     noticeably faster than walking.
-  */
   const duration =
     Math.max(
       300,
@@ -1641,7 +1633,7 @@ function boundAcrossScreen() {
     );
 }
 
-/* STOP WALKING */
+/* STOP MOVEMENT */
 
 function stopWalking() {
   if (
@@ -1859,6 +1851,7 @@ function beginRestPeriod() {
       positiveBehaviorEnd
   ) {
     boundAcrossScreen();
+
     return;
   }
 
@@ -1973,9 +1966,11 @@ function showMessage(
   messageTimer =
     setTimeout(
       () => {
+
         message.classList.add(
           "hidden"
         );
+
       },
       duration
     );
@@ -2092,6 +2087,7 @@ function selectAction(
       button,
       i
     ) => {
+
       button.classList.toggle(
         "selected",
         i ===
@@ -2213,7 +2209,8 @@ function wakeCharacter() {
 
   if (
     state.forcedSleep &&
-    state.energy < 20
+    state.energy <
+    20
   ) {
     showMessage(
       "Too tired"
@@ -2287,7 +2284,8 @@ function performAction(
 
   if (
     state.forcedSit &&
-    action !== "sit"
+    action !==
+    "sit"
   ) {
     showMessage(
       "Still sitting."
@@ -2311,6 +2309,7 @@ function performAction(
         state.sleeping
       ) {
         wakeCharacter();
+
         return;
       }
 
@@ -2333,7 +2332,6 @@ function performAction(
         );
 
       applyPositiveInteraction();
-
       updateStatusDisplay();
 
       playTemporaryAnimation(
@@ -2385,7 +2383,6 @@ function performAction(
         );
 
       applyPositiveInteraction();
-
       updateStatusDisplay();
 
       playTemporaryAnimation(
@@ -2412,7 +2409,6 @@ function performAction(
         );
 
       applyPositiveInteraction();
-
       updateStatusDisplay();
 
       playTemporaryAnimation(
@@ -2520,7 +2516,7 @@ actionButtons.forEach(
   }
 );
 
-/* META DISPLAY POINTER / SWIPE INPUT */
+/* TOUCH / POINTER SWIPE INPUT */
 
 document.addEventListener(
   "pointerdown",
@@ -2687,6 +2683,94 @@ document.addEventListener(
   }
 );
 
+/* META NEURAL BAND / KEYBOARD INPUT */
+
+document.addEventListener(
+  "keydown",
+  event => {
+
+    switch (
+      event.key
+    ) {
+
+      case "ArrowLeft":
+
+        event.preventDefault();
+
+        if (
+          interactionMode
+        ) {
+          previousAction();
+        }
+
+        break;
+
+
+      case "ArrowRight":
+
+        event.preventDefault();
+
+        if (
+          interactionMode
+        ) {
+          nextAction();
+        }
+
+        break;
+
+
+      case "ArrowDown":
+
+        event.preventDefault();
+
+        if (
+          !interactionMode
+        ) {
+          openInteractionTray();
+        }
+
+        break;
+
+
+      case "ArrowUp":
+
+        event.preventDefault();
+
+        if (
+          interactionMode
+        ) {
+          closeInteractionTray();
+
+        } else if (
+          statusCardVisible
+        ) {
+          hideStatusCard();
+        }
+
+        break;
+
+
+      case "Enter":
+
+      case " ":
+
+        event.preventDefault();
+
+        if (
+          interactionMode
+        ) {
+          performAction(
+            actions[
+              selectedAction
+            ]
+          );
+        }
+
+        break;
+    }
+  }
+);
+
 /* GAME TICK */
 
 function gameTick() {
@@ -2700,13 +2784,15 @@ function gameTick() {
   ) {
     updateStatusDisplay();
     updateMoodAnimation();
+
     return;
   }
 
   if (
     !wasSleeping &&
     state.sleeping &&
-    state.energy <= 0
+    state.energy <=
+    0
   ) {
     putCharacterToSleep(
       true
