@@ -11,6 +11,7 @@
 
 * {
   box-sizing: border-box;
+
   user-select: none;
   -webkit-user-select: none;
 }
@@ -40,6 +41,7 @@ body {
 
 #app {
   position: fixed;
+
   inset: 0;
 
   overflow: hidden;
@@ -69,15 +71,19 @@ body {
   transform: translateX(-50%);
 
   display: flex;
+
   gap: 8px;
 
   align-items: center;
 
   padding: 4px 8px;
 
-  border: 1px solid rgba(138, 53, 255, 0.28);
+  border:
+    1px solid
+    rgba(138, 53, 255, 0.28);
 
-  background: rgba(0, 0, 0, 0.56);
+  background:
+    rgba(0, 0, 0, 0.56);
 }
 
 .mini-stat {
@@ -103,9 +109,12 @@ body {
   width: 32px;
   height: 4px;
 
-  border: 1px solid rgba(138, 53, 255, 0.34);
+  border:
+    1px solid
+    rgba(138, 53, 255, 0.34);
 
-  background: rgba(0, 0, 0, 0.7);
+  background:
+    rgba(0, 0, 0, 0.7);
 }
 
 .mini-fill {
@@ -235,7 +244,8 @@ body {
   text-overflow: ellipsis;
 
   border:
-    1px solid rgba(138, 53, 255, 0.32);
+    1px solid
+    rgba(138, 53, 255, 0.32);
 
   background:
     rgba(0, 0, 0, 0.78);
@@ -277,7 +287,8 @@ body {
     translate(-50%, -50%);
 
   border:
-    1px solid rgba(138, 53, 255, 0.72);
+    1px solid
+    rgba(138, 53, 255, 0.72);
 
   background:
     rgba(5, 5, 9, 0.97);
@@ -328,7 +339,8 @@ body {
     1px;
 
   border:
-    1px solid var(--purple-dark);
+    1px solid
+    var(--purple-dark);
 
   background:
     #15131a;
@@ -370,7 +382,8 @@ body {
     4px;
 
   border:
-    1px solid rgba(138, 53, 255, 0.42);
+    1px solid
+    rgba(138, 53, 255, 0.42);
 
   background:
     var(--panel);
@@ -480,7 +493,50 @@ body {
   pointer-events:
     none;
 }
+
+
+/* ============================================================
+   META DISPLAY FOCUS CLEANUP
+============================================================ */
+
+/*
+   #app needs to remain focusable for
+   Meta Display / Neural Band input,
+   but the browser's native focus ring
+   should not be visible.
+*/
+
+#app,
+#app:focus,
+#app:focus-visible,
+#app.focusable:focus,
+#app.focusable:focus-visible {
+  outline: none !important;
+
+  box-shadow: none !important;
+
+  border-color:
+    transparent;
+
+  -webkit-tap-highlight-color:
+    transparent;
+}
+
+/*
+   Action buttons use Pocket Furry's
+   purple .selected state instead of
+   the browser/Meta native focus ring.
+*/
+
+.action,
 .action:focus,
-.action:focus-visible {
-  outline: none;
+.action:focus-visible,
+.action.focusable:focus,
+.action.focusable:focus-visible {
+  outline: none !important;
+
+  box-shadow: none !important;
+
+  -webkit-tap-highlight-color:
+    transparent;
 }
