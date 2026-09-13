@@ -124,6 +124,30 @@ body {
 
 
 /* ============================================================
+   MOOD HUD
+============================================================ */
+
+.mood-stat {
+  min-width: 14px;
+
+  justify-content: center;
+}
+
+.mood-icon {
+  width: auto;
+
+  color: var(--purple-soft);
+
+  font-size: 10px;
+  line-height: 1;
+
+  opacity: 0.78;
+
+  filter: grayscale(1);
+}
+
+
+/* ============================================================
    CHARACTER STAGE
 ============================================================ */
 
@@ -161,12 +185,6 @@ body {
   display: block;
 
   width: auto;
-
-  /*
-    Larger than the phone layout.
-    Meta Display is visually sparse, so Noctis
-    should dominate the available space.
-  */
 
   height: min(72vh, 210px);
 
@@ -374,8 +392,6 @@ body {
 
 /* ============================================================
    HINT
-
-   Hide this on Meta after testing if desired.
 ============================================================ */
 
 .control-hint {
