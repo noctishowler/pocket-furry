@@ -132,9 +132,21 @@ const MAX_STAT =
   100;
 
 
+/* ============================================================
+   ENERGY
+============================================================ */
+
+/*
+   100 -> 0 over 16 waking hours.
+*/
+
 const ENERGY_DRAIN_PER_MINUTE =
   100 / (16 * 60);
 
+
+/*
+   0 -> 100 over 10 minutes of sleep.
+*/
 
 const ENERGY_RECOVERY_PER_MINUTE =
   100 / 10;
@@ -142,6 +154,58 @@ const ENERGY_RECOVERY_PER_MINUTE =
 
 const EXHAUSTED_THRESHOLD =
   10;
+
+
+/* ============================================================
+   HEALTH
+============================================================ */
+
+/*
+   Healthy recovery:
+
+   0 -> 100 over 24 hours,
+   but only while all needs are met.
+*/
+
+const HEALTH_RECOVERY_PER_MINUTE =
+  100 / (24 * 60);
+
+
+/*
+   Sickness:
+
+   100 -> 0 over 24 hours.
+*/
+
+const HEALTH_DRAIN_PER_MINUTE =
+  100 / (24 * 60);
+
+
+/*
+   Eating restores 25 health points.
+*/
+
+const FOOD_HEALTH_RECOVERY =
+  25;
+
+
+/*
+   Thresholds for health regeneration.
+
+   These match the existing behavioral
+   warning thresholds where practical.
+*/
+
+const HEALTH_MIN_HUNGER =
+  20;
+
+
+const HEALTH_MIN_HAPPINESS =
+  25;
+
+
+const HEALTH_MIN_CLEANLINESS =
+  25;
 
 
 /* ============================================================
@@ -815,6 +879,179 @@ function updateFoodFromClock() {
 
 
 /* ============================================================
+   HEALTH STATE
+============================================================ */
+
+function areHealthNeedsMet() {
+
+  return (
+
+    state.hunger >=
+    HEALTH_MIN_HUNGER
+
+    &&
+
+    state.happiness >=
+    HEALTH_MIN_HAPPINESS
+
+    &&
+
+    state.energy >
+    EXHAUSTED_THRESHOLD
+
+    &&
+
+    state.cleanliness >=
+    HEALTH_MIN_CLEANLINESS
+
+  );
+}
+
+
+function updateHealthFromClock(
+  minutes
+) {
+
+  if (
+    !state.alive
+  ) {
+
+    return;
+  }
+
+
+  const hungerStage =
+    getHungerStage();
+
+
+  /*
+     Sick or critical:
+
+     Health continuously drains.
+  */
+
+  if (
+    hungerStage ===
+    "sick"
+
+    ||
+
+    hungerStage ===
+    "critical"
+  ) {
+
+    state.health =
+      clamp(
+        state.health -
+        HEALTH_DRAIN_PER_MINUTE *
+        minutes
+      );
+
+  }
+
+
+  /*
+     Healthy and every need is met:
+
+     Slowly regenerate health.
+  */
+
+  else if (
+    areHealthNeedsMet()
+  ) {
+
+    state.health =
+      clamp(
+        state.health +
+        HEALTH_RECOVERY_PER_MINUTE *
+        minutes
+      );
+  }
+
+
+  /*
+     Zero health = death.
+  */
+
+  if (
+    state.health <=
+    0
+  ) {
+
+    killCharacter();
+  }
+}
+
+
+/* ============================================================
+   DEATH
+============================================================ */
+
+function killCharacter() {
+
+  if (
+    !state.alive
+  ) {
+
+    return;
+  }
+
+
+  state.health =
+    0;
+
+
+  state.alive =
+    false;
+
+
+  state.sleeping =
+    false;
+
+
+  state.forcedSleep =
+    false;
+
+
+  state.forcedSit =
+    false;
+
+
+  state.sitStartedAt =
+    null;
+
+
+  temporaryAnimation =
+    false;
+
+
+  clearTimeout(
+    animationTimer
+  );
+
+
+  clearTimeout(
+    sleepTimer
+  );
+
+
+  pauseAmbient();
+
+
+  stopWalking();
+
+
+  setAnimation(
+    "death",
+    activeDirection
+  );
+
+
+  saveState();
+}
+
+
+/* ============================================================
    MOOD HUD
 ============================================================ */
 
@@ -830,7 +1067,6 @@ function getMoodEmoji() {
 
   /*
      Forced sit stays visually neutral.
-     Consequence isn't shown until release.
   */
 
   if (
@@ -1162,7 +1398,7 @@ function toggleForcedSit() {
 
 
 /* ============================================================
-   PERSISTENT ENERGY / LOCAL TIME
+   PERSISTENT TIME
 ============================================================ */
 
 function updatePersistentTime() {
@@ -1183,6 +1419,32 @@ function updatePersistentTime() {
     elapsed /
     60000;
 
+
+  /*
+     DEAD
+
+     Keep timestamps current, but don't
+     continue processing needs.
+  */
+
+  if (
+    !state.alive
+  ) {
+
+    state.lastUpdate =
+      now;
+
+
+    saveState();
+
+
+    return;
+  }
+
+
+  /* --------------------------------------------------------
+     ENERGY - SLEEPING
+  --------------------------------------------------------- */
 
   if (
     state.sleeping
@@ -1213,7 +1475,14 @@ function updatePersistentTime() {
         false;
     }
 
-  } else {
+  }
+
+
+  /* --------------------------------------------------------
+     ENERGY - AWAKE
+  --------------------------------------------------------- */
+
+  else {
 
     state.energy =
       clamp(
@@ -1255,7 +1524,23 @@ function updatePersistentTime() {
   }
 
 
+  /*
+     Update food before health, because the
+     current food state determines whether
+     health heals or drains.
+  */
+
   updateFoodFromClock();
+
+
+  /*
+     Process health using the same elapsed
+     real-world time.
+  */
+
+  updateHealthFromClock(
+    minutes
+  );
 
 
   state.lastUpdate =
@@ -1302,8 +1587,13 @@ function updateStatusDisplay() {
     );
 
 
-  moodEmoji.textContent =
-    getMoodEmoji();
+  if (
+    moodEmoji
+  ) {
+
+    moodEmoji.textContent =
+      getMoodEmoji();
+  }
 
 
   happinessBar.style.width =
@@ -1576,7 +1866,8 @@ function playTemporaryAnimation(
 
         if (
           !state.forcedSit &&
-          !state.sleeping
+          !state.sleeping &&
+          state.alive
         ) {
 
           resumeAmbient(
@@ -1934,7 +2225,8 @@ function playAmbientReaction(
 
         if (
           !state.forcedSit &&
-          !state.sleeping
+          !state.sleeping &&
+          state.alive
         ) {
 
           resumeAmbient(
@@ -2278,7 +2570,8 @@ function hideStatusCard() {
   if (
     !interactionMode &&
     !state.sleeping &&
-    !state.forcedSit
+    !state.forcedSit &&
+    state.alive
   ) {
 
     resumeAmbient(
@@ -2340,7 +2633,8 @@ function closeInteractionTray() {
 
   if (
     !state.sleeping &&
-    !state.forcedSit
+    !state.forcedSit &&
+    state.alive
   ) {
 
     resumeAmbient(
@@ -2406,6 +2700,14 @@ function putCharacterToSleep(
   forced = false
 ) {
 
+  if (
+    !state.alive
+  ) {
+
+    return;
+  }
+
+
   pauseAmbient();
 
 
@@ -2455,6 +2757,14 @@ function putCharacterToSleep(
     setTimeout(
       () => {
 
+        if (
+          !state.alive
+        ) {
+
+          return;
+        }
+
+
         setAnimation(
           "lieDown"
         );
@@ -2463,6 +2773,14 @@ function putCharacterToSleep(
         sleepTimer =
           setTimeout(
             () => {
+
+              if (
+                !state.alive
+              ) {
+
+                return;
+              }
+
 
               temporaryAnimation =
                 false;
@@ -2490,6 +2808,14 @@ function putCharacterToSleep(
 ============================================================ */
 
 function wakeCharacter() {
+
+  if (
+    !state.alive
+  ) {
+
+    return;
+  }
+
 
   if (
     state.forcedSleep &&
@@ -2538,6 +2864,14 @@ function wakeCharacter() {
   animationTimer =
     setTimeout(
       () => {
+
+        if (
+          !state.alive
+        ) {
+
+          return;
+        }
+
 
         temporaryAnimation =
           false;
@@ -2600,6 +2934,10 @@ function performAction(action) {
   switch (action) {
 
 
+    /* --------------------------------------------------------
+       FEED
+    --------------------------------------------------------- */
+
     case "feed":
 
       if (
@@ -2618,6 +2956,17 @@ function performAction(action) {
 
       state.hunger =
         100;
+
+
+      /*
+         Eating restores 25 health points.
+      */
+
+      state.health =
+        clamp(
+          state.health +
+          FOOD_HEALTH_RECOVERY
+        );
 
 
       state.happiness =
@@ -2645,6 +2994,10 @@ function performAction(action) {
 
       break;
 
+
+    /* --------------------------------------------------------
+       PLAY
+    --------------------------------------------------------- */
 
     case "play":
 
@@ -2712,6 +3065,10 @@ function performAction(action) {
       break;
 
 
+    /* --------------------------------------------------------
+       PET
+    --------------------------------------------------------- */
+
     case "pet":
 
       if (
@@ -2743,6 +3100,10 @@ function performAction(action) {
       break;
 
 
+    /* --------------------------------------------------------
+       CLEAN
+    --------------------------------------------------------- */
+
     case "clean":
 
       state.cleanliness =
@@ -2760,12 +3121,20 @@ function performAction(action) {
       break;
 
 
+    /* --------------------------------------------------------
+       SIT
+    --------------------------------------------------------- */
+
     case "sit":
 
       toggleForcedSit();
 
       break;
 
+
+    /* --------------------------------------------------------
+       SLEEP
+    --------------------------------------------------------- */
 
     case "sleep":
 
@@ -2784,6 +3153,10 @@ function performAction(action) {
 
       break;
 
+
+    /* --------------------------------------------------------
+       MEDICINE
+    --------------------------------------------------------- */
 
     case "medicine":
 
@@ -2980,6 +3353,8 @@ document.addEventListener(
       Math.abs(dy);
 
 
+    /* LEFT / RIGHT */
+
     if (
       ax >
       SWIPE_DISTANCE
@@ -3011,6 +3386,8 @@ document.addEventListener(
       return;
     }
 
+
+    /* DOWN / UP */
 
     if (
       ay >
@@ -3055,6 +3432,8 @@ document.addEventListener(
     }
 
 
+    /* TAP WHILE MENU OPEN */
+
     if (
       interactionMode
 
@@ -3087,6 +3466,28 @@ function gameTick() {
 
   updatePersistentTime();
 
+
+  /*
+     Death overrides everything.
+  */
+
+  if (
+    !state.alive
+  ) {
+
+    updateStatusDisplay();
+
+
+    updateMoodAnimation();
+
+
+    return;
+  }
+
+
+  /*
+     Energy reached zero while awake.
+  */
 
   if (
     !wasSleeping &&
@@ -3216,6 +3617,10 @@ function init() {
     0;
 
 
+  /*
+     Process all real-world elapsed time.
+  */
+
   updatePersistentTime();
 
 
@@ -3237,6 +3642,28 @@ function init() {
   );
 
 
+  /*
+     Dead characters do nothing except
+     display their death state.
+  */
+
+  if (
+    !state.alive
+  ) {
+
+    setAnimation(
+      "death",
+      activeDirection
+    );
+
+    return;
+  }
+
+
+  /*
+     Persistent forced sit survives reload.
+  */
+
   if (
     state.forcedSit
   ) {
@@ -3251,8 +3678,7 @@ function init() {
 
 
   if (
-    !state.sleeping &&
-    state.alive
+    !state.sleeping
   ) {
 
     resumeAmbient(
