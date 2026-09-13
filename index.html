@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
+
+  <meta name="theme-color" content="#09090d" />
+
+  <title>Pocket Furry</title>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <main id="app">
+
+    <!-- =========================
+         STATUS BAR
+    ========================== -->
+
+    <section id="statusBar" class="status-bar">
+
+      <div class="stat">
+        <span>FOOD</span>
+
+        <div class="meter">
+          <div
+            id="hungerBar"
+            class="meter-fill">
+          </div>
+        </div>
+      </div>
+
+
+      <div class="stat">
+        <span>MOOD</span>
+
+        <div class="meter">
+          <div
+            id="happinessBar"
+            class="meter-fill">
+          </div>
+        </div>
+      </div>
+
+
+      <div class="stat">
+        <span>ENERGY</span>
+
+        <div class="meter">
+          <div
+            id="energyBar"
+            class="meter-fill">
+          </div>
+        </div>
+      </div>
+
+
+      <div class="stat">
+        <span>HEALTH</span>
+
+        <div class="meter">
+          <div
+            id="healthBar"
+            class="meter-fill">
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         CHARACTER STAGE
+    ========================== -->
+
+    <section id="petStage" class="pet-stage">
+
+      <img
+        id="character"
+        src="assets/characters/noctis/idle.gif"
+        alt="Pocket Furry character"
+        draggable="false"
+      />
+
+      <div
+        id="message"
+        class="message hidden">
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         ACTION BAR
+    ========================== -->
+
+    <section id="actionBar" class="action-bar">
+
+      <button
+        class="action selected"
+        data-action="feed">
+
+        <span class="action-icon">
+          ◆
+        </span>
+
+        <span class="action-label">
+          FEED
+        </span>
+      </button>
+
+
+      <button
+        class="action"
+        data-action="play">
+
+        <span class="action-icon">
+          ▲
+        </span>
+
+        <span class="action-label">
+          PLAY
+        </span>
+      </button>
+
+
+      <button
+        class="action"
+        data-action="pet">
+
+        <span class="action-icon">
+          ♥
+        </span>
+
+        <span class="action-label">
+          PET
+        </span>
+      </button>
+
+
+      <button
+        class="action"
+        data-action="clean">
+
+        <span class="action-icon">
+          ✦
+        </span>
+
+        <span class="action-label">
+          CLEAN
+        </span>
+      </button>
+
+
+      <button
+        class="action"
+        data-action="sleep">
+
+        <span class="action-icon">
+          ☾
+        </span>
+
+        <span class="action-label">
+          SLEEP
+        </span>
+      </button>
+
+
+      <button
+        class="action"
+        data-action="medicine">
+
+        <span class="action-icon">
+          +
+        </span>
+
+        <span class="action-label">
+          MED
+        </span>
+      </button>
+
+    </section>
+
+
+    <!-- =========================
+         CONTROL HINT
+    ========================== -->
+
+    <div id="hint" class="hint">
+      ◀ ▶ SELECT &nbsp;&nbsp; TAP ACTIVATE
+    </div>
+
+  </main>
+
+
+  <script src="app.js"></script>
+
+</body>
+</html>
