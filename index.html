@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
 
@@ -21,44 +22,61 @@
 
     <!-- ============================================
          COMPACT STATUS HUD
+
+         Mood | Health | Hunger | Clean | Energy
     ============================================= -->
 
-    <section id="statusHud" class="status-hud">
+    <section
+      id="statusHud"
+      class="status-hud"
+    >
 
-      <div class="mini-stat" data-stat="happiness">
+      <!-- MOOD -->
+
+      <div
+        id="moodHud"
+        class="mini-stat mood-stat"
+      >
+
+        <span
+          id="moodEmoji"
+          class="mini-icon mood-icon"
+        >
+          😊
+        </span>
+
+      </div>
+
+
+      <!-- HEALTH -->
+
+      <div
+        class="mini-stat"
+        data-stat="health"
+      >
 
         <span class="mini-icon">
-          ♥
+          +
         </span>
 
         <div class="mini-meter">
 
           <div
-            id="happinessBar"
-            class="mini-fill">
-          </div>
+            id="healthBar"
+            class="mini-fill"
+          ></div>
 
         </div>
 
       </div>
 
 
+      <!-- HUNGER -->
+
       <div
-        id="moodHud"
-        class="mini-stat mood-stat">
-
-        <span
-          id="moodEmoji"
-          class="mini-icon mood-icon">
-
-          😊
-
-        </span>
-
-      </div>
-
-
-      <div class="mini-stat" data-stat="hunger">
+        class="mini-stat"
+        data-stat="hunger"
+      >
 
         <span class="mini-icon">
           ◆
@@ -68,15 +86,43 @@
 
           <div
             id="hungerBar"
-            class="mini-fill">
-          </div>
+            class="mini-fill"
+          ></div>
 
         </div>
 
       </div>
 
 
-      <div class="mini-stat" data-stat="energy">
+      <!-- CLEANLINESS -->
+
+      <div
+        class="mini-stat"
+        data-stat="cleanliness"
+      >
+
+        <span class="mini-icon">
+          ✦
+        </span>
+
+        <div class="mini-meter">
+
+          <div
+            id="cleanlinessBar"
+            class="mini-fill"
+          ></div>
+
+        </div>
+
+      </div>
+
+
+      <!-- ENERGY -->
+
+      <div
+        class="mini-stat"
+        data-stat="energy"
+      >
 
         <span class="mini-icon">
           ☾
@@ -86,8 +132,8 @@
 
           <div
             id="energyBar"
-            class="mini-fill">
-          </div>
+            class="mini-fill"
+          ></div>
 
         </div>
 
@@ -100,7 +146,10 @@
          CHARACTER AREA
     ============================================= -->
 
-    <section id="petStage" class="pet-stage">
+    <section
+      id="petStage"
+      class="pet-stage"
+    >
 
       <div id="characterMover">
 
@@ -116,8 +165,8 @@
 
       <div
         id="message"
-        class="message hidden">
-      </div>
+        class="message hidden"
+      ></div>
 
 
       <!-- ========================================
@@ -126,7 +175,8 @@
 
       <section
         id="statusCard"
-        class="status-card hidden">
+        class="status-card hidden"
+      >
 
         <div class="status-card-title">
           NOCTIS
@@ -134,52 +184,97 @@
 
 
         <div class="detail-stat">
-          <span>HAPPINESS</span>
-          <span id="happinessValue">0</span>
+
+          <span>
+            HAPPINESS
+          </span>
+
+          <span id="happinessValue">
+            0
+          </span>
+
         </div>
 
         <div class="detail-meter">
+
           <div id="detailHappiness"></div>
+
         </div>
 
 
         <div class="detail-stat">
-          <span>HUNGER</span>
-          <span id="hungerValue">0</span>
+
+          <span>
+            HUNGER
+          </span>
+
+          <span id="hungerValue">
+            0
+          </span>
+
         </div>
 
         <div class="detail-meter">
+
           <div id="detailHunger"></div>
+
         </div>
 
 
         <div class="detail-stat">
-          <span>ENERGY</span>
-          <span id="energyValue">0</span>
+
+          <span>
+            ENERGY
+          </span>
+
+          <span id="energyValue">
+            0
+          </span>
+
         </div>
 
         <div class="detail-meter">
+
           <div id="detailEnergy"></div>
+
         </div>
 
 
         <div class="detail-stat">
-          <span>HEALTH</span>
-          <span id="healthValue">0</span>
+
+          <span>
+            HEALTH
+          </span>
+
+          <span id="healthValue">
+            0
+          </span>
+
         </div>
 
         <div class="detail-meter">
+
           <div id="detailHealth"></div>
+
         </div>
 
 
         <div class="detail-stat">
-          <span>CLEAN</span>
-          <span id="cleanValue">0</span>
+
+          <span>
+            CLEAN
+          </span>
+
+          <span id="cleanValue">
+            0
+          </span>
+
         </div>
 
         <div class="detail-meter">
+
           <div id="detailClean"></div>
+
         </div>
 
       </section>
@@ -193,12 +288,13 @@
 
     <section
       id="actionTray"
-      class="action-tray hidden-tray">
-
+      class="action-tray hidden-tray"
+    >
 
       <button
         class="action selected"
-        data-action="feed">
+        data-action="feed"
+      >
 
         <span class="action-icon">
           ◆
@@ -213,7 +309,8 @@
 
       <button
         class="action"
-        data-action="play">
+        data-action="play"
+      >
 
         <span class="action-icon">
           ▲
@@ -228,7 +325,8 @@
 
       <button
         class="action"
-        data-action="pet">
+        data-action="pet"
+      >
 
         <span class="action-icon">
           ♥
@@ -243,7 +341,8 @@
 
       <button
         class="action"
-        data-action="clean">
+        data-action="clean"
+      >
 
         <span class="action-icon">
           ✦
@@ -258,7 +357,8 @@
 
       <button
         class="action"
-        data-action="sit">
+        data-action="sit"
+      >
 
         <span class="action-icon">
           ▼
@@ -273,7 +373,8 @@
 
       <button
         class="action"
-        data-action="sleep">
+        data-action="sleep"
+      >
 
         <span class="action-icon">
           ☾
@@ -288,7 +389,8 @@
 
       <button
         class="action"
-        data-action="medicine">
+        data-action="medicine"
+      >
 
         <span class="action-icon">
           +
@@ -309,7 +411,8 @@
 
     <div
       id="controlHint"
-      class="control-hint">
+      class="control-hint"
+    >
 
       SWIPE DOWN TO INTERACT
 
@@ -321,4 +424,5 @@
   <script src="app.js"></script>
 
 </body>
+
 </html>
