@@ -125,7 +125,7 @@ function getActiveCharacter() {
 
 
 /* ============================================================
-   TIME / GAME CONSTANTS
+   GAME CONSTANTS
 ============================================================ */
 
 const MAX_STAT =
@@ -135,7 +135,7 @@ const MAX_STAT =
 /*
    ENERGY
 
-   Full -> empty in 16 hours awake.
+   100 -> 0 over 16 waking hours.
 */
 
 const ENERGY_DRAIN_PER_MINUTE =
@@ -145,17 +145,12 @@ const ENERGY_DRAIN_PER_MINUTE =
 /*
    SLEEP
 
-   Empty -> full in 10 minutes.
+   0 -> 100 over 10 minutes.
 */
 
 const ENERGY_RECOVERY_PER_MINUTE =
   100 / 10;
 
-
-/*
-   At 10% energy and below,
-   normal idle becomes angry.
-*/
 
 const EXHAUSTED_THRESHOLD =
   10;
@@ -165,23 +160,24 @@ const EXHAUSTED_THRESHOLD =
    HUNGER CLOCK
 ============================================================ */
 
-/*
-   First 24 hours:
-   normal hunger progression.
-
-   24-48 hours:
-   sick.
-
-   48+ hours:
-   critical starvation.
-*/
-
 const FOOD_DURATION_MS =
   24 * 60 * 60 * 1000;
 
 
 const SICK_HUNGER_MS =
   48 * 60 * 60 * 1000;
+
+
+/* ============================================================
+   FORCED SIT CLOCK
+============================================================ */
+
+const SIT_SAD_MS =
+  15 * 60 * 1000;
+
+
+const SIT_ANGRY_MS =
+  30 * 60 * 1000;
 
 
 /* ============================================================
@@ -216,16 +212,12 @@ const MIN_TRAVEL_DISTANCE =
   35;
 
 
-/*
-   Chance a walk stops before reaching the far side.
-*/
-
 const MIDSCREEN_STOP_CHANCE =
   0.55;
 
 
 /* ============================================================
-   AMBIENT BEHAVIOR CHANCES
+   AMBIENT BEHAVIOR
 ============================================================ */
 
 const MOOD_REACTION_CHANCE =
@@ -255,6 +247,11 @@ const LONG_PRESS_TIME =
 /* ============================================================
    SAVE DATA
 ============================================================ */
+
+/*
+   Keep v5 so current player data remains compatible.
+   Missing fields are filled from defaultState.
+*/
 
 const SAVE_VERSION =
   5;
@@ -297,6 +294,24 @@ const defaultState = {
 
   forcedSleep:
     false,
+
+  forcedSit:
+    false,
+
+  sitStartedAt:
+    null,
+
+  /*
+     Resentment/recovery state.
+
+     happy   = normal behavior
+     neutral = recovering
+     sad     = stronger penalty
+     angry   = strongest penalty
+  */
+
+  recoveryMood:
+    "happy",
 
   alive:
     true,
@@ -461,6 +476,8 @@ const actions = [
 
   "clean",
 
+  "sit",
+
   "sleep",
 
   "medicine"
@@ -548,6 +565,14 @@ let longPressTriggered =
 
 
 /* ============================================================
+   MESSAGE TIMER
+============================================================ */
+
+let messageTimer =
+  null;
+
+
+/* ============================================================
    UTILITIES
 ============================================================ */
 
@@ -631,7 +656,11 @@ function loadState() {
 
       lastMealAt:
         loaded.lastMealAt ||
-        Date.now()
+        Date.now(),
+
+      recoveryMood:
+        loaded.recoveryMood ||
+        "happy"
     };
 
   } catch {
@@ -743,7 +772,7 @@ function setAnimation(
 
 
 /* ============================================================
-   FOOD / STARVATION STATE
+   FOOD STATE
 ============================================================ */
 
 function getFoodAge() {
@@ -806,6 +835,254 @@ function updateFoodFromClock() {
 
 
 /* ============================================================
+   POSITIVE INTERACTION / RECOVERY
+============================================================ */
+
+function applyPositiveInteraction() {
+
+  /*
+     Positive interactions while forced sitting
+     do not erase the consequence before release.
+  */
+
+  if (
+    state.forcedSit
+  ) {
+
+    return;
+  }
+
+
+  switch (
+    state.recoveryMood
+  ) {
+
+    case "angry":
+
+      state.recoveryMood =
+        "sad";
+
+      break;
+
+
+    case "sad":
+
+      state.recoveryMood =
+        "neutral";
+
+      break;
+
+
+    case "neutral":
+
+      state.recoveryMood =
+        "happy";
+
+      break;
+
+
+    case "happy":
+
+    default:
+
+      state.recoveryMood =
+        "happy";
+
+      break;
+  }
+}
+
+
+/* ============================================================
+   FORCED SIT
+============================================================ */
+
+function startForcedSit() {
+
+  if (
+    state.sleeping ||
+    !state.alive
+  ) {
+
+    return;
+  }
+
+
+  pauseAmbient();
+
+
+  stopWalking();
+
+
+  clearTimeout(
+    animationTimer
+  );
+
+
+  temporaryAnimation =
+    false;
+
+
+  state.forcedSit =
+    true;
+
+
+  state.sitStartedAt =
+    Date.now();
+
+
+  setAnimation(
+    "bored",
+    activeDirection
+  );
+
+
+  showMessage(
+    "Sit."
+  );
+
+
+  saveState();
+}
+
+
+function applySitPenalty(
+  elapsed
+) {
+
+  if (
+    elapsed >=
+    SIT_ANGRY_MS
+  ) {
+
+    state.recoveryMood =
+      "angry";
+
+    return;
+  }
+
+
+  if (
+    elapsed >=
+    SIT_SAD_MS
+  ) {
+
+    /*
+       Don't improve an already-angry recovery
+       state just because a shorter sit occurred.
+    */
+
+    if (
+      state.recoveryMood !==
+      "angry"
+    ) {
+
+      state.recoveryMood =
+        "sad";
+    }
+  }
+}
+
+
+function releaseForcedSit(
+  resumeMovement = true
+) {
+
+  if (
+    !state.forcedSit
+  ) {
+
+    return;
+  }
+
+
+  const startedAt =
+    state.sitStartedAt ||
+    Date.now();
+
+
+  const elapsed =
+    Math.max(
+      0,
+      Date.now() -
+      startedAt
+    );
+
+
+  applySitPenalty(
+    elapsed
+  );
+
+
+  state.forcedSit =
+    false;
+
+
+  state.sitStartedAt =
+    null;
+
+
+  saveState();
+
+
+  updateMoodAnimation();
+
+
+  if (
+    state.recoveryMood ===
+    "angry"
+  ) {
+
+    showMessage(
+      "Not happy."
+    );
+
+  } else if (
+    state.recoveryMood ===
+    "sad"
+  ) {
+
+    showMessage(
+      "Feeling down."
+    );
+
+  } else {
+
+    showMessage(
+      "Free!"
+    );
+  }
+
+
+  if (
+    resumeMovement &&
+    !state.sleeping &&
+    state.alive
+  ) {
+
+    resumeAmbient(
+      1200
+    );
+  }
+}
+
+
+function toggleForcedSit() {
+
+  if (
+    state.forcedSit
+  ) {
+
+    releaseForcedSit();
+
+  } else {
+
+    startForcedSit();
+  }
+}
+
+
+/* ============================================================
    PERSISTENT ENERGY / LOCAL TIME
 ============================================================ */
 
@@ -827,6 +1104,10 @@ function updatePersistentTime() {
     elapsed /
     60000;
 
+
+  /* --------------------------------------------------------
+     SLEEPING
+  --------------------------------------------------------- */
 
   if (
     state.sleeping
@@ -857,7 +1138,14 @@ function updatePersistentTime() {
         false;
     }
 
-  } else {
+  }
+
+
+  /* --------------------------------------------------------
+     AWAKE
+  --------------------------------------------------------- */
+
+  else {
 
     state.energy =
       clamp(
@@ -874,6 +1162,23 @@ function updatePersistentTime() {
 
       state.energy =
         0;
+
+
+      /*
+         Forced sleep releases a forced sit.
+
+         The elapsed sit time still counts toward
+         the post-release penalty.
+      */
+
+      if (
+        state.forcedSit
+      ) {
+
+        releaseForcedSit(
+          false
+        );
+      }
 
 
       state.sleeping =
@@ -1018,7 +1323,8 @@ function updateCriticalIndicators() {
 
   moodNode.classList.toggle(
     "critical",
-    state.happiness < 25
+    state.happiness <
+    25
   );
 
 
@@ -1052,6 +1358,8 @@ function updateMoodAnimation() {
   }
 
 
+  /* DEAD */
+
   if (
     !state.alive
   ) {
@@ -1064,6 +1372,8 @@ function updateMoodAnimation() {
   }
 
 
+  /* SLEEP */
+
   if (
     state.sleeping
   ) {
@@ -1075,6 +1385,29 @@ function updateMoodAnimation() {
     return;
   }
 
+
+  /*
+     FORCED SIT
+
+     It remains visually bored regardless of the
+     elapsed sit penalty. The penalty isn't shown
+     until release.
+  */
+
+  if (
+    state.forcedSit
+  ) {
+
+    setAnimation(
+      "bored",
+      activeDirection
+    );
+
+    return;
+  }
+
+
+  /* STARVATION */
 
   if (
     getHungerStage() ===
@@ -1089,6 +1422,8 @@ function updateMoodAnimation() {
   }
 
 
+  /* DAY TWO WITHOUT FOOD */
+
   if (
     getHungerStage() ===
     "sick"
@@ -1101,6 +1436,8 @@ function updateMoodAnimation() {
     return;
   }
 
+
+  /* LOW FOOD */
 
   if (
     state.hunger <
@@ -1115,6 +1452,8 @@ function updateMoodAnimation() {
   }
 
 
+  /* EXHAUSTED */
+
   if (
     state.energy <=
     EXHAUSTED_THRESHOLD
@@ -1128,6 +1467,8 @@ function updateMoodAnimation() {
   }
 
 
+  /* VERY LOW GENERAL HAPPINESS */
+
   if (
     state.happiness <
     25
@@ -1140,6 +1481,13 @@ function updateMoodAnimation() {
     return;
   }
 
+
+  /*
+     Post-sit resentment is intentionally not
+     a permanent idle pose.
+
+     It gets sprinkled into roaming instead.
+  */
 
   setAnimation(
     "idle",
@@ -1190,9 +1538,19 @@ function playTemporaryAnimation(
         updateMoodAnimation();
 
 
-        resumeAmbient(
-          1500
-        );
+        /*
+           Forced sit does not resume roaming.
+        */
+
+        if (
+          !state.forcedSit &&
+          !state.sleeping
+        ) {
+
+          resumeAmbient(
+            1500
+          );
+        }
 
       },
       duration
@@ -1285,6 +1643,10 @@ function getNextRoamTarget() {
   let travelFraction;
 
 
+  /*
+     Frequently stop somewhere in the middle.
+  */
+
   if (
     Math.random() <
     MIDSCREEN_STOP_CHANCE
@@ -1338,6 +1700,7 @@ function walkAcrossScreen() {
     interactionMode ||
     statusCardVisible ||
     state.sleeping ||
+    state.forcedSit ||
     !state.alive
   ) {
 
@@ -1367,8 +1730,11 @@ function walkAcrossScreen() {
 
   activeDirection =
 
-    distance > 0
+    distance >
+    0
+
       ? "right"
+
       : "left";
 
 
@@ -1429,6 +1795,10 @@ function walkAcrossScreen() {
           "none";
 
 
+        /*
+           Maintain alternating left/right tendency.
+        */
+
         nextWalkDirection =
 
           activeDirection ===
@@ -1467,22 +1837,26 @@ function stopWalking() {
 
 
   const stageRect =
-    petStage.getBoundingClientRect();
+    petStage
+      .getBoundingClientRect();
 
 
   const moverRect =
-    characterMover.getBoundingClientRect();
+    characterMover
+      .getBoundingClientRect();
 
 
   currentX =
     (
       moverRect.left +
-      moverRect.width / 2
+      moverRect.width /
+      2
     )
     -
     (
       stageRect.left +
-      stageRect.width / 2
+      stageRect.width /
+      2
     );
 
 
@@ -1500,6 +1874,60 @@ function stopWalking() {
 
 
 /* ============================================================
+   AMBIENT SPECIAL REACTION
+============================================================ */
+
+function playAmbientReaction(
+  animation,
+  duration = 1600
+) {
+
+  temporaryAnimation =
+    true;
+
+
+  setAnimation(
+    animation,
+    activeDirection
+  );
+
+
+  clearTimeout(
+    animationTimer
+  );
+
+
+  animationTimer =
+    setTimeout(
+      () => {
+
+        temporaryAnimation =
+          false;
+
+
+        updateMoodAnimation();
+
+
+        if (
+          !state.forcedSit &&
+          !state.sleeping
+        ) {
+
+          resumeAmbient(
+            randomBetween(
+              800,
+              1500
+            )
+          );
+        }
+
+      },
+      duration
+    );
+}
+
+
+/* ============================================================
    REST / RANDOM AMBIENT BEHAVIOR
 ============================================================ */
 
@@ -1507,6 +1935,7 @@ function beginRestPeriod() {
 
   if (
     state.sleeping ||
+    state.forcedSit ||
     interactionMode ||
     statusCardVisible ||
     !state.alive
@@ -1524,7 +1953,7 @@ function beginRestPeriod() {
 
 
   /*
-     Important condition states take priority.
+     Physical condition states take priority.
   */
 
   if (
@@ -1563,21 +1992,111 @@ function beginRestPeriod() {
     Math.random();
 
 
-  /* --------------------------------------------------------
-     RANDOM MOOD REACTION
+  const positiveBehaviorEnd =
+    MOOD_REACTION_CHANCE +
+    BOUND_CHANCE;
 
-     50+ happiness = happy
-     below 50 = sad
+
+  /* --------------------------------------------------------
+     POST-SIT ANGRY
+
+     The slots that would normally produce
+     happy or bound instead produce angry.
   --------------------------------------------------------- */
 
   if (
+    state.recoveryMood ===
+    "angry"
+
+    &&
+
+    roll <
+    positiveBehaviorEnd
+  ) {
+
+    playAmbientReaction(
+      "angry",
+      1700
+    );
+
+    return;
+  }
+
+
+  /* --------------------------------------------------------
+     POST-SIT SAD
+
+     Happy/bound slots become sad.
+  --------------------------------------------------------- */
+
+  if (
+    state.recoveryMood ===
+    "sad"
+
+    &&
+
+    roll <
+    positiveBehaviorEnd
+  ) {
+
+    playAmbientReaction(
+      "sad",
+      1700
+    );
+
+    return;
+  }
+
+
+  /* --------------------------------------------------------
+     RECOVERY NEUTRAL
+
+     No happy/bound flourishes yet.
+     Those opportunities simply become idle.
+  --------------------------------------------------------- */
+
+  if (
+    state.recoveryMood ===
+    "neutral"
+
+    &&
+
+    roll <
+    positiveBehaviorEnd
+  ) {
+
+    setAnimation(
+      "idle",
+      activeDirection
+    );
+
+
+    resumeAmbient(
+      pauseDuration
+    );
+
+    return;
+  }
+
+
+  /* --------------------------------------------------------
+     HAPPY / NORMAL RANDOM REACTION
+  --------------------------------------------------------- */
+
+  if (
+    state.recoveryMood ===
+    "happy"
+
+    &&
+
     roll <
     MOOD_REACTION_CHANCE
   ) {
 
-    temporaryAnimation =
-      true;
-
+    /*
+       Actual happiness still determines whether
+       the emotional reaction reads happy or sad.
+    */
 
     const moodAnimation =
 
@@ -1589,91 +2108,38 @@ function beginRestPeriod() {
         : "sad";
 
 
-    setAnimation(
+    playAmbientReaction(
       moodAnimation,
-      activeDirection
+      1500
     );
-
-
-    clearTimeout(
-      animationTimer
-    );
-
-
-    animationTimer =
-      setTimeout(
-        () => {
-
-          temporaryAnimation =
-            false;
-
-
-          updateMoodAnimation();
-
-
-          resumeAmbient(
-            randomBetween(
-              900,
-              1600
-            )
-          );
-
-        },
-        1500
-      );
-
 
     return;
   }
 
 
   /* --------------------------------------------------------
-     RANDOM BOUND
+     HAPPY / NORMAL RANDOM BOUND
   --------------------------------------------------------- */
 
   if (
+    state.recoveryMood ===
+    "happy"
+
+    &&
+
     roll <
-    MOOD_REACTION_CHANCE +
-    BOUND_CHANCE
+    positiveBehaviorEnd
   ) {
 
-    temporaryAnimation =
-      true;
+    /*
+       Uses current facing direction:
+       bound-left.gif or bound-right.gif.
+    */
 
-
-    setAnimation(
+    playAmbientReaction(
       "bound",
-      activeDirection
+      1600
     );
-
-
-    clearTimeout(
-      animationTimer
-    );
-
-
-    animationTimer =
-      setTimeout(
-        () => {
-
-          temporaryAnimation =
-            false;
-
-
-          updateMoodAnimation();
-
-
-          resumeAmbient(
-            randomBetween(
-              700,
-              1500
-            )
-          );
-
-        },
-        1600
-      );
-
 
     return;
   }
@@ -1685,8 +2151,7 @@ function beginRestPeriod() {
 
   if (
     roll <
-    MOOD_REACTION_CHANCE +
-    BOUND_CHANCE +
+    positiveBehaviorEnd +
     BORED_CHANCE
   ) {
 
@@ -1699,7 +2164,6 @@ function beginRestPeriod() {
     resumeAmbient(
       pauseDuration
     );
-
 
     return;
   }
@@ -1742,6 +2206,16 @@ function resumeAmbient(
   );
 
 
+  if (
+    state.forcedSit ||
+    state.sleeping ||
+    !state.alive
+  ) {
+
+    return;
+  }
+
+
   ambientTimer =
     setTimeout(
       () => {
@@ -1757,10 +2231,6 @@ function resumeAmbient(
 /* ============================================================
    MESSAGE
 ============================================================ */
-
-let messageTimer =
-  null;
-
 
 function showMessage(
   text,
@@ -1833,7 +2303,8 @@ function hideStatusCard() {
 
   if (
     !interactionMode &&
-    !state.sleeping
+    !state.sleeping &&
+    !state.forcedSit
   ) {
 
     resumeAmbient(
@@ -1894,7 +2365,8 @@ function closeInteractionTray() {
 
 
   if (
-    !state.sleeping
+    !state.sleeping &&
+    !state.forcedSit
   ) {
 
     resumeAmbient(
@@ -1926,7 +2398,8 @@ function selectAction(index) {
 
       button.classList.toggle(
         "selected",
-        i === selectedAction
+        i ===
+        selectedAction
       );
     }
   );
@@ -1936,7 +2409,8 @@ function selectAction(index) {
 function nextAction() {
 
   selectAction(
-    selectedAction + 1
+    selectedAction +
+    1
   );
 }
 
@@ -1944,7 +2418,8 @@ function nextAction() {
 function previousAction() {
 
   selectAction(
-    selectedAction - 1
+    selectedAction -
+    1
   );
 }
 
@@ -1961,6 +2436,16 @@ function putCharacterToSleep(
 
 
   stopWalking();
+
+
+  if (
+    state.forcedSit
+  ) {
+
+    releaseForcedSit(
+      false
+    );
+  }
 
 
   state.sleeping =
@@ -2118,6 +2603,32 @@ function performAction(action) {
     Date.now();
 
 
+  /*
+     Once SIT has been forced, Noctis stays sitting
+     until SIT is selected again.
+
+     Other actions don't interrupt the forced sit.
+  */
+
+  if (
+    state.forcedSit &&
+    action !==
+    "sit"
+  ) {
+
+    showMessage(
+      "Still sitting."
+    );
+
+    setAnimation(
+      "bored",
+      activeDirection
+    );
+
+    return;
+  }
+
+
   switch (action) {
 
 
@@ -2150,6 +2661,9 @@ function performAction(action) {
           state.happiness +
           5
         );
+
+
+      applyPositiveInteraction();
 
 
       playTemporaryAnimation(
@@ -2212,6 +2726,9 @@ function performAction(action) {
         );
 
 
+      applyPositiveInteraction();
+
+
       playTemporaryAnimation(
 
         Math.random() <
@@ -2250,6 +2767,9 @@ function performAction(action) {
         );
 
 
+      applyPositiveInteraction();
+
+
       playTemporaryAnimation(
         "happy",
         1500
@@ -2272,6 +2792,17 @@ function performAction(action) {
         "lieDown",
         1700
       );
+
+      break;
+
+
+    /* --------------------------------------------------------
+       SIT / RELEASE
+    --------------------------------------------------------- */
+
+    case "sit":
+
+      toggleForcedSit();
 
       break;
 
@@ -2442,8 +2973,13 @@ document.addEventListener(
 
 
     if (
-      dx > 12 ||
-      dy > 12
+      dx >
+      12
+
+      ||
+
+      dy >
+      12
     ) {
 
       clearTimeout(
@@ -2489,9 +3025,7 @@ document.addEventListener(
       Math.abs(dy);
 
 
-    /* --------------------------------------------------------
-       LEFT / RIGHT
-    --------------------------------------------------------- */
+    /* LEFT / RIGHT */
 
     if (
       ax >
@@ -2499,7 +3033,8 @@ document.addEventListener(
 
       &&
 
-      ax > ay
+      ax >
+      ay
     ) {
 
       if (
@@ -2507,7 +3042,8 @@ document.addEventListener(
       ) {
 
         if (
-          dx > 0
+          dx >
+          0
         ) {
 
           previousAction();
@@ -2523,9 +3059,7 @@ document.addEventListener(
     }
 
 
-    /* --------------------------------------------------------
-       DOWN / UP
-    --------------------------------------------------------- */
+    /* DOWN / UP */
 
     if (
       ay >
@@ -2533,11 +3067,13 @@ document.addEventListener(
 
       &&
 
-      ay > ax
+      ay >
+      ax
     ) {
 
       if (
-        dy > 0
+        dy >
+        0
       ) {
 
         if (
@@ -2568,9 +3104,7 @@ document.addEventListener(
     }
 
 
-    /* --------------------------------------------------------
-       TAP WHILE MENU OPEN
-    --------------------------------------------------------- */
+    /* TAP WHILE MENU OPEN */
 
     if (
       interactionMode
@@ -2605,10 +3139,16 @@ function gameTick() {
   updatePersistentTime();
 
 
+  /*
+     If he hit zero while awake,
+     run the forced-sleep transition.
+  */
+
   if (
     !wasSleeping &&
     state.sleeping &&
-    state.energy <= 0
+    state.energy <=
+    0
   ) {
 
     putCharacterToSleep(
@@ -2668,6 +3208,7 @@ document.addEventListener(
 
       if (
         !state.sleeping &&
+        !state.forcedSit &&
         state.alive
       ) {
 
@@ -2731,6 +3272,11 @@ function init() {
     0;
 
 
+  /*
+     Apply all real time that passed
+     while the app was closed.
+  */
+
   updatePersistentTime();
 
 
@@ -2750,6 +3296,23 @@ function init() {
     event =>
       event.preventDefault()
   );
+
+
+  /*
+     Persistent forced sit survives reload.
+  */
+
+  if (
+    state.forcedSit
+  ) {
+
+    setAnimation(
+      "bored",
+      activeDirection
+    );
+
+    return;
+  }
 
 
   if (
