@@ -136,17 +136,9 @@ const MAX_STAT =
    ENERGY
 ============================================================ */
 
-/*
-   100 -> 0 over 16 waking hours.
-*/
-
 const ENERGY_DRAIN_PER_MINUTE =
   100 / (16 * 60);
 
-
-/*
-   0 -> 100 over 10 minutes sleeping.
-*/
 
 const ENERGY_RECOVERY_PER_MINUTE =
   100 / 10;
@@ -160,37 +152,17 @@ const EXHAUSTED_THRESHOLD =
    HEALTH
 ============================================================ */
 
-/*
-   Health regenerates from 0 -> 100
-   over 24 hours while healthy and
-   all needs are met.
-*/
-
 const HEALTH_RECOVERY_PER_MINUTE =
   100 / (24 * 60);
 
-
-/*
-   While sick, health drains
-   100 -> 0 over 24 hours.
-*/
 
 const HEALTH_DRAIN_PER_MINUTE =
   100 / (24 * 60);
 
 
-/*
-   Eating restores 25 health points.
-*/
-
 const FOOD_HEALTH_RECOVERY =
   25;
 
-
-/*
-   Minimum needs required for natural
-   health regeneration.
-*/
 
 const HEALTH_MIN_HUNGER =
   20;
@@ -207,17 +179,6 @@ const HEALTH_MIN_CLEANLINESS =
 /* ============================================================
    HUNGER CLOCK
 ============================================================ */
-
-/*
-   First 24 hours:
-   normal hunger progression.
-
-   24 - 48 hours:
-   sick.
-
-   48+ hours:
-   critical hunger.
-*/
 
 const FOOD_DURATION_MS =
   24 * 60 * 60 * 1000;
@@ -937,11 +898,6 @@ function updateHealthFromClock(
     getHungerStage();
 
 
-  /*
-     Sick or critical:
-     continuously lose health.
-  */
-
   if (
     hungerStage ===
     "sick"
@@ -959,15 +915,7 @@ function updateHealthFromClock(
         minutes
       );
 
-  }
-
-
-  /*
-     Healthy and all needs met:
-     slowly recover health.
-  */
-
-  else if (
+  } else if (
     areHealthNeedsMet()
   ) {
 
@@ -979,10 +927,6 @@ function updateHealthFromClock(
       );
   }
 
-
-  /*
-     Zero health means death.
-  */
 
   if (
     state.health <=
@@ -1076,13 +1020,6 @@ function getMoodEmoji() {
   }
 
 
-  /*
-     While forced sitting, he only
-     appears bored/neutral.
-
-     Penalty is revealed after release.
-  */
-
   if (
     state.forcedSit
   ) {
@@ -1090,10 +1027,6 @@ function getMoodEmoji() {
     return "😐";
   }
 
-
-  /*
-     Sit recovery overrides raw happiness.
-  */
 
   if (
     state.recoveryMood ===
@@ -1121,10 +1054,6 @@ function getMoodEmoji() {
     return "😐";
   }
 
-
-  /*
-     Normal happiness scale.
-  */
 
   if (
     state.happiness >=
@@ -1347,13 +1276,22 @@ function releaseForcedSit(
     null;
 
 
-  updateStatusDisplay();
+  temporaryAnimation =
+    false;
+
+
+  clearTimeout(
+    animationTimer
+  );
 
 
   saveState();
 
 
   updateMoodAnimation();
+
+
+  updateStatusDisplay();
 
 
   if (
@@ -1384,12 +1322,23 @@ function releaseForcedSit(
 
   if (
     resumeMovement &&
+    interactionMode
+  ) {
+
+    closeInteractionTray();
+
+    return;
+  }
+
+
+  if (
+    resumeMovement &&
     !state.sleeping &&
     state.alive
   ) {
 
     resumeAmbient(
-      1200
+      900
     );
   }
 }
@@ -1433,11 +1382,6 @@ function updatePersistentTime() {
     60000;
 
 
-  /*
-     Dead pets don't continue processing
-     hunger/energy/health.
-  */
-
   if (
     !state.alive
   ) {
@@ -1452,10 +1396,6 @@ function updatePersistentTime() {
     return;
   }
 
-
-  /* --------------------------------------------------------
-     ENERGY - SLEEPING
-  --------------------------------------------------------- */
 
   if (
     state.sleeping
@@ -1486,14 +1426,7 @@ function updatePersistentTime() {
         false;
     }
 
-  }
-
-
-  /* --------------------------------------------------------
-     ENERGY - AWAKE
-  --------------------------------------------------------- */
-
-  else {
+  } else {
 
     state.energy =
       clamp(
@@ -1534,11 +1467,6 @@ function updatePersistentTime() {
     }
   }
 
-
-  /*
-     Update food before health because hunger
-     determines whether health heals or drains.
-  */
 
   updateFoodFromClock();
 
@@ -1592,8 +1520,6 @@ function updateStatusDisplay() {
     );
 
 
-  /* MOOD */
-
   if (
     moodEmoji
   ) {
@@ -1603,66 +1529,130 @@ function updateStatusDisplay() {
   }
 
 
-  /* COMPACT HUD */
+  if (
+    healthBar
+  ) {
 
-  healthBar.style.width =
-    `${health}%`;
-
-
-  hungerBar.style.width =
-    `${food}%`;
-
-
-  cleanlinessBar.style.width =
-    `${clean}%`;
+    healthBar.style.width =
+      `${health}%`;
+  }
 
 
-  energyBar.style.width =
-    `${energy}%`;
+  if (
+    hungerBar
+  ) {
+
+    hungerBar.style.width =
+      `${food}%`;
+  }
 
 
-  /* DETAILED VALUES */
+  if (
+    cleanlinessBar
+  ) {
 
-  happinessValue.textContent =
-    happiness;
-
-
-  hungerValue.textContent =
-    food;
-
-
-  energyValue.textContent =
-    energy;
+    cleanlinessBar.style.width =
+      `${clean}%`;
+  }
 
 
-  healthValue.textContent =
-    health;
+  if (
+    energyBar
+  ) {
+
+    energyBar.style.width =
+      `${energy}%`;
+  }
 
 
-  cleanValue.textContent =
-    clean;
+  if (
+    happinessValue
+  ) {
+
+    happinessValue.textContent =
+      happiness;
+  }
 
 
-  /* DETAILED METERS */
+  if (
+    hungerValue
+  ) {
 
-  detailHappiness.style.width =
-    `${happiness}%`;
-
-
-  detailHunger.style.width =
-    `${food}%`;
-
-
-  detailEnergy.style.width =
-    `${energy}%`;
+    hungerValue.textContent =
+      food;
+  }
 
 
-  detailHealth.style.width =
-    `${health}%`;
+  if (
+    energyValue
+  ) {
+
+    energyValue.textContent =
+      energy;
+  }
 
 
-  detailClean.style.width =
-    `${clean}%`;
+  if (
+    healthValue
+  ) {
+
+    healthValue.textContent =
+      health;
+  }
+
+
+  if (
+    cleanValue
+  ) {
+
+    cleanValue.textContent =
+      clean;
+  }
+
+
+  if (
+    detailHappiness
+  ) {
+
+    detailHappiness.style.width =
+      `${happiness}%`;
+  }
+
+
+  if (
+    detailHunger
+  ) {
+
+    detailHunger.style.width =
+      `${food}%`;
+  }
+
+
+  if (
+    detailEnergy
+  ) {
+
+    detailEnergy.style.width =
+      `${energy}%`;
+  }
+
+
+  if (
+    detailHealth
+  ) {
+
+    detailHealth.style.width =
+      `${health}%`;
+  }
+
+
+  if (
+    detailClean
+  ) {
+
+    detailClean.style.width =
+      `${clean}%`;
+  }
 
 
   updateCriticalIndicators();
@@ -1699,32 +1689,52 @@ function updateCriticalIndicators() {
     );
 
 
-  healthNode.classList.toggle(
-    "critical",
-    state.health <
-    25
-  );
+  if (
+    healthNode
+  ) {
+
+    healthNode.classList.toggle(
+      "critical",
+      state.health <
+      25
+    );
+  }
 
 
-  foodNode.classList.toggle(
-    "critical",
-    getHungerStage() ===
-    "critical"
-  );
+  if (
+    foodNode
+  ) {
+
+    foodNode.classList.toggle(
+      "critical",
+      getHungerStage() ===
+      "critical"
+    );
+  }
 
 
-  cleanNode.classList.toggle(
-    "critical",
-    state.cleanliness <
-    HEALTH_MIN_CLEANLINESS
-  );
+  if (
+    cleanNode
+  ) {
+
+    cleanNode.classList.toggle(
+      "critical",
+      state.cleanliness <
+      HEALTH_MIN_CLEANLINESS
+    );
+  }
 
 
-  energyNode.classList.toggle(
-    "critical",
-    state.energy <=
-    EXHAUSTED_THRESHOLD
-  );
+  if (
+    energyNode
+  ) {
+
+    energyNode.classList.toggle(
+      "critical",
+      state.energy <=
+      EXHAUSTED_THRESHOLD
+    );
+  }
 }
 
 
@@ -2298,10 +2308,6 @@ function beginRestPeriod() {
     );
 
 
-  /*
-     Physical needs override ambient personality.
-  */
-
   if (
     getHungerStage() !==
     "normal"
@@ -2343,11 +2349,6 @@ function beginRestPeriod() {
     BOUND_CHANCE;
 
 
-  /*
-     Angry recovery replaces the normal
-     happy/bound slots with angry reactions.
-  */
-
   if (
     state.recoveryMood ===
     "angry"
@@ -2367,11 +2368,6 @@ function beginRestPeriod() {
   }
 
 
-  /*
-     Sad recovery replaces happy/bound
-     with sad reactions.
-  */
-
   if (
     state.recoveryMood ===
     "sad"
@@ -2390,11 +2386,6 @@ function beginRestPeriod() {
     return;
   }
 
-
-  /*
-     Neutral recovery suppresses
-     happy/bound flourishes.
-  */
 
   if (
     state.recoveryMood ===
@@ -2419,10 +2410,6 @@ function beginRestPeriod() {
     return;
   }
 
-
-  /*
-     Normal mood reaction.
-  */
 
   if (
     state.recoveryMood ===
@@ -2453,10 +2440,6 @@ function beginRestPeriod() {
   }
 
 
-  /*
-     Random bound in current direction.
-  */
-
   if (
     state.recoveryMood ===
     "happy"
@@ -2475,10 +2458,6 @@ function beginRestPeriod() {
     return;
   }
 
-
-  /*
-     Random bored pause.
-  */
 
   if (
     roll <
@@ -2499,10 +2478,6 @@ function beginRestPeriod() {
     return;
   }
 
-
-  /*
-     Otherwise idle.
-  */
 
   setAnimation(
     "idle",
@@ -2525,6 +2500,10 @@ function pauseAmbient() {
   clearTimeout(
     ambientTimer
   );
+
+
+  ambientTimer =
+    null;
 }
 
 
@@ -2535,6 +2514,10 @@ function resumeAmbient(
   clearTimeout(
     ambientTimer
   );
+
+
+  ambientTimer =
+    null;
 
 
   if (
@@ -2550,6 +2533,35 @@ function resumeAmbient(
   ambientTimer =
     setTimeout(
       () => {
+
+        ambientTimer =
+          null;
+
+
+        if (
+          state.forcedSit ||
+          state.sleeping ||
+          !state.alive
+        ) {
+
+          return;
+        }
+
+
+        if (
+          interactionMode ||
+          statusCardVisible ||
+          temporaryAnimation ||
+          walking
+        ) {
+
+          resumeAmbient(
+            800
+          );
+
+          return;
+        }
+
 
         walkAcrossScreen();
 
@@ -2703,7 +2715,7 @@ function closeInteractionTray() {
   ) {
 
     resumeAmbient(
-      1500
+      900
     );
   }
 }
@@ -2976,11 +2988,6 @@ function performAction(action) {
     Date.now();
 
 
-  /*
-     Forced sit can only be released
-     with the SIT action.
-  */
-
   if (
     state.forcedSit &&
     action !==
@@ -3004,10 +3011,6 @@ function performAction(action) {
   switch (action) {
 
 
-    /* --------------------------------------------------------
-       FEED
-    --------------------------------------------------------- */
-
     case "feed":
 
       if (
@@ -3027,10 +3030,6 @@ function performAction(action) {
       state.hunger =
         100;
 
-
-      /*
-         Eating heals 25%.
-      */
 
       state.health =
         clamp(
@@ -3064,10 +3063,6 @@ function performAction(action) {
 
       break;
 
-
-    /* --------------------------------------------------------
-       PLAY
-    --------------------------------------------------------- */
 
     case "play":
 
@@ -3135,10 +3130,6 @@ function performAction(action) {
       break;
 
 
-    /* --------------------------------------------------------
-       PET
-    --------------------------------------------------------- */
-
     case "pet":
 
       if (
@@ -3170,10 +3161,6 @@ function performAction(action) {
       break;
 
 
-    /* --------------------------------------------------------
-       CLEAN
-    --------------------------------------------------------- */
-
     case "clean":
 
       state.cleanliness =
@@ -3191,20 +3178,12 @@ function performAction(action) {
       break;
 
 
-    /* --------------------------------------------------------
-       SIT
-    --------------------------------------------------------- */
-
     case "sit":
 
       toggleForcedSit();
 
       break;
 
-
-    /* --------------------------------------------------------
-       SLEEP
-    --------------------------------------------------------- */
 
     case "sleep":
 
@@ -3223,10 +3202,6 @@ function performAction(action) {
 
       break;
 
-
-    /* --------------------------------------------------------
-       MEDICINE
-    --------------------------------------------------------- */
 
     case "medicine":
 
@@ -3423,8 +3398,6 @@ document.addEventListener(
       Math.abs(dy);
 
 
-    /* LEFT / RIGHT */
-
     if (
       ax >
       SWIPE_DISTANCE
@@ -3456,8 +3429,6 @@ document.addEventListener(
       return;
     }
 
-
-    /* DOWN / UP */
 
     if (
       ay >
@@ -3502,8 +3473,6 @@ document.addEventListener(
     }
 
 
-    /* TAP WHILE MENU OPEN */
-
     if (
       interactionMode
 
@@ -3537,10 +3506,6 @@ function gameTick() {
   updatePersistentTime();
 
 
-  /*
-     Death overrides everything.
-  */
-
   if (
     !state.alive
   ) {
@@ -3554,10 +3519,6 @@ function gameTick() {
     return;
   }
 
-
-  /*
-     Energy reached zero while awake.
-  */
 
   if (
     !wasSleeping &&
@@ -3687,10 +3648,6 @@ function init() {
     0;
 
 
-  /*
-     Apply real-world elapsed time.
-  */
-
   updatePersistentTime();
 
 
@@ -3729,6 +3686,10 @@ function init() {
     state.forcedSit
   ) {
 
+    temporaryAnimation =
+      false;
+
+
     setAnimation(
       "bored",
       activeDirection
@@ -3739,13 +3700,21 @@ function init() {
 
 
   if (
-    !state.sleeping
+    state.sleeping
   ) {
 
-    resumeAmbient(
-      1800
+    setAnimation(
+      "sleep",
+      activeDirection
     );
+
+    return;
   }
+
+
+  resumeAmbient(
+    1800
+  );
 }
 
 
