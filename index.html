@@ -18,7 +18,11 @@
 
 <body>
 
-  <main id="app">
+  <main
+    id="app"
+    class="focusable"
+    tabindex="0"
+  >
 
     <!-- ============================================
          COMPACT STATUS HUD
@@ -196,9 +200,7 @@
         </div>
 
         <div class="detail-meter">
-
           <div id="detailHappiness"></div>
-
         </div>
 
 
@@ -215,9 +217,7 @@
         </div>
 
         <div class="detail-meter">
-
           <div id="detailHunger"></div>
-
         </div>
 
 
@@ -234,9 +234,7 @@
         </div>
 
         <div class="detail-meter">
-
           <div id="detailEnergy"></div>
-
         </div>
 
 
@@ -253,9 +251,7 @@
         </div>
 
         <div class="detail-meter">
-
           <div id="detailHealth"></div>
-
         </div>
 
 
@@ -272,9 +268,7 @@
         </div>
 
         <div class="detail-meter">
-
           <div id="detailClean"></div>
-
         </div>
 
       </section>
@@ -292,8 +286,9 @@
     >
 
       <button
-        class="action selected"
+        class="action focusable selected"
         data-action="feed"
+        tabindex="0"
       >
 
         <span class="action-icon">
@@ -308,8 +303,9 @@
 
 
       <button
-        class="action"
+        class="action focusable"
         data-action="play"
+        tabindex="0"
       >
 
         <span class="action-icon">
@@ -324,8 +320,9 @@
 
 
       <button
-        class="action"
+        class="action focusable"
         data-action="pet"
+        tabindex="0"
       >
 
         <span class="action-icon">
@@ -340,8 +337,9 @@
 
 
       <button
-        class="action"
+        class="action focusable"
         data-action="clean"
+        tabindex="0"
       >
 
         <span class="action-icon">
@@ -356,8 +354,9 @@
 
 
       <button
-        class="action"
+        class="action focusable"
         data-action="sit"
+        tabindex="0"
       >
 
         <span class="action-icon">
@@ -372,8 +371,9 @@
 
 
       <button
-        class="action"
+        class="action focusable"
         data-action="sleep"
+        tabindex="0"
       >
 
         <span class="action-icon">
@@ -388,8 +388,9 @@
 
 
       <button
-        class="action"
+        class="action focusable"
         data-action="medicine"
+        tabindex="0"
       >
 
         <span class="action-icon">
@@ -413,9 +414,7 @@
       id="controlHint"
       class="control-hint"
     >
-
       SWIPE DOWN TO INTERACT
-
     </div>
 
   </main>
