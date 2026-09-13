@@ -1,6 +1,5 @@
 "use strict";
 
-
 /* ============================================================
    POCKET FURRY
 
@@ -8,8 +7,8 @@
 
    Noctis is Character Pack #1.
 
-   Future characters can be added without rewriting
-   the core pet engine.
+   Animation names below match the ACTUAL files currently
+   in assets/characters/noctis/
 ============================================================ */
 
 
@@ -19,96 +18,115 @@
 
 const characters = {
 
-
   noctis: {
 
-    id:
-      "noctis",
+    id: "noctis",
 
-    name:
-      "Noctis",
+    name: "Noctis",
 
-    path:
-      "assets/characters/noctis/",
-
+    path: "assets/characters/noctis/",
 
     animations: {
 
-      idle:
-        "idle.gif",
+      idle: {
+        right: "idle.gif",
+        left: "idle-left.gif"
+      },
 
-      happy:
-        "happy.gif",
+      happy: {
+        right: "happy.gif",
+        left: "happy-left.gif"
+      },
 
-      sad:
-        "sad.gif",
+      sad: {
+        right: "sad.gif",
+        left: "sad-left.gif"
+      },
 
-      angry:
-        "angry.gif",
+      angry: {
+        right: "angry.gif",
+        left: "angry-left.gif"
+      },
 
-      bored:
-        "bored.gif",
+      bored: {
+        right: "bored.gif",
+        left: "bored-left.gif"
+      },
 
-      hungry:
-        "hungry.gif",
+      hungry: {
+        right: "hungry.gif",
+        left: "hungry-left.gif"
+      },
 
-      sick:
-        "sick.gif",
+      sick: {
+        right: "sick.gif",
+        left: "sick-left.gif"
+      },
 
-      sleep:
-        "sleep.gif",
+      sleepy: {
+        right: "sleepy.gif",
+        left: "sleepy-left.gif"
+      },
 
-      eat:
-        "eat.gif",
+      lieDown: {
+        right: "lie-down.gif",
+        left: "lie-down-left.gif"
+      },
 
-      play:
-        "play.gif",
+      sleep: {
+        right: "sleep.gif",
+        left: "sleep-left.gif"
+      },
 
-      walk:
-        "walk.gif",
+      wakeUp: {
+        right: "wake-up.gif",
+        left: "wake-up-left.gif"
+      },
 
-      run:
-        "run.gif",
+      eat: {
+        right: "eat.gif",
+        left: "eat-left.gif"
+      },
 
-      excited:
-        "excited.gif",
+      walk: {
+        right: "walk-right.gif",
+        left: "walk-left.gif"
+      },
 
-      pet:
-        "pet.gif",
+      jump: {
+        right: "jump-right.gif",
+        left: "jump-left.gif"
+      },
 
-      clean:
-        "clean.gif",
+      bound: {
+        right: "bound-right.gif",
+        left: "bound-left.gif"
+      },
 
-      dead:
-        "dead.gif"
+      death: {
+        right: "death.gif",
+        left: "death-left.gif"
+      }
     },
 
 
     /* --------------------------------------------------------
-       CHARACTER PERSONALITY
-
-       Later, each furry can have different stat behavior.
+       PERSONALITY / STAT BEHAVIOR
     --------------------------------------------------------- */
 
     personality: {
 
-      hungerDecay:
-        0.55,
+      hungerDecay: 0.55,
 
-      happinessDecay:
-        0.25,
+      happinessDecay: 0.25,
 
-      energyDecay:
-        0.20,
+      energyDecay: 0.20,
 
-      cleanlinessDecay:
-        0.10,
+      cleanlinessDecay: 0.10,
 
-      sleepRecovery:
-        0.85
+      sleepRecovery: 0.85
     }
   }
-
 };
 
 
@@ -116,15 +134,14 @@ const characters = {
    ACTIVE CHARACTER
 ============================================================ */
 
-let activeCharacterId =
-  "noctis";
+let activeCharacterId = "noctis";
+
+let activeDirection = "right";
 
 
 function getActiveCharacter() {
 
-  return characters[
-    activeCharacterId
-  ];
+  return characters[activeCharacterId];
 }
 
 
@@ -132,20 +149,15 @@ function getActiveCharacter() {
    SAVE SYSTEM
 ============================================================ */
 
-const SAVE_VERSION =
-  1;
+const SAVE_VERSION = 2;
 
 
 function getSaveKey() {
 
   return (
-
     "pocketFurry_" +
-
     activeCharacterId +
-
     "_v" +
-
     SAVE_VERSION
   );
 }
@@ -155,12 +167,9 @@ function getSaveKey() {
    GAME CONSTANTS
 ============================================================ */
 
-const MAX_STAT =
-  100;
+const MAX_STAT = 100;
 
-
-const GAME_TICK_INTERVAL =
-  60 * 1000;
+const GAME_TICK_INTERVAL = 60 * 1000;
 
 
 /* ============================================================
@@ -169,41 +178,31 @@ const GAME_TICK_INTERVAL =
 
 const defaultState = {
 
-  hunger:
-    85,
+  hunger: 85,
 
-  happiness:
-    85,
+  happiness: 85,
 
-  energy:
-    85,
+  energy: 85,
 
-  health:
-    100,
+  health: 100,
 
-  cleanliness:
-    100,
+  cleanliness: 100,
 
-  sleeping:
-    false,
+  sleeping: false,
 
-  alive:
-    true,
+  alive: true,
 
-  lastUpdate:
-    Date.now(),
+  lastUpdate: Date.now(),
 
-  lastInteraction:
-    Date.now()
+  lastInteraction: Date.now()
 };
 
 
 /* ============================================================
-   LOAD STATE
+   STATE
 ============================================================ */
 
-let state =
-  loadState();
+let state = loadState();
 
 
 /* ============================================================
@@ -211,58 +210,31 @@ let state =
 ============================================================ */
 
 const characterSprite =
-  document.getElementById(
-    "character"
-  );
-
+  document.getElementById("character");
 
 const hungerBar =
-  document.getElementById(
-    "hungerBar"
-  );
-
+  document.getElementById("hungerBar");
 
 const happinessBar =
-  document.getElementById(
-    "happinessBar"
-  );
-
+  document.getElementById("happinessBar");
 
 const energyBar =
-  document.getElementById(
-    "energyBar"
-  );
-
+  document.getElementById("energyBar");
 
 const healthBar =
-  document.getElementById(
-    "healthBar"
-  );
-
+  document.getElementById("healthBar");
 
 const statusBar =
-  document.getElementById(
-    "statusBar"
-  );
-
+  document.getElementById("statusBar");
 
 const actionBar =
-  document.getElementById(
-    "actionBar"
-  );
-
+  document.getElementById("actionBar");
 
 const message =
-  document.getElementById(
-    "message"
-  );
-
+  document.getElementById("message");
 
 const actionButtons = [
-
-  ...document.querySelectorAll(
-    ".action"
-  )
+  ...document.querySelectorAll(".action")
 ];
 
 
@@ -286,66 +258,52 @@ const actions = [
 ];
 
 
-let selectedAction =
-  0;
+let selectedAction = 0;
 
 
 /* ============================================================
    ANIMATION STATE
 ============================================================ */
 
-let currentAnimation =
-  "";
+let currentAnimation = "";
 
+let currentAnimationDirection = "";
 
-let actionAnimationTimer =
-  null;
+let actionAnimationTimer = null;
 
+let messageTimer = null;
 
-let messageTimer =
-  null;
+let temporaryAnimation = false;
 
-
-let temporaryAnimation =
-  false;
+let sleepTransitionTimer = null;
 
 
 /* ============================================================
    UI STATE
 ============================================================ */
 
-let uiVisible =
-  true;
+let uiVisible = true;
 
 
 /* ============================================================
    POINTER STATE
 ============================================================ */
 
-let pointerStartX =
-  0;
+let pointerStartX = 0;
 
+let pointerStartY = 0;
 
-let pointerStartY =
-  0;
-
-
-let pointerStartTime =
-  0;
+let pointerStartTime = 0;
 
 
 /* ============================================================
-   UTILITY
+   HELPERS
 ============================================================ */
 
-function clamp(
-  value
-) {
+function clamp(value) {
 
   return Math.max(
-
     0,
-
     Math.min(
       MAX_STAT,
       value
@@ -354,22 +312,58 @@ function clamp(
 }
 
 
+function randomDirection() {
+
+  return (
+    Math.random() < 0.5
+      ? "left"
+      : "right"
+  );
+}
+
+
+function setDirection(direction) {
+
+  if (
+    direction !== "left" &&
+    direction !== "right"
+  ) {
+
+    return;
+  }
+
+  activeDirection = direction;
+}
+
+
 /* ============================================================
-   CHARACTER HELPERS
+   ANIMATION PATH
 ============================================================ */
 
 function getAnimationPath(
-  animationName
+  animationName,
+  direction = activeDirection
 ) {
 
   const character =
     getActiveCharacter();
 
-
-  const filename =
+  const animation =
     character.animations[
       animationName
     ];
+
+
+  if (!animation) {
+
+    return null;
+  }
+
+
+  const filename =
+    animation[direction] ||
+    animation.right ||
+    animation.left;
 
 
   if (!filename) {
@@ -396,12 +390,8 @@ function saveState() {
 
 
   localStorage.setItem(
-
     getSaveKey(),
-
-    JSON.stringify(
-      state
-    )
+    JSON.stringify(state)
   );
 }
 
@@ -432,9 +422,7 @@ function loadState() {
 
       ...defaultState,
 
-      ...JSON.parse(
-        saved
-      )
+      ...JSON.parse(saved)
     };
 
   } catch {
@@ -448,21 +436,11 @@ function loadState() {
 
 /* ============================================================
    CHARACTER SWITCHING
-
-   Not exposed in the interface yet.
-
-   Later this can become the character-selection screen.
 ============================================================ */
 
-function switchCharacter(
-  characterId
-) {
+function switchCharacter(characterId) {
 
-  if (
-    !characters[
-      characterId
-    ]
-  ) {
+  if (!characters[characterId]) {
 
     console.warn(
       "Unknown character:",
@@ -484,7 +462,15 @@ function switchCharacter(
     loadState();
 
 
+  activeDirection =
+    "right";
+
+
   currentAnimation =
+    "";
+
+
+  currentAnimationDirection =
     "";
 
 
@@ -494,9 +480,7 @@ function switchCharacter(
 
 
   showMessage(
-
     getActiveCharacter().name
-
   );
 }
 
@@ -521,64 +505,43 @@ function applyOfflineDecay() {
 
   const elapsed =
     Math.max(
-
       0,
-
-      now -
-      state.lastUpdate
+      now - state.lastUpdate
     );
 
 
   const minutes =
-    elapsed /
-    60000;
+    elapsed / 60000;
 
 
-  /* --------------------------------------------------------
-     FOOD
-  --------------------------------------------------------- */
+  /* FOOD */
 
   state.hunger =
     clamp(
-
       state.hunger -
-
       personality.hungerDecay *
-
       minutes
     );
 
 
-  /* --------------------------------------------------------
-     MOOD
-  --------------------------------------------------------- */
+  /* MOOD */
 
   state.happiness =
     clamp(
-
       state.happiness -
-
       personality.happinessDecay *
-
       minutes
     );
 
 
-  /* --------------------------------------------------------
-     ENERGY
-  --------------------------------------------------------- */
+  /* ENERGY */
 
-  if (
-    state.sleeping
-  ) {
+  if (state.sleeping) {
 
     state.energy =
       clamp(
-
         state.energy +
-
         personality.sleepRecovery *
-
         minutes
       );
 
@@ -586,109 +549,69 @@ function applyOfflineDecay() {
 
     state.energy =
       clamp(
-
         state.energy -
-
         personality.energyDecay *
-
         minutes
       );
   }
 
 
-  /* --------------------------------------------------------
-     CLEANLINESS
-  --------------------------------------------------------- */
+  /* CLEANLINESS */
 
   state.cleanliness =
     clamp(
-
       state.cleanliness -
-
       personality.cleanlinessDecay *
-
       minutes
     );
 
 
-  /* --------------------------------------------------------
-     STARVATION DAMAGE
-  --------------------------------------------------------- */
+  /* STARVATION DAMAGE */
 
-  if (
-    state.hunger <
-    15
-  ) {
+  if (state.hunger < 15) {
 
     state.health =
       clamp(
-
         state.health -
-
         0.35 *
-
         minutes
       );
   }
 
 
-  /* --------------------------------------------------------
-     FILTH DAMAGE
-  --------------------------------------------------------- */
+  /* FILTH DAMAGE */
 
-  if (
-    state.cleanliness <
-    15
-  ) {
+  if (state.cleanliness < 15) {
 
     state.health =
       clamp(
-
         state.health -
-
         0.20 *
-
         minutes
       );
   }
 
 
-  /* --------------------------------------------------------
-     LOW FOOD MOOD PENALTY
-  --------------------------------------------------------- */
+  /* LOW FOOD MOOD PENALTY */
 
-  if (
-    state.hunger <
-    25
-  ) {
+  if (state.hunger < 25) {
 
     state.happiness =
       clamp(
-
         state.happiness -
-
         0.20 *
-
         minutes
       );
   }
 
 
-  /* --------------------------------------------------------
-     DEATH
-  --------------------------------------------------------- */
+  /* DEATH */
 
-  if (
-    state.health <=
-    0
-  ) {
+  if (state.health <= 0) {
 
-    state.alive =
-      false;
+    state.alive = false;
 
-
-    state.sleeping =
-      false;
+    state.sleeping = false;
   }
 
 
@@ -709,14 +632,11 @@ function updateMeters() {
   hungerBar.style.width =
     `${state.hunger}%`;
 
-
   happinessBar.style.width =
     `${state.happiness}%`;
 
-
   energyBar.style.width =
     `${state.energy}%`;
-
 
   healthBar.style.width =
     `${state.health}%`;
@@ -728,19 +648,20 @@ function updateMeters() {
 ============================================================ */
 
 function setAnimation(
-  name
+  name,
+  direction = activeDirection
 ) {
 
   const path =
     getAnimationPath(
-      name
+      name,
+      direction
     );
 
 
   if (!path) {
 
     console.warn(
-
       `Animation "${name}" does not exist for ${getActiveCharacter().name}`
     );
 
@@ -749,8 +670,8 @@ function setAnimation(
 
 
   if (
-    currentAnimation ===
-    name
+    currentAnimation === name &&
+    currentAnimationDirection === direction
   ) {
 
     return;
@@ -759,6 +680,14 @@ function setAnimation(
 
   currentAnimation =
     name;
+
+
+  currentAnimationDirection =
+    direction;
+
+
+  activeDirection =
+    direction;
 
 
   characterSprite.src =
@@ -771,12 +700,9 @@ function setAnimation(
 ============================================================ */
 
 function playTemporaryAnimation(
-
   name,
-
-  duration =
-    2400
-
+  duration = 2400,
+  direction = activeDirection
 ) {
 
   temporaryAnimation =
@@ -789,13 +715,13 @@ function playTemporaryAnimation(
 
 
   setAnimation(
-    name
+    name,
+    direction
   );
 
 
   actionAnimationTimer =
     setTimeout(
-
       () => {
 
         temporaryAnimation =
@@ -805,49 +731,38 @@ function playTemporaryAnimation(
         updateMoodAnimation();
 
       },
-
       duration
     );
 }
 
 
 /* ============================================================
-   AUTOMATIC MOOD / STATE ANIMATION
+   AUTOMATIC STATE / MOOD
 ============================================================ */
 
 function updateMoodAnimation() {
 
-  if (
-    temporaryAnimation
-  ) {
+  if (temporaryAnimation) {
 
     return;
   }
 
 
-  /* --------------------------------------------------------
-     DEAD
-  --------------------------------------------------------- */
+  /* DEAD */
 
-  if (
-    !state.alive
-  ) {
+  if (!state.alive) {
 
     setAnimation(
-      "dead"
+      "death"
     );
 
     return;
   }
 
 
-  /* --------------------------------------------------------
-     SLEEPING
-  --------------------------------------------------------- */
+  /* SLEEPING */
 
-  if (
-    state.sleeping
-  ) {
+  if (state.sleeping) {
 
     setAnimation(
       "sleep"
@@ -857,14 +772,9 @@ function updateMoodAnimation() {
   }
 
 
-  /* --------------------------------------------------------
-     SICK
-  --------------------------------------------------------- */
+  /* SICK */
 
-  if (
-    state.health <
-    35
-  ) {
+  if (state.health < 35) {
 
     setAnimation(
       "sick"
@@ -874,14 +784,9 @@ function updateMoodAnimation() {
   }
 
 
-  /* --------------------------------------------------------
-     HUNGRY
-  --------------------------------------------------------- */
+  /* HUNGRY */
 
-  if (
-    state.hunger <
-    25
-  ) {
+  if (state.hunger < 25) {
 
     setAnimation(
       "hungry"
@@ -891,14 +796,21 @@ function updateMoodAnimation() {
   }
 
 
-  /* --------------------------------------------------------
-     SAD
-  --------------------------------------------------------- */
+  /* VERY TIRED */
 
-  if (
-    state.happiness <
-    25
-  ) {
+  if (state.energy < 20) {
+
+    setAnimation(
+      "sleepy"
+    );
+
+    return;
+  }
+
+
+  /* SAD */
+
+  if (state.happiness < 25) {
 
     setAnimation(
       "sad"
@@ -908,14 +820,9 @@ function updateMoodAnimation() {
   }
 
 
-  /* --------------------------------------------------------
-     BORED
-  --------------------------------------------------------- */
+  /* BORED */
 
-  if (
-    state.happiness <
-    45
-  ) {
+  if (state.happiness < 45) {
 
     setAnimation(
       "bored"
@@ -925,19 +832,11 @@ function updateMoodAnimation() {
   }
 
 
-  /* --------------------------------------------------------
-     HAPPY
-  --------------------------------------------------------- */
+  /* HAPPY */
 
   if (
-
-    state.happiness >
-    85
-
-    &&
-
-    state.energy >
-    45
+    state.happiness > 85 &&
+    state.energy > 45
   ) {
 
     setAnimation(
@@ -948,9 +847,7 @@ function updateMoodAnimation() {
   }
 
 
-  /* --------------------------------------------------------
-     DEFAULT
-  --------------------------------------------------------- */
+  /* DEFAULT */
 
   setAnimation(
     "idle"
@@ -963,12 +860,8 @@ function updateMoodAnimation() {
 ============================================================ */
 
 function showMessage(
-
   text,
-
-  duration =
-    1700
-
+  duration = 1700
 ) {
 
   clearTimeout(
@@ -987,15 +880,77 @@ function showMessage(
 
   messageTimer =
     setTimeout(
-
       () => {
 
         message.classList.add(
           "hidden"
         );
-      },
 
+      },
       duration
+    );
+}
+
+
+/* ============================================================
+   GO TO SLEEP
+============================================================ */
+
+function putCharacterToSleep() {
+
+  clearTimeout(
+    sleepTransitionTimer
+  );
+
+
+  state.sleeping =
+    true;
+
+
+  temporaryAnimation =
+    true;
+
+
+  setAnimation(
+    "sleepy"
+  );
+
+
+  showMessage(
+    `${getActiveCharacter().name} is getting sleepy.`
+  );
+
+
+  sleepTransitionTimer =
+    setTimeout(
+      () => {
+
+        setAnimation(
+          "lieDown"
+        );
+
+
+        sleepTransitionTimer =
+          setTimeout(
+            () => {
+
+              temporaryAnimation =
+                false;
+
+
+              setAnimation(
+                "sleep"
+              );
+
+
+              saveState();
+
+            },
+            1400
+          );
+
+      },
+      1400
     );
 }
 
@@ -1006,17 +961,56 @@ function showMessage(
 
 function wakeCharacter() {
 
+  if (!state.sleeping) {
+
+    return;
+  }
+
+
+  clearTimeout(
+    sleepTransitionTimer
+  );
+
+
   state.sleeping =
     false;
 
 
-  showMessage(
+  temporaryAnimation =
+    true;
 
+
+  setAnimation(
+    "wakeUp"
+  );
+
+
+  showMessage(
     `${getActiveCharacter().name} wakes up.`
   );
 
 
-  updateMoodAnimation();
+  clearTimeout(
+    actionAnimationTimer
+  );
+
+
+  actionAnimationTimer =
+    setTimeout(
+      () => {
+
+        temporaryAnimation =
+          false;
+
+
+        updateMoodAnimation();
+
+      },
+      1800
+    );
+
+
+  saveState();
 }
 
 
@@ -1024,20 +1018,15 @@ function wakeCharacter() {
    ACTIONS
 ============================================================ */
 
-function performAction(
-  action
-) {
+function performAction(action) {
 
   const character =
     getActiveCharacter();
 
 
-  if (
-    !state.alive
-  ) {
+  if (!state.alive) {
 
     showMessage(
-
       `${character.name} is no longer responding.`
     );
 
@@ -1049,9 +1038,7 @@ function performAction(
     Date.now();
 
 
-  switch (
-    action
-  ) {
+  switch (action) {
 
 
     /* ======================================================
@@ -1060,40 +1047,33 @@ function performAction(
 
     case "feed":
 
-      if (
-        state.sleeping
-      ) {
+      if (state.sleeping) {
 
         wakeCharacter();
+
+        return;
       }
 
 
       state.hunger =
         clamp(
-
-          state.hunger +
-          30
+          state.hunger + 30
         );
 
 
       state.happiness =
         clamp(
-
-          state.happiness +
-          4
+          state.happiness + 4
         );
 
 
       playTemporaryAnimation(
-
         "eat",
-
         2600
       );
 
 
       showMessage(
-
         `${character.name} eats.`
       );
 
@@ -1106,30 +1086,24 @@ function performAction(
 
     case "play":
 
-      if (
-        state.sleeping
-      ) {
+      if (state.sleeping) {
 
         wakeCharacter();
+
+        return;
       }
 
 
-      if (
-        state.energy <
-        15
-      ) {
+      if (state.energy < 15) {
 
         showMessage(
-
           `${character.name} is too tired.`
         );
 
 
         playTemporaryAnimation(
-
-          "sad",
-
-          1800
+          "sleepy",
+          1900
         );
 
 
@@ -1139,47 +1113,41 @@ function performAction(
 
       state.happiness =
         clamp(
-
-          state.happiness +
-          22
+          state.happiness + 22
         );
 
 
       state.energy =
         clamp(
-
-          state.energy -
-          12
+          state.energy - 12
         );
 
 
       state.hunger =
         clamp(
-
-          state.hunger -
-          6
+          state.hunger - 6
         );
 
 
-      if (
-        Math.random() >
-        0.5
-      ) {
+      setDirection(
+        randomDirection()
+      );
+
+
+      if (Math.random() < 0.5) {
 
         playTemporaryAnimation(
-
-          "play",
-
-          3000
+          "jump",
+          2600,
+          activeDirection
         );
 
       } else {
 
         playTemporaryAnimation(
-
-          "run",
-
-          3000
+          "bound",
+          3000,
+          activeDirection
         );
       }
 
@@ -1197,12 +1165,9 @@ function performAction(
 
     case "pet":
 
-      if (
-        state.sleeping
-      ) {
+      if (state.sleeping) {
 
         showMessage(
-
           `${character.name} is sleeping.`
         );
 
@@ -1212,16 +1177,12 @@ function performAction(
 
       state.happiness =
         clamp(
-
-          state.happiness +
-          10
+          state.happiness + 10
         );
 
 
       playTemporaryAnimation(
-
-        "pet",
-
+        "happy",
         1800
       );
 
@@ -1235,9 +1196,22 @@ function performAction(
 
     /* ======================================================
        CLEAN
+
+       There isn't currently a dedicated clean.gif, so this
+       uses the calm lie-down animation while cleaning.
     ====================================================== */
 
     case "clean":
+
+      if (state.sleeping) {
+
+        showMessage(
+          `${character.name} is sleeping.`
+        );
+
+        return;
+      }
+
 
       state.cleanliness =
         100;
@@ -1245,16 +1219,12 @@ function performAction(
 
       state.health =
         clamp(
-
-          state.health +
-          3
+          state.health + 3
         );
 
 
       playTemporaryAnimation(
-
-        "clean",
-
+        "lieDown",
         2200
       );
 
@@ -1272,26 +1242,13 @@ function performAction(
 
     case "sleep":
 
-      if (
-        state.sleeping
-      ) {
+      if (state.sleeping) {
 
         wakeCharacter();
 
       } else {
 
-        state.sleeping =
-          true;
-
-
-        setAnimation(
-          "sleep"
-        );
-
-
-        showMessage(
-          "Good night."
-        );
+        putCharacterToSleep();
       }
 
       break;
@@ -1299,14 +1256,14 @@ function performAction(
 
     /* ======================================================
        MEDICINE
+
+       No dedicated medicine animation exists, so Noctis
+       responds with angry.gif.
     ====================================================== */
 
     case "medicine":
 
-      if (
-        state.health >
-        85
-      ) {
+      if (state.health > 85) {
 
         showMessage(
           "No medicine needed."
@@ -1316,27 +1273,29 @@ function performAction(
       }
 
 
+      if (state.sleeping) {
+
+        wakeCharacter();
+
+        return;
+      }
+
+
       state.health =
         clamp(
-
-          state.health +
-          30
+          state.health + 30
         );
 
 
       state.happiness =
         clamp(
-
-          state.happiness -
-          3
+          state.happiness - 3
         );
 
 
       playTemporaryAnimation(
-
         "angry",
-
-        1700
+        1900
       );
 
 
@@ -1350,7 +1309,6 @@ function performAction(
 
   updateMeters();
 
-
   saveState();
 }
 
@@ -1362,15 +1320,8 @@ function performAction(
 function randomBehavior() {
 
   if (
-
-    temporaryAnimation
-
-    ||
-
-    state.sleeping
-
-    ||
-
+    temporaryAnimation ||
+    state.sleeping ||
     !state.alive
   ) {
 
@@ -1379,71 +1330,114 @@ function randomBehavior() {
 
 
   const timeSinceInteraction =
-
     Date.now() -
-
     state.lastInteraction;
 
 
-  /* --------------------------------------------------------
-     BORED WHEN LEFT ALONE
-  --------------------------------------------------------- */
+  /* BORED IF IGNORED */
 
   if (
-
     timeSinceInteraction >
-
-    8 *
-    60 *
-    1000
-
-    &&
-
-    Math.random() <
-    0.35
+    8 * 60 * 1000 &&
+    Math.random() < 0.35
   ) {
 
     playTemporaryAnimation(
-
       "bored",
-
       3500
     );
 
+    return;
+  }
+
+
+  const roll =
+    Math.random();
+
+
+  /* --------------------------------------------------------
+     WALK
+  --------------------------------------------------------- */
+
+  if (roll < 0.12) {
+
+    const direction =
+      randomDirection();
+
+
+    setDirection(
+      direction
+    );
+
+
+    playTemporaryAnimation(
+      "walk",
+      3000,
+      direction
+    );
 
     return;
   }
 
 
   /* --------------------------------------------------------
-     AMBIENT ACTION
+     BOUND
   --------------------------------------------------------- */
 
-  const roll =
-    Math.random();
+  if (roll < 0.17) {
+
+    const direction =
+      randomDirection();
 
 
-  if (
-    roll <
-    0.15
-  ) {
-
-    playTemporaryAnimation(
-
-      "walk",
-
-      2800
+    setDirection(
+      direction
     );
 
-  } else if (
-    roll <
-    0.22
-  ) {
 
     playTemporaryAnimation(
+      "bound",
+      2400,
+      direction
+    );
 
+    return;
+  }
+
+
+  /* --------------------------------------------------------
+     JUMP
+  --------------------------------------------------------- */
+
+  if (roll < 0.21) {
+
+    const direction =
+      randomDirection();
+
+
+    setDirection(
+      direction
+    );
+
+
+    playTemporaryAnimation(
+      "jump",
+      2000,
+      direction
+    );
+
+    return;
+  }
+
+
+  /* --------------------------------------------------------
+     HAPPY
+  --------------------------------------------------------- */
+
+  if (roll < 0.27) {
+
+    playTemporaryAnimation(
       "happy",
-
       1800
     );
   }
@@ -1454,35 +1448,22 @@ function randomBehavior() {
    ACTION SELECTOR
 ============================================================ */
 
-function selectAction(
-  index
-) {
+function selectAction(index) {
 
   selectedAction =
-
     (
       index +
       actions.length
-    )
-
-    %
-
+    ) %
     actions.length;
 
 
   actionButtons.forEach(
-
-    (
-      button,
-      i
-    ) => {
+    (button, i) => {
 
       button.classList.toggle(
-
         "selected",
-
-        i ===
-        selectedAction
+        i === selectedAction
       );
     }
   );
@@ -1496,9 +1477,7 @@ function selectAction(
 function nextAction() {
 
   selectAction(
-
-    selectedAction +
-    1
+    selectedAction + 1
   );
 }
 
@@ -1510,9 +1489,7 @@ function nextAction() {
 function previousAction() {
 
   selectAction(
-
-    selectedAction -
-    1
+    selectedAction - 1
   );
 }
 
@@ -1524,10 +1501,7 @@ function previousAction() {
 function activateSelectedAction() {
 
   performAction(
-
-    actions[
-      selectedAction
-    ]
+    actions[selectedAction]
   );
 }
 
@@ -1537,16 +1511,10 @@ function activateSelectedAction() {
 ============================================================ */
 
 actionButtons.forEach(
-
-  (
-    button,
-    index
-  ) => {
+  (button, index) => {
 
     button.addEventListener(
-
       "click",
-
       event => {
 
         event.stopPropagation();
@@ -1558,10 +1526,7 @@ actionButtons.forEach(
 
 
         performAction(
-
-          actions[
-            index
-          ]
+          actions[index]
         );
       }
     );
@@ -1574,9 +1539,7 @@ actionButtons.forEach(
 ============================================================ */
 
 document.addEventListener(
-
   "pointerdown",
-
   event => {
 
     pointerStartX =
@@ -1598,63 +1561,40 @@ document.addEventListener(
 ============================================================ */
 
 document.addEventListener(
-
   "pointerup",
-
   event => {
 
     const dx =
-
       event.clientX -
-
       pointerStartX;
 
 
     const dy =
-
       event.clientY -
-
       pointerStartY;
 
 
     const distanceX =
-      Math.abs(
-        dx
-      );
+      Math.abs(dx);
 
 
     const distanceY =
-      Math.abs(
-        dy
-      );
+      Math.abs(dy);
 
 
     const elapsed =
-
       Date.now() -
-
       pointerStartTime;
 
 
-    /* --------------------------------------------------------
-       HORIZONTAL SWIPE
-    --------------------------------------------------------- */
+    /* HORIZONTAL SWIPE */
 
     if (
-
-      distanceX >
-      35
-
-      &&
-
-      distanceX >
-      distanceY
+      distanceX > 35 &&
+      distanceX > distanceY
     ) {
 
-      if (
-        dx >
-        0
-      ) {
+      if (dx > 0) {
 
         previousAction();
 
@@ -1663,45 +1603,30 @@ document.addEventListener(
         nextAction();
       }
 
-
       return;
     }
 
 
-    /* --------------------------------------------------------
-       VERTICAL SWIPE
-    --------------------------------------------------------- */
+    /* VERTICAL SWIPE */
 
     if (
-
-      distanceY >
-      35
-
-      &&
-
-      distanceY >
-      distanceX
+      distanceY > 35 &&
+      distanceY > distanceX
     ) {
 
       /* DOWN */
 
-      if (
-        dy >
-        0
-      ) {
+      if (dy > 0) {
 
         toggleUI();
 
       }
 
-
       /* UP */
 
       else {
 
-        if (
-          state.sleeping
-        ) {
+        if (state.sleeping) {
 
           wakeCharacter();
 
@@ -1713,29 +1638,16 @@ document.addEventListener(
         }
       }
 
-
       return;
     }
 
 
-    /* --------------------------------------------------------
-       TAP
-    --------------------------------------------------------- */
+    /* TAP */
 
     if (
-
-      distanceX <
-      15
-
-      &&
-
-      distanceY <
-      15
-
-      &&
-
-      elapsed <
-      450
+      distanceX < 15 &&
+      distanceY < 15 &&
+      elapsed < 450
     ) {
 
       activateSelectedAction();
@@ -1755,17 +1667,13 @@ function toggleUI() {
 
 
   statusBar.classList.toggle(
-
     "hidden-ui",
-
     !uiVisible
   );
 
 
   actionBar.classList.toggle(
-
     "hidden-ui",
-
     !uiVisible
   );
 }
@@ -1776,15 +1684,10 @@ function toggleUI() {
 ============================================================ */
 
 document.addEventListener(
-
   "keydown",
-
   event => {
 
-    switch (
-      event.key
-    ) {
-
+    switch (event.key) {
 
       case "ArrowLeft":
 
@@ -1818,9 +1721,7 @@ document.addEventListener(
 
       case "ArrowUp":
 
-        if (
-          state.sleeping
-        ) {
+        if (state.sleeping) {
 
           wakeCharacter();
 
@@ -1845,9 +1746,7 @@ function gameTick() {
 
   applyOfflineDecay();
 
-
   updateMeters();
-
 
   updateMoodAnimation();
 }
@@ -1858,11 +1757,8 @@ function gameTick() {
 ============================================================ */
 
 setInterval(
-
   randomBehavior,
-
-  25 *
-  1000
+  25 * 1000
 );
 
 
@@ -1871,9 +1767,7 @@ setInterval(
 ============================================================ */
 
 setInterval(
-
   gameTick,
-
   GAME_TICK_INTERVAL
 );
 
@@ -1883,9 +1777,7 @@ setInterval(
 ============================================================ */
 
 window.addEventListener(
-
   "beforeunload",
-
   saveState
 );
 
@@ -1895,13 +1787,10 @@ window.addEventListener(
 ============================================================ */
 
 document.addEventListener(
-
   "visibilitychange",
-
   () => {
 
     if (
-
       document.visibilityState ===
       "hidden"
     ) {
@@ -1912,9 +1801,7 @@ document.addEventListener(
 
       applyOfflineDecay();
 
-
       updateMeters();
-
 
       updateMoodAnimation();
     }
@@ -1927,12 +1814,47 @@ document.addEventListener(
 ============================================================ */
 
 characterSprite.addEventListener(
-
   "dragstart",
-
   event =>
     event.preventDefault()
 );
+
+
+/* ============================================================
+   PRELOAD ANIMATIONS
+
+   Helps prevent a blank frame the first time an animation
+   is requested.
+============================================================ */
+
+function preloadAnimations() {
+
+  const character =
+    getActiveCharacter();
+
+
+  Object.values(
+    character.animations
+  ).forEach(
+    animation => {
+
+      Object.values(
+        animation
+      ).forEach(
+        filename => {
+
+          const img =
+            new Image();
+
+
+          img.src =
+            character.path +
+            filename;
+        }
+      );
+    }
+  );
+}
 
 
 /* ============================================================
@@ -1941,16 +1863,13 @@ characterSprite.addEventListener(
 
 function init() {
 
+  preloadAnimations();
+
   applyOfflineDecay();
 
-
-  selectAction(
-    0
-  );
-
+  selectAction(0);
 
   updateMeters();
-
 
   updateMoodAnimation();
 }
