@@ -1,361 +1,185 @@
 :root {
-
-  --bg:
-    #09090d;
-
-  --purple:
-    #8a35ff;
-
-  --purple-soft:
-    #b26aff;
-
-  --purple-dark:
-    #42117c;
-
-  --white:
-    #f4efff;
-
-  --dim:
-    #8d8799;
-
-  --panel:
-    rgba(8, 8, 13, 0.92);
-
-  --critical:
-    #ff4d78;
+  --bg: #09090d;
+  --purple: #8a35ff;
+  --purple-soft: #b26aff;
+  --purple-dark: #42117c;
+  --white: #f4efff;
+  --dim: #8d8799;
+  --panel: rgba(8, 8, 13, 0.94);
+  --critical: #ff4d78;
 }
-
-
-/* ============================================================
-   GLOBAL
-============================================================ */
 
 * {
-
-  box-sizing:
-    border-box;
-
-  user-select:
-    none;
-
-  -webkit-user-select:
-    none;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
 }
-
 
 html,
 body {
+  margin: 0;
+  padding: 0;
 
-  margin:
-    0;
+  width: 100%;
+  height: 100%;
 
-  padding:
-    0;
+  overflow: hidden;
 
-  width:
-    100%;
+  background: var(--bg);
+  color: var(--white);
 
-  height:
-    100%;
+  font-family: "Courier New", monospace;
 
-  overflow:
-    hidden;
-
-  background:
-    var(--bg);
-
-  color:
-    var(--white);
-
-  font-family:
-    "Courier New",
-    monospace;
-
-  touch-action:
-    none;
+  touch-action: none;
+  overscroll-behavior: none;
 }
-
 
 body {
-
-  display:
-    flex;
-
-  justify-content:
-    center;
-
-  align-items:
-    center;
+  display: block;
 }
-
-
-/* ============================================================
-   APP
-============================================================ */
 
 #app {
+  position: fixed;
+  inset: 0;
 
-  position:
-    relative;
-
-  width:
-    100vw;
-
-  height:
-    100vh;
-
-  overflow:
-    hidden;
-
-  display:
-    flex;
-
-  flex-direction:
-    column;
+  overflow: hidden;
 
   background:
-
     radial-gradient(
       circle at 50% 58%,
-      rgba(90, 32, 145, 0.14),
-      transparent 42%
+      rgba(90, 32, 145, 0.13),
+      transparent 45%
     ),
-
-    #09090d;
+    var(--bg);
 }
 
 
 /* ============================================================
-   COMPACT STATUS HUD
+   META DISPLAY STATUS HUD
 ============================================================ */
 
 .status-hud {
+  position: absolute;
 
-  position:
-    absolute;
+  z-index: 20;
 
-  z-index:
-    20;
+  top: 6px;
+  left: 50%;
 
-  top:
-    max(
-      8px,
-      env(safe-area-inset-top)
-    );
+  transform: translateX(-50%);
 
-  left:
-    50%;
+  display: flex;
+  gap: 10px;
 
-  transform:
-    translateX(-50%);
+  align-items: center;
 
-  display:
-    flex;
+  padding: 4px 8px;
 
-  align-items:
-    center;
+  border: 1px solid rgba(138, 53, 255, 0.28);
 
-  gap:
-    12px;
-
-  padding:
-    6px 10px;
-
-  border:
-
-    1px solid
-    rgba(138, 53, 255, 0.22);
-
-  background:
-
-    rgba(
-      0,
-      0,
-      0,
-      0.48
-    );
-
-  backdrop-filter:
-    blur(4px);
+  background: rgba(0, 0, 0, 0.56);
 }
-
 
 .mini-stat {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  gap:
-    5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
-
 
 .mini-icon {
+  width: 10px;
 
-  width:
-    12px;
+  color: var(--purple-soft);
 
-  color:
-    var(--purple-soft);
-
-  font-size:
-    11px;
-
-  text-align:
-    center;
+  font-size: 9px;
+  line-height: 1;
+  text-align: center;
 }
-
 
 .mini-meter {
+  width: 32px;
+  height: 4px;
 
-  width:
-    42px;
+  border: 1px solid rgba(138, 53, 255, 0.34);
 
-  height:
-    5px;
-
-  border:
-
-    1px solid
-    rgba(138, 53, 255, 0.35);
-
-  background:
-    rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.7);
 }
-
 
 .mini-fill {
+  width: 100%;
+  height: 100%;
 
-  width:
-    100%;
+  background: var(--purple);
 
-  height:
-    100%;
-
-  background:
-    var(--purple);
-
-  transition:
-    width 250ms ease;
+  transition: width 180ms linear;
 }
 
-
-.mini-stat.critical
-.mini-icon {
-
-  color:
-    var(--critical);
+.mini-stat.critical .mini-icon {
+  color: var(--critical);
 }
 
-
-.mini-stat.critical
-.mini-fill {
-
-  background:
-    var(--critical);
-
-  animation:
-    pulseCritical
-    900ms
-    ease-in-out
-    infinite;
-}
-
-
-@keyframes pulseCritical {
-
-  0%,
-  100% {
-
-    opacity:
-      1;
-  }
-
-  50% {
-
-    opacity:
-      0.45;
-  }
+.mini-stat.critical .mini-fill {
+  background: var(--critical);
 }
 
 
 /* ============================================================
-   PET STAGE
+   CHARACTER STAGE
 ============================================================ */
 
 .pet-stage {
+  position: absolute;
 
-  position:
-    relative;
-
-  flex:
-    1;
-
-  min-height:
+  inset:
+    28px
+    0
+    0
     0;
 
-  display:
-    flex;
-
-  align-items:
-    flex-end;
-
-  justify-content:
-    center;
-
-  padding:
-
-    45px
-    20px
-    20px;
+  overflow: hidden;
 }
 
 
 /* ============================================================
-   CHARACTER
+   CHARACTER MOVEMENT
 ============================================================ */
 
+#characterMover {
+  position: absolute;
+
+  left: 50%;
+  bottom: 5px;
+
+  transform: translateX(-50%);
+
+  z-index: 5;
+
+  will-change: left;
+}
+
 #character {
+  display: block;
 
-  display:
-    block;
+  width: auto;
 
-  width:
-    auto;
+  /*
+    Larger than the phone layout.
+    Meta Display is visually sparse, so Noctis
+    should dominate the available space.
+  */
 
-  height:
-    min(
-      60vh,
-      265px
-    );
+  height: min(72vh, 210px);
 
-  max-width:
-    84vw;
+  max-width: 42vw;
 
-  object-fit:
-    contain;
+  object-fit: contain;
 
-  image-rendering:
-    pixelated;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 
-  image-rendering:
-    crisp-edges;
+  pointer-events: auto;
 
-  filter:
-
-    drop-shadow(
-      0 0 6px
-      rgba(138, 53, 255, 0.14)
-    );
-
-  transform-origin:
-    center bottom;
-
-  cursor:
-    pointer;
+  -webkit-user-drag: none;
 }
 
 
@@ -364,179 +188,105 @@ body {
 ============================================================ */
 
 .message {
+  position: absolute;
 
-  position:
-    absolute;
+  z-index: 15;
 
-  top:
-    22%;
+  top: 4px;
+  left: 50%;
 
-  left:
-    50%;
+  transform: translateX(-50%);
 
-  transform:
-    translateX(-50%);
+  padding: 3px 7px;
 
-  padding:
-    6px 11px;
+  max-width: 70%;
 
-  white-space:
-    nowrap;
+  overflow: hidden;
 
-  border:
+  white-space: nowrap;
+  text-overflow: ellipsis;
 
-    1px solid
-    rgba(138, 53, 255, 0.4);
+  border: 1px solid rgba(138, 53, 255, 0.32);
 
-  background:
-    rgba(0, 0, 0, 0.80);
+  background: rgba(0, 0, 0, 0.78);
 
-  color:
-    var(--white);
+  color: var(--white);
 
-  font-size:
-    10px;
+  font-size: 8px;
 
-  letter-spacing:
-    0.5px;
-
-  pointer-events:
-    none;
-
-  transition:
-    opacity 160ms ease;
+  pointer-events: none;
 }
 
-
 .message.hidden {
-
-  opacity:
-    0;
+  opacity: 0;
 }
 
 
 /* ============================================================
-   DETAILED STATUS CARD
+   STATUS CARD
 ============================================================ */
 
 .status-card {
+  position: absolute;
 
-  position:
-    absolute;
+  z-index: 40;
 
-  z-index:
-    30;
+  top: 50%;
+  left: 50%;
 
-  top:
-    50%;
+  width: 180px;
 
-  left:
-    50%;
+  padding: 9px;
 
-  width:
-    min(
-      230px,
-      78vw
-    );
+  transform: translate(-50%, -50%);
 
-  padding:
-    12px;
+  border: 1px solid rgba(138, 53, 255, 0.72);
 
-  transform:
-    translate(
-      -50%,
-      -50%
-    );
-
-  border:
-
-    1px solid
-    rgba(138, 53, 255, 0.7);
-
-  background:
-    rgba(5, 5, 9, 0.94);
-
-  box-shadow:
-
-    0 0 18px
-    rgba(90, 20, 180, 0.18);
+  background: rgba(5, 5, 9, 0.97);
 }
-
 
 .status-card.hidden {
-
-  display:
-    none;
+  display: none;
 }
-
 
 .status-card-title {
+  margin-bottom: 7px;
 
-  margin-bottom:
-    10px;
+  color: var(--purple-soft);
 
-  color:
-    var(--purple-soft);
+  font-size: 9px;
+  letter-spacing: 1px;
 
-  font-size:
-    11px;
-
-  letter-spacing:
-    2px;
-
-  text-align:
-    center;
+  text-align: center;
 }
-
 
 .detail-stat {
+  display: flex;
 
-  display:
-    flex;
+  justify-content: space-between;
 
-  justify-content:
-    space-between;
+  margin-top: 4px;
 
-  margin-top:
-    6px;
+  color: var(--dim);
 
-  color:
-    var(--dim);
-
-  font-size:
-    8px;
-
-  letter-spacing:
-    0.7px;
+  font-size: 7px;
 }
-
 
 .detail-meter {
+  height: 4px;
 
-  height:
-    5px;
+  margin-top: 1px;
 
-  margin-top:
-    2px;
+  border: 1px solid var(--purple-dark);
 
-  background:
-    #15131a;
-
-  border:
-    1px solid var(--purple-dark);
+  background: #15131a;
 }
 
-
 .detail-meter > div {
+  width: 100%;
+  height: 100%;
 
-  width:
-    100%;
-
-  height:
-    100%;
-
-  background:
-    var(--purple);
+  background: var(--purple);
 }
 
 
@@ -545,226 +295,104 @@ body {
 ============================================================ */
 
 .action-tray {
+  position: absolute;
 
-  position:
-    absolute;
+  z-index: 30;
 
-  z-index:
-    25;
+  left: 50%;
+  bottom: 5px;
 
-  left:
-    50%;
+  transform: translateX(-50%);
 
-  bottom:
-    max(
-      12px,
-      env(safe-area-inset-bottom)
-    );
+  display: flex;
 
-  transform:
-    translateX(-50%);
+  gap: 2px;
 
-  display:
-    flex;
+  padding: 4px;
 
-  align-items:
-    center;
+  border: 1px solid rgba(138, 53, 255, 0.42);
 
-  gap:
-    4px;
-
-  padding:
-    6px;
-
-  border:
-
-    1px solid
-    rgba(138, 53, 255, 0.38);
-
-  background:
-    var(--panel);
+  background: var(--panel);
 
   transition:
-
-    opacity 160ms ease,
-
-    transform 160ms ease;
+    opacity 120ms linear,
+    transform 120ms linear;
 }
-
 
 .action-tray.hidden-tray {
+  opacity: 0;
 
-  opacity:
-    0;
+  transform: translate(-50%, 18px);
 
-  transform:
-    translate(
-      -50%,
-      30px
-    );
-
-  pointer-events:
-    none;
+  pointer-events: none;
 }
-
-
-/* ============================================================
-   ACTION BUTTONS
-============================================================ */
 
 .action {
+  min-width: 34px;
 
-  min-width:
-    44px;
+  padding: 3px 2px;
 
-  padding:
-    5px 4px;
+  border: 1px solid transparent;
 
-  border:
-    1px solid transparent;
+  background: transparent;
 
-  outline:
-    none;
+  color: var(--dim);
 
-  background:
-    transparent;
+  font-family: inherit;
 
-  color:
-    var(--dim);
-
-  font-family:
-    inherit;
-
-  text-align:
-    center;
+  outline: none;
 }
-
 
 .action.selected {
+  border-color: var(--purple);
 
-  border-color:
-    var(--purple);
+  color: var(--white);
 
-  color:
-    var(--white);
-
-  background:
-
-    rgba(
-      138,
-      53,
-      255,
-      0.15
-    );
+  background: rgba(138, 53, 255, 0.15);
 }
-
 
 .action-icon {
+  display: block;
 
-  display:
-    block;
+  color: var(--purple-soft);
 
-  color:
-    var(--purple-soft);
+  font-size: 11px;
 
-  font-size:
-    14px;
+  text-align: center;
 }
 
-
 .action-label {
+  display: block;
 
-  display:
-    block;
+  margin-top: 1px;
 
-  margin-top:
-    2px;
+  font-size: 6px;
 
-  font-size:
-    7px;
+  text-align: center;
 }
 
 
 /* ============================================================
-   CONTROL HINT
+   HINT
+
+   Hide this on Meta after testing if desired.
 ============================================================ */
 
 .control-hint {
+  position: absolute;
 
-  position:
-    absolute;
+  z-index: 10;
 
-  z-index:
-    10;
+  left: 50%;
+  bottom: 1px;
 
-  left:
-    50%;
+  transform: translateX(-50%);
 
-  bottom:
-    5px;
+  color: rgba(180, 160, 210, 0.30);
 
-  transform:
-    translateX(-50%);
+  font-size: 5px;
 
-  color:
+  white-space: nowrap;
 
-    rgba(
-      180,
-      160,
-      210,
-      0.38
-    );
-
-  font-size:
-    7px;
-
-  letter-spacing:
-    0.5px;
-
-  white-space:
-    nowrap;
-
-  pointer-events:
-    none;
-}
-
-
-/* ============================================================
-   SMALL DISPLAY
-============================================================ */
-
-@media (
-  max-height:
-  400px
-) {
-
-  #character {
-
-    height:
-      min(
-        54vh,
-        185px
-      );
-  }
-
-
-  .status-hud {
-
-    top:
-      4px;
-  }
-
-
-  .action-tray {
-
-    bottom:
-      5px;
-  }
-
-
-  .control-hint {
-
-    display:
-      none;
-  }
+  pointer-events: none;
 }
