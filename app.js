@@ -133,8 +133,9 @@ const MAX_STAT =
 
 
 /*
-   Energy:
-   100 -> 0 over 16 hours awake.
+   ENERGY
+
+   Full -> empty in 16 hours awake.
 */
 
 const ENERGY_DRAIN_PER_MINUTE =
@@ -142,8 +143,9 @@ const ENERGY_DRAIN_PER_MINUTE =
 
 
 /*
-   Sleep:
-   0 -> 100 in 10 minutes.
+   SLEEP
+
+   Empty -> full in 10 minutes.
 */
 
 const ENERGY_RECOVERY_PER_MINUTE =
@@ -151,24 +153,27 @@ const ENERGY_RECOVERY_PER_MINUTE =
 
 
 /*
-   At 10% energy or lower Noctis becomes irritable.
+   At 10% energy and below,
+   normal idle becomes angry.
 */
 
 const EXHAUSTED_THRESHOLD =
   10;
 
 
+/* ============================================================
+   HUNGER CLOCK
+============================================================ */
+
 /*
-   Food timeline:
+   First 24 hours:
+   normal hunger progression.
 
-   0 - 24 hr:
-      normal hunger progression
+   24-48 hours:
+   sick.
 
-   24 - 48 hr:
-      sick
-
-   48+ hr:
-      critical starvation
+   48+ hours:
+   critical starvation.
 */
 
 const FOOD_DURATION_MS =
@@ -179,53 +184,65 @@ const SICK_HUNGER_MS =
   48 * 60 * 60 * 1000;
 
 
-/*
-   Update state every 30 seconds while open.
-*/
+/* ============================================================
+   GAME TIMING
+============================================================ */
 
 const GAME_TICK_INTERVAL =
   30 * 1000;
 
 
-/*
-   Walking speed.
-*/
+/* ============================================================
+   MOVEMENT
+============================================================ */
 
 const WALK_SPEED =
   38;
 
 
-/*
-   Edge safety margin.
-*/
-
 const WALK_MARGIN =
   20;
 
 
-/*
-   Pause duration between walks.
-*/
-
 const MIN_PAUSE_MS =
-  2500;
+  2200;
 
 
 const MAX_PAUSE_MS =
-  6000;
+  6200;
+
+
+const MIN_TRAVEL_DISTANCE =
+  35;
 
 
 /*
-   Chance of bored sitting during a pause.
+   Chance a walk stops before reaching the far side.
 */
 
-const BORED_PAUSE_CHANCE =
-  0.28;
+const MIDSCREEN_STOP_CHANCE =
+  0.55;
 
 
-/*
-   Meta gesture threshold.
-*/
+/* ============================================================
+   AMBIENT BEHAVIOR CHANCES
+============================================================ */
+
+const MOOD_REACTION_CHANCE =
+  0.07;
+
+
+const BOUND_CHANCE =
+  0.12;
+
+
+const BORED_CHANCE =
+  0.22;
+
+
+/* ============================================================
+   META INPUT
+============================================================ */
 
 const SWIPE_DISTANCE =
   28;
@@ -238,13 +255,6 @@ const LONG_PRESS_TIME =
 /* ============================================================
    SAVE DATA
 ============================================================ */
-
-/*
-   Keep v5 so existing users don't get an
-   unnecessary total reset.
-
-   New fields are added automatically.
-*/
 
 const SAVE_VERSION =
   5;
@@ -509,12 +519,6 @@ let ambientTimer =
   null;
 
 
-/*
-   Start in the center.
-
-   First walk goes right.
-*/
-
 let currentX =
   0;
 
@@ -624,15 +628,6 @@ function loadState() {
       ...defaultState,
 
       ...loaded,
-
-      /*
-        Older save files don't contain
-        lastMealAt.
-
-        Treat the update as a fresh meal
-        rather than immediately starving
-        an existing pet.
-      */
 
       lastMealAt:
         loaded.lastMealAt ||
@@ -788,13 +783,6 @@ function getHungerStage() {
 }
 
 
-/*
-   Food gauge drains linearly during
-   the first 24 hours.
-
-   After that it remains at zero.
-*/
-
 function updateFoodFromClock() {
 
   const elapsed =
@@ -818,7 +806,7 @@ function updateFoodFromClock() {
 
 
 /* ============================================================
-   ENERGY / CLOCK PROCESSING
+   PERSISTENT ENERGY / LOCAL TIME
 ============================================================ */
 
 function updatePersistentTime() {
@@ -840,10 +828,6 @@ function updatePersistentTime() {
     60000;
 
 
-  /*
-     SLEEPING
-  */
-
   if (
     state.sleeping
   ) {
@@ -855,12 +839,6 @@ function updatePersistentTime() {
         minutes
       );
 
-
-    /*
-       Fully charged after sleep.
-
-       Automatically wake after reaching 100.
-    */
 
     if (
       state.energy >=
@@ -879,14 +857,7 @@ function updatePersistentTime() {
         false;
     }
 
-  }
-
-
-  /*
-     AWAKE
-  */
-
-  else {
+  } else {
 
     state.energy =
       clamp(
@@ -895,10 +866,6 @@ function updatePersistentTime() {
         minutes
       );
 
-
-    /*
-       0 energy = mandatory sleep.
-    */
 
     if (
       state.energy <=
@@ -921,11 +888,6 @@ function updatePersistentTime() {
     }
   }
 
-
-  /*
-     Food is based on time since
-     the last meal, not frame updates.
-  */
 
   updateFoodFromClock();
 
@@ -1060,11 +1022,6 @@ function updateCriticalIndicators() {
   );
 
 
-  /*
-     Food becomes visually critical
-     once the pet reaches day three.
-  */
-
   foodNode.classList.toggle(
     "critical",
     getHungerStage() ===
@@ -1081,7 +1038,7 @@ function updateCriticalIndicators() {
 
 
 /* ============================================================
-   CURRENT RESTING STATE
+   RESTING / MOOD STATE
 ============================================================ */
 
 function updateMoodAnimation() {
@@ -1095,10 +1052,6 @@ function updateMoodAnimation() {
   }
 
 
-  /*
-     DEAD
-  */
-
   if (
     !state.alive
   ) {
@@ -1111,10 +1064,6 @@ function updateMoodAnimation() {
   }
 
 
-  /*
-     SLEEP
-  */
-
   if (
     state.sleeping
   ) {
@@ -1126,10 +1075,6 @@ function updateMoodAnimation() {
     return;
   }
 
-
-  /*
-     FOOD DAY 3+
-  */
 
   if (
     getHungerStage() ===
@@ -1144,10 +1089,6 @@ function updateMoodAnimation() {
   }
 
 
-  /*
-     FOOD DAY 2
-  */
-
   if (
     getHungerStage() ===
     "sick"
@@ -1160,10 +1101,6 @@ function updateMoodAnimation() {
     return;
   }
 
-
-  /*
-     LOW FOOD DURING DAY 1
-  */
 
   if (
     state.hunger <
@@ -1178,12 +1115,6 @@ function updateMoodAnimation() {
   }
 
 
-  /*
-     EXHAUSTED
-
-     At 10% or below, idle becomes angry.
-  */
-
   if (
     state.energy <=
     EXHAUSTED_THRESHOLD
@@ -1196,10 +1127,6 @@ function updateMoodAnimation() {
     return;
   }
 
-
-  /*
-     SAD
-  */
 
   if (
     state.happiness <
@@ -1214,10 +1141,6 @@ function updateMoodAnimation() {
   }
 
 
-  /*
-     NORMAL
-  */
-
   setAnimation(
     "idle",
     activeDirection
@@ -1226,7 +1149,7 @@ function updateMoodAnimation() {
 
 
 /* ============================================================
-   TEMPORARY REACTION ANIMATION
+   TEMPORARY ANIMATION
 ============================================================ */
 
 function playTemporaryAnimation(
@@ -1314,7 +1237,97 @@ function getHorizontalLimits() {
 
 
 /* ============================================================
-   WALK ACROSS SCREEN
+   PICK NEXT ROAM DESTINATION
+============================================================ */
+
+function getNextRoamTarget() {
+
+  const limits =
+    getHorizontalLimits();
+
+
+  const edgeTarget =
+
+    nextWalkDirection ===
+    "right"
+
+      ? limits.max
+
+      : limits.min;
+
+
+  const remainingDistance =
+    edgeTarget -
+    currentX;
+
+
+  if (
+    Math.abs(
+      remainingDistance
+    ) <
+    MIN_TRAVEL_DISTANCE
+  ) {
+
+    nextWalkDirection =
+
+      nextWalkDirection ===
+      "right"
+
+        ? "left"
+
+        : "right";
+
+
+    return getNextRoamTarget();
+  }
+
+
+  let travelFraction;
+
+
+  if (
+    Math.random() <
+    MIDSCREEN_STOP_CHANCE
+  ) {
+
+    travelFraction =
+      randomBetween(
+        0.35,
+        0.75
+      );
+
+  } else {
+
+    travelFraction =
+      randomBetween(
+        0.82,
+        1.0
+      );
+  }
+
+
+  let target =
+    currentX +
+    remainingDistance *
+    travelFraction;
+
+
+  target =
+    Math.max(
+      limits.min,
+      Math.min(
+        limits.max,
+        target
+      )
+    );
+
+
+  return target;
+}
+
+
+/* ============================================================
+   WALK / ROAM
 ============================================================ */
 
 function walkAcrossScreen() {
@@ -1332,22 +1345,8 @@ function walkAcrossScreen() {
   }
 
 
-  const limits =
-    getHorizontalLimits();
-
-
-  /*
-     Alternate direction every trip.
-  */
-
   const targetX =
-
-    nextWalkDirection ===
-    "right"
-
-      ? limits.max
-
-      : limits.min;
+    getNextRoamTarget();
 
 
   const distance =
@@ -1355,14 +1354,20 @@ function walkAcrossScreen() {
     currentX;
 
 
-  /*
-     Which sprite faces the direction
-     of travel.
-  */
+  if (
+    Math.abs(distance) <
+    MIN_TRAVEL_DISTANCE
+  ) {
+
+    beginRestPeriod();
+
+    return;
+  }
+
 
   activeDirection =
 
-    distance >= 0
+    distance > 0
       ? "right"
       : "left";
 
@@ -1379,7 +1384,7 @@ function walkAcrossScreen() {
 
   const duration =
     Math.max(
-      800,
+      700,
       (
         Math.abs(distance) /
         WALK_SPEED
@@ -1391,10 +1396,6 @@ function walkAcrossScreen() {
   characterMover.style.transition =
     "none";
 
-
-  /*
-     Force browser layout update.
-  */
 
   void characterMover.offsetWidth;
 
@@ -1428,14 +1429,9 @@ function walkAcrossScreen() {
           "none";
 
 
-        /*
-           Reverse direction for
-           next journey.
-        */
-
         nextWalkDirection =
 
-          nextWalkDirection ===
+          activeDirection ===
           "right"
 
             ? "left"
@@ -1504,7 +1500,7 @@ function stopWalking() {
 
 
 /* ============================================================
-   REST AT END OF WALK
+   REST / RANDOM AMBIENT BEHAVIOR
 ============================================================ */
 
 function beginRestPeriod() {
@@ -1512,14 +1508,15 @@ function beginRestPeriod() {
   if (
     state.sleeping ||
     interactionMode ||
-    statusCardVisible
+    statusCardVisible ||
+    !state.alive
   ) {
 
     return;
   }
 
 
-  const pause =
+  const pauseDuration =
     randomBetween(
       MIN_PAUSE_MS,
       MAX_PAUSE_MS
@@ -1527,12 +1524,12 @@ function beginRestPeriod() {
 
 
   /*
-     Exhaustion / illness takes priority
-     over ambient bored behavior.
+     Important condition states take priority.
   */
 
   if (
-    getHungerStage() !== "normal"
+    getHungerStage() !==
+    "normal"
 
     ||
 
@@ -1541,17 +1538,156 @@ function beginRestPeriod() {
 
     ||
 
-    state.hunger < 20
+    state.hunger <
+    20
+
+    ||
+
+    state.happiness <
+    25
   ) {
 
     updateMoodAnimation();
 
+
+    resumeAmbient(
+      pauseDuration
+    );
+
+
+    return;
   }
 
 
-  else if (
-    Math.random() <
-    BORED_PAUSE_CHANCE
+  const roll =
+    Math.random();
+
+
+  /* --------------------------------------------------------
+     RANDOM MOOD REACTION
+
+     50+ happiness = happy
+     below 50 = sad
+  --------------------------------------------------------- */
+
+  if (
+    roll <
+    MOOD_REACTION_CHANCE
+  ) {
+
+    temporaryAnimation =
+      true;
+
+
+    const moodAnimation =
+
+      state.happiness >=
+      50
+
+        ? "happy"
+
+        : "sad";
+
+
+    setAnimation(
+      moodAnimation,
+      activeDirection
+    );
+
+
+    clearTimeout(
+      animationTimer
+    );
+
+
+    animationTimer =
+      setTimeout(
+        () => {
+
+          temporaryAnimation =
+            false;
+
+
+          updateMoodAnimation();
+
+
+          resumeAmbient(
+            randomBetween(
+              900,
+              1600
+            )
+          );
+
+        },
+        1500
+      );
+
+
+    return;
+  }
+
+
+  /* --------------------------------------------------------
+     RANDOM BOUND
+  --------------------------------------------------------- */
+
+  if (
+    roll <
+    MOOD_REACTION_CHANCE +
+    BOUND_CHANCE
+  ) {
+
+    temporaryAnimation =
+      true;
+
+
+    setAnimation(
+      "bound",
+      activeDirection
+    );
+
+
+    clearTimeout(
+      animationTimer
+    );
+
+
+    animationTimer =
+      setTimeout(
+        () => {
+
+          temporaryAnimation =
+            false;
+
+
+          updateMoodAnimation();
+
+
+          resumeAmbient(
+            randomBetween(
+              700,
+              1500
+            )
+          );
+
+        },
+        1600
+      );
+
+
+    return;
+  }
+
+
+  /* --------------------------------------------------------
+     BORED SIT
+  --------------------------------------------------------- */
+
+  if (
+    roll <
+    MOOD_REACTION_CHANCE +
+    BOUND_CHANCE +
+    BORED_CHANCE
   ) {
 
     setAnimation(
@@ -1559,20 +1695,28 @@ function beginRestPeriod() {
       activeDirection
     );
 
-  }
 
-
-  else {
-
-    setAnimation(
-      "idle",
-      activeDirection
+    resumeAmbient(
+      pauseDuration
     );
+
+
+    return;
   }
+
+
+  /* --------------------------------------------------------
+     NORMAL IDLE
+  --------------------------------------------------------- */
+
+  setAnimation(
+    "idle",
+    activeDirection
+  );
 
 
   resumeAmbient(
-    pause
+    pauseDuration
   );
 }
 
@@ -1687,9 +1831,15 @@ function hideStatusCard() {
   );
 
 
-  resumeAmbient(
-    1500
-  );
+  if (
+    !interactionMode &&
+    !state.sleeping
+  ) {
+
+    resumeAmbient(
+      1500
+    );
+  }
 }
 
 
@@ -1705,7 +1855,13 @@ function openInteractionTray() {
   stopWalking();
 
 
-  hideStatusCard();
+  statusCardVisible =
+    false;
+
+
+  statusCard.classList.add(
+    "hidden"
+  );
 
 
   interactionMode =
@@ -1737,9 +1893,14 @@ function closeInteractionTray() {
     "SWIPE DOWN TO INTERACT";
 
 
-  resumeAmbient(
-    1500
-  );
+  if (
+    !state.sleeping
+  ) {
+
+    resumeAmbient(
+      1500
+    );
+  }
 }
 
 
@@ -1871,11 +2032,6 @@ function putCharacterToSleep(
 
 function wakeCharacter() {
 
-  /*
-     Forced sleep cannot be interrupted
-     until some energy has recovered.
-  */
-
   if (
     state.forcedSleep &&
     state.energy <
@@ -1980,11 +2136,6 @@ function performAction(action) {
         return;
       }
 
-
-      /*
-         A successful meal resets
-         the 3-day food clock.
-      */
 
       state.lastMealAt =
         Date.now();
@@ -2184,6 +2335,7 @@ function performAction(action) {
 
   updateStatusDisplay();
 
+
   saveState();
 }
 
@@ -2337,9 +2489,9 @@ document.addEventListener(
       Math.abs(dy);
 
 
-    /*
+    /* --------------------------------------------------------
        LEFT / RIGHT
-    */
+    --------------------------------------------------------- */
 
     if (
       ax >
@@ -2371,9 +2523,9 @@ document.addEventListener(
     }
 
 
-    /*
+    /* --------------------------------------------------------
        DOWN / UP
-    */
+    --------------------------------------------------------- */
 
     if (
       ay >
@@ -2383,10 +2535,6 @@ document.addEventListener(
 
       ay > ax
     ) {
-
-      /*
-         DOWN
-      */
 
       if (
         dy > 0
@@ -2398,14 +2546,8 @@ document.addEventListener(
 
           openInteractionTray();
         }
-      }
 
-
-      /*
-         UP
-      */
-
-      else {
+      } else {
 
         if (
           interactionMode
@@ -2426,9 +2568,9 @@ document.addEventListener(
     }
 
 
-    /*
+    /* --------------------------------------------------------
        TAP WHILE MENU OPEN
-    */
+    --------------------------------------------------------- */
 
     if (
       interactionMode
@@ -2463,10 +2605,6 @@ function gameTick() {
   updatePersistentTime();
 
 
-  /*
-     Energy hit zero while we were awake.
-  */
-
   if (
     !wasSleeping &&
     state.sleeping &&
@@ -2487,7 +2625,7 @@ function gameTick() {
 
 
 /* ============================================================
-   TIMERS
+   TIMER
 ============================================================ */
 
 setInterval(
@@ -2497,7 +2635,7 @@ setInterval(
 
 
 /* ============================================================
-   VISIBILITY
+   APP VISIBILITY
 ============================================================ */
 
 document.addEventListener(
@@ -2511,7 +2649,9 @@ document.addEventListener(
 
       pauseAmbient();
 
+
       stopWalking();
+
 
       saveState();
 
@@ -2519,13 +2659,16 @@ document.addEventListener(
 
       updatePersistentTime();
 
+
       updateStatusDisplay();
+
 
       updateMoodAnimation();
 
 
       if (
-        !state.sleeping
+        !state.sleeping &&
+        state.alive
       ) {
 
         resumeAmbient(
@@ -2538,7 +2681,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   PRELOAD
+   PRELOAD ANIMATIONS
 ============================================================ */
 
 function preloadAnimations() {
@@ -2580,10 +2723,6 @@ function init() {
   preloadAnimations();
 
 
-  /*
-     Start centered.
-  */
-
   characterMover.style.left =
     "50%";
 
@@ -2591,11 +2730,6 @@ function init() {
   currentX =
     0;
 
-
-  /*
-     Apply all time that passed while
-     the app was closed.
-  */
 
   updatePersistentTime();
 
@@ -2617,19 +2751,6 @@ function init() {
       event.preventDefault()
   );
 
-
-  /*
-     If awake, begin walking shortly
-     after startup.
-
-     Pattern becomes:
-
-       walk right
-       pause
-       walk left
-       pause
-       repeat
-  */
 
   if (
     !state.sleeping &&
