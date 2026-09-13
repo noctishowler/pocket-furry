@@ -480,3 +480,7 @@ body {
   pointer-events:
     none;
 }
+.action:focus,
+.action:focus-visible {
+  outline: none;
+}
