@@ -145,7 +145,7 @@ const ENERGY_DRAIN_PER_MINUTE =
 
 
 /*
-   0 -> 100 over 10 minutes of sleep.
+   0 -> 100 over 10 minutes sleeping.
 */
 
 const ENERGY_RECOVERY_PER_MINUTE =
@@ -161,10 +161,9 @@ const EXHAUSTED_THRESHOLD =
 ============================================================ */
 
 /*
-   Healthy recovery:
-
-   0 -> 100 over 24 hours,
-   but only while all needs are met.
+   Health regenerates from 0 -> 100
+   over 24 hours while healthy and
+   all needs are met.
 */
 
 const HEALTH_RECOVERY_PER_MINUTE =
@@ -172,8 +171,7 @@ const HEALTH_RECOVERY_PER_MINUTE =
 
 
 /*
-   Sickness:
-
+   While sick, health drains
    100 -> 0 over 24 hours.
 */
 
@@ -190,10 +188,8 @@ const FOOD_HEALTH_RECOVERY =
 
 
 /*
-   Thresholds for health regeneration.
-
-   These match the existing behavioral
-   warning thresholds where practical.
+   Minimum needs required for natural
+   health regeneration.
 */
 
 const HEALTH_MIN_HUNGER =
@@ -212,6 +208,17 @@ const HEALTH_MIN_CLEANLINESS =
    HUNGER CLOCK
 ============================================================ */
 
+/*
+   First 24 hours:
+   normal hunger progression.
+
+   24 - 48 hours:
+   sick.
+
+   48+ hours:
+   critical hunger.
+*/
+
 const FOOD_DURATION_MS =
   24 * 60 * 60 * 1000;
 
@@ -221,7 +228,7 @@ const SICK_HUNGER_MS =
 
 
 /* ============================================================
-   FORCED SIT CLOCK
+   FORCED SIT
 ============================================================ */
 
 const SIT_SAD_MS =
@@ -421,15 +428,21 @@ const moodEmoji =
   );
 
 
-const happinessBar =
+const healthBar =
   document.getElementById(
-    "happinessBar"
+    "healthBar"
   );
 
 
 const hungerBar =
   document.getElementById(
     "hungerBar"
+  );
+
+
+const cleanlinessBar =
+  document.getElementById(
+    "cleanlinessBar"
   );
 
 
@@ -879,7 +892,7 @@ function updateFoodFromClock() {
 
 
 /* ============================================================
-   HEALTH STATE
+   HEALTH
 ============================================================ */
 
 function areHealthNeedsMet() {
@@ -926,8 +939,7 @@ function updateHealthFromClock(
 
   /*
      Sick or critical:
-
-     Health continuously drains.
+     continuously lose health.
   */
 
   if (
@@ -951,9 +963,8 @@ function updateHealthFromClock(
 
 
   /*
-     Healthy and every need is met:
-
-     Slowly regenerate health.
+     Healthy and all needs met:
+     slowly recover health.
   */
 
   else if (
@@ -970,7 +981,7 @@ function updateHealthFromClock(
 
 
   /*
-     Zero health = death.
+     Zero health means death.
   */
 
   if (
@@ -1066,7 +1077,10 @@ function getMoodEmoji() {
 
 
   /*
-     Forced sit stays visually neutral.
+     While forced sitting, he only
+     appears bored/neutral.
+
+     Penalty is revealed after release.
   */
 
   if (
@@ -1078,8 +1092,7 @@ function getMoodEmoji() {
 
 
   /*
-     Recovery state can temporarily override
-     raw happiness.
+     Sit recovery overrides raw happiness.
   */
 
   if (
@@ -1421,10 +1434,8 @@ function updatePersistentTime() {
 
 
   /*
-     DEAD
-
-     Keep timestamps current, but don't
-     continue processing needs.
+     Dead pets don't continue processing
+     hunger/energy/health.
   */
 
   if (
@@ -1525,18 +1536,12 @@ function updatePersistentTime() {
 
 
   /*
-     Update food before health, because the
-     current food state determines whether
-     health heals or drains.
+     Update food before health because hunger
+     determines whether health heals or drains.
   */
 
   updateFoodFromClock();
 
-
-  /*
-     Process health using the same elapsed
-     real-world time.
-  */
 
   updateHealthFromClock(
     minutes
@@ -1587,6 +1592,8 @@ function updateStatusDisplay() {
     );
 
 
+  /* MOOD */
+
   if (
     moodEmoji
   ) {
@@ -1596,17 +1603,25 @@ function updateStatusDisplay() {
   }
 
 
-  happinessBar.style.width =
-    `${happiness}%`;
+  /* COMPACT HUD */
+
+  healthBar.style.width =
+    `${health}%`;
 
 
   hungerBar.style.width =
     `${food}%`;
 
 
+  cleanlinessBar.style.width =
+    `${clean}%`;
+
+
   energyBar.style.width =
     `${energy}%`;
 
+
+  /* DETAILED VALUES */
 
   happinessValue.textContent =
     happiness;
@@ -1627,6 +1642,8 @@ function updateStatusDisplay() {
   cleanValue.textContent =
     clean;
 
+
+  /* DETAILED METERS */
 
   detailHappiness.style.width =
     `${happiness}%`;
@@ -1658,9 +1675,9 @@ function updateStatusDisplay() {
 
 function updateCriticalIndicators() {
 
-  const moodNode =
+  const healthNode =
     document.querySelector(
-      '[data-stat="happiness"]'
+      '[data-stat="health"]'
     );
 
 
@@ -1670,15 +1687,21 @@ function updateCriticalIndicators() {
     );
 
 
+  const cleanNode =
+    document.querySelector(
+      '[data-stat="cleanliness"]'
+    );
+
+
   const energyNode =
     document.querySelector(
       '[data-stat="energy"]'
     );
 
 
-  moodNode.classList.toggle(
+  healthNode.classList.toggle(
     "critical",
-    state.happiness <
+    state.health <
     25
   );
 
@@ -1687,6 +1710,13 @@ function updateCriticalIndicators() {
     "critical",
     getHungerStage() ===
     "critical"
+  );
+
+
+  cleanNode.classList.toggle(
+    "critical",
+    state.cleanliness <
+    HEALTH_MIN_CLEANLINESS
   );
 
 
@@ -2133,7 +2163,7 @@ function walkAcrossScreen() {
 
 
 /* ============================================================
-   STOP CURRENT WALK
+   STOP WALKING
 ============================================================ */
 
 function stopWalking() {
@@ -2244,7 +2274,7 @@ function playAmbientReaction(
 
 
 /* ============================================================
-   REST / RANDOM AMBIENT BEHAVIOR
+   REST / AMBIENT BEHAVIOR
 ============================================================ */
 
 function beginRestPeriod() {
@@ -2267,6 +2297,10 @@ function beginRestPeriod() {
       MAX_PAUSE_MS
     );
 
+
+  /*
+     Physical needs override ambient personality.
+  */
 
   if (
     getHungerStage() !==
@@ -2309,6 +2343,11 @@ function beginRestPeriod() {
     BOUND_CHANCE;
 
 
+  /*
+     Angry recovery replaces the normal
+     happy/bound slots with angry reactions.
+  */
+
   if (
     state.recoveryMood ===
     "angry"
@@ -2328,6 +2367,11 @@ function beginRestPeriod() {
   }
 
 
+  /*
+     Sad recovery replaces happy/bound
+     with sad reactions.
+  */
+
   if (
     state.recoveryMood ===
     "sad"
@@ -2346,6 +2390,11 @@ function beginRestPeriod() {
     return;
   }
 
+
+  /*
+     Neutral recovery suppresses
+     happy/bound flourishes.
+  */
 
   if (
     state.recoveryMood ===
@@ -2370,6 +2419,10 @@ function beginRestPeriod() {
     return;
   }
 
+
+  /*
+     Normal mood reaction.
+  */
 
   if (
     state.recoveryMood ===
@@ -2400,6 +2453,10 @@ function beginRestPeriod() {
   }
 
 
+  /*
+     Random bound in current direction.
+  */
+
   if (
     state.recoveryMood ===
     "happy"
@@ -2418,6 +2475,10 @@ function beginRestPeriod() {
     return;
   }
 
+
+  /*
+     Random bored pause.
+  */
 
   if (
     roll <
@@ -2438,6 +2499,10 @@ function beginRestPeriod() {
     return;
   }
 
+
+  /*
+     Otherwise idle.
+  */
 
   setAnimation(
     "idle",
@@ -2911,6 +2976,11 @@ function performAction(action) {
     Date.now();
 
 
+  /*
+     Forced sit can only be released
+     with the SIT action.
+  */
+
   if (
     state.forcedSit &&
     action !==
@@ -2959,7 +3029,7 @@ function performAction(action) {
 
 
       /*
-         Eating restores 25 health points.
+         Eating heals 25%.
       */
 
       state.health =
@@ -3567,7 +3637,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   PRELOAD ANIMATIONS
+   PRELOAD
 ============================================================ */
 
 function preloadAnimations() {
@@ -3618,7 +3688,7 @@ function init() {
 
 
   /*
-     Process all real-world elapsed time.
+     Apply real-world elapsed time.
   */
 
   updatePersistentTime();
@@ -3642,11 +3712,6 @@ function init() {
   );
 
 
-  /*
-     Dead characters do nothing except
-     display their death state.
-  */
-
   if (
     !state.alive
   ) {
@@ -3659,10 +3724,6 @@ function init() {
     return;
   }
 
-
-  /*
-     Persistent forced sit survives reload.
-  */
 
   if (
     state.forcedSit
