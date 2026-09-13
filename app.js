@@ -162,10 +162,10 @@ const GAME_TICK_INTERVAL =
 const WALK_SPEED = 38;
 
 /*
-   Bounding is intentionally much faster
+   Bounding should visibly feel faster
    than normal walking.
 */
-const BOUND_SPEED = 92;
+const BOUND_SPEED = 120;
 
 const WALK_MARGIN = 0;
 
@@ -920,7 +920,8 @@ function updatePersistentTime() {
       );
 
     if (
-      state.energy >= 100
+      state.energy >=
+      100
     ) {
       state.energy =
         100;
@@ -1572,12 +1573,6 @@ function boundAcrossScreen() {
       ? "right"
       : "left";
 
-  /*
-     We use both flags because the character
-     is physically moving AND performing
-     a special one-shot behavior.
-  */
-
   walking =
     true;
 
@@ -1589,9 +1584,14 @@ function boundAcrossScreen() {
     activeDirection
   );
 
+  /*
+     Reduced minimum duration and higher
+     movement speed make bounds feel
+     noticeably faster than walking.
+  */
   const duration =
     Math.max(
-      450,
+      300,
       (
         Math.abs(distance) /
         BOUND_SPEED
@@ -1678,12 +1678,6 @@ function stopWalking() {
 
   walking =
     false;
-
-  /*
-     If a fast bound was interrupted by
-     user input, don't leave the special
-     animation flag stuck.
-  */
 
   if (
     currentAnimation ===
@@ -1856,14 +1850,6 @@ function beginRestPeriod() {
 
     return;
   }
-
-  /*
-     Happy spontaneous bound:
-
-     Instead of playing the GIF in place,
-     Noctis actually travels across the
-     screen at BOUND_SPEED.
-  */
 
   if (
     state.recoveryMood ===
