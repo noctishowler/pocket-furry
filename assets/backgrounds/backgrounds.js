@@ -432,24 +432,25 @@
     }
 
 
-    const path =
-      BACKGROUND_ROOT +
-      background.file;
+    const portrait = window.matchMedia("(orientation: portrait)").matches;
+    const file = portrait
+      ? background.file.replace(/\.(png)$/i, "-portrait.$1")
+      : background.file;
+    const path = BACKGROUND_ROOT + file;
 
 
     /*
-       Stretch the scene to completely
-       fill the available game screen.
+       Use portrait artwork without stretching on upright screens.\n       Preserve the existing landscape presentation.
     */
 
     gameScreen.style.backgroundImage =
       `url("${path}")`;
 
     gameScreen.style.backgroundSize =
-      "100% 100%";
+      portrait ? "cover" : "100% 100%";
 
     gameScreen.style.backgroundPosition =
-      "center center";
+      portrait ? "center bottom" : "center center";
 
     gameScreen.style.backgroundRepeat =
       "no-repeat";
@@ -809,7 +810,7 @@
 
     backButton.innerHTML = `
       <span class="list-item-primary">
-        ‹ BACK
+        â¹ BACK
       </span>
 
       <span class="list-item-secondary">
@@ -1115,3 +1116,4 @@
   }
 
 })();
+
