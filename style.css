@@ -60,6 +60,188 @@ body {
     var(--bg);
 }
 
+.screen {
+  position: absolute;
+
+  inset: 0;
+}
+
+.hidden {
+  display: none !important;
+}
+
+
+/* ============================================================
+   MAIN / PICKER LISTS
+============================================================ */
+
+.menu-screen {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 18px;
+}
+
+.menu-panel {
+  width:
+    min(92vw, 360px);
+
+  max-height:
+    92vh;
+
+  padding: 14px;
+
+  border:
+    1px solid
+    rgba(138, 53, 255, 0.55);
+
+  background:
+    rgba(5, 5, 9, 0.95);
+}
+
+.menu-title {
+  color:
+    var(--purple-soft);
+
+  font-size:
+    13px;
+
+  letter-spacing:
+    1.5px;
+
+  text-align:
+    center;
+}
+
+.menu-subtitle {
+  margin-top:
+    3px;
+
+  margin-bottom:
+    10px;
+
+  color:
+    var(--dim);
+
+  font-size:
+    7px;
+
+  letter-spacing:
+    1px;
+
+  text-align:
+    center;
+}
+
+.list-menu {
+  display: flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    5px;
+}
+
+.list-item {
+  width: 100%;
+
+  min-height:
+    42px;
+
+  padding:
+    7px 9px;
+
+  border:
+    1px solid
+    rgba(138, 53, 255, 0.18);
+
+  background:
+    rgba(0, 0, 0, 0.32);
+
+  color:
+    var(--dim);
+
+  font-family:
+    inherit;
+
+  text-align:
+    left;
+}
+
+.list-item.selected {
+  border-color:
+    var(--purple);
+
+  background:
+    rgba(138, 53, 255, 0.15);
+
+  color:
+    var(--white);
+}
+
+.list-item-primary {
+  display: block;
+
+  font-size:
+    10px;
+
+  line-height:
+    1.2;
+
+  letter-spacing:
+    0.5px;
+}
+
+.list-item-secondary {
+  display: block;
+
+  margin-top:
+    3px;
+
+  color:
+    var(--dim);
+
+  font-size:
+    7px;
+
+  line-height:
+    1.2;
+}
+
+.list-item.selected
+.list-item-secondary {
+  color:
+    rgba(244, 239, 255, 0.72);
+}
+
+.list-item.empty
+.list-item-primary,
+.list-item.back
+.list-item-primary {
+  color:
+    var(--purple-soft);
+}
+
+.screen-hint {
+  margin-top:
+    10px;
+
+  color:
+    rgba(180, 160, 210, 0.42);
+
+  font-size:
+    6px;
+
+  text-align:
+    center;
+
+  white-space:
+    nowrap;
+}
+
 
 /* ============================================================
    STATUS HUD
@@ -73,14 +255,17 @@ body {
   top: 6px;
   left: 50%;
 
-  transform: translateX(-50%);
+  transform:
+    translateX(-50%);
 
   display: flex;
+
   align-items: center;
 
   gap: 8px;
 
-  padding: 4px 8px;
+  padding:
+    4px 8px;
 
   border:
     1px solid
@@ -92,6 +277,7 @@ body {
 
 .mini-stat {
   display: flex;
+
   align-items: center;
 
   gap: 4px;
@@ -100,12 +286,17 @@ body {
 .mini-icon {
   width: 10px;
 
-  color: var(--purple-soft);
+  color:
+    var(--purple-soft);
 
-  font-size: 9px;
-  line-height: 1;
+  font-size:
+    9px;
 
-  text-align: center;
+  line-height:
+    1;
+
+  text-align:
+    center;
 }
 
 .mini-meter {
@@ -124,65 +315,67 @@ body {
   width: 100%;
   height: 100%;
 
-  background: var(--purple);
+  background:
+    var(--purple);
 
   transition:
     width 180ms linear;
 }
 
-.mini-stat.critical .mini-icon {
-  color: var(--critical);
+.mini-stat.critical
+.mini-icon {
+  color:
+    var(--critical);
 }
 
-.mini-stat.critical .mini-fill {
-  background: var(--critical);
+.mini-stat.critical
+.mini-fill {
+  background:
+    var(--critical);
 }
-
-
-/* ============================================================
-   MOOD
-============================================================ */
 
 .mood-stat {
-  min-width: 12px;
+  min-width:
+    12px;
 
-  justify-content: center;
+  justify-content:
+    center;
 }
 
 .mood-icon {
-  width: 12px;
+  width:
+    12px;
 
-  font-size: 10px;
-  line-height: 1;
+  font-size:
+    10px;
 
-  text-align: center;
+  line-height:
+    1;
 
-  opacity: 0.78;
+  text-align:
+    center;
 
-  filter: grayscale(1);
-}
+  opacity:
+    0.78;
 
-
-/* ============================================================
-   CHARACTER STAGE
-============================================================ */
-
-.pet-stage {
-  position: absolute;
-
-  inset:
-    28px
-    0
-    0
-    0;
-
-  overflow: hidden;
+  filter:
+    grayscale(1);
 }
 
 
 /* ============================================================
    CHARACTER
 ============================================================ */
+
+.pet-stage {
+  position: absolute;
+
+  inset:
+    28px 0 0 0;
+
+  overflow:
+    hidden;
+}
 
 #characterMover {
   position: absolute;
@@ -195,7 +388,8 @@ body {
 
   z-index: 5;
 
-  will-change: left;
+  will-change:
+    left;
 }
 
 #character {
@@ -209,14 +403,20 @@ body {
   max-width:
     42vw;
 
-  object-fit: contain;
+  object-fit:
+    contain;
 
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
+  image-rendering:
+    pixelated;
 
-  pointer-events: auto;
+  image-rendering:
+    crisp-edges;
 
-  -webkit-user-drag: none;
+  pointer-events:
+    auto;
+
+  -webkit-user-drag:
+    none;
 }
 
 
@@ -241,10 +441,14 @@ body {
   max-width:
     70%;
 
-  overflow: hidden;
+  overflow:
+    hidden;
 
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  white-space:
+    nowrap;
+
+  text-overflow:
+    ellipsis;
 
   border:
     1px solid
@@ -256,13 +460,11 @@ body {
   color:
     var(--white);
 
-  font-size: 8px;
+  font-size:
+    8px;
 
-  pointer-events: none;
-}
-
-.message.hidden {
-  opacity: 0;
+  pointer-events:
+    none;
 }
 
 
@@ -278,9 +480,11 @@ body {
   top: 50%;
   left: 50%;
 
-  width: 180px;
+  width:
+    180px;
 
-  padding: 9px;
+  padding:
+    9px;
 
   transform:
     translate(-50%, -50%);
@@ -293,21 +497,21 @@ body {
     rgba(5, 5, 9, 0.97);
 }
 
-.status-card.hidden {
-  display: none;
-}
-
 .status-card-title {
-  margin-bottom: 7px;
+  margin-bottom:
+    7px;
 
   color:
     var(--purple-soft);
 
-  font-size: 9px;
+  font-size:
+    9px;
 
-  letter-spacing: 1px;
+  letter-spacing:
+    1px;
 
-  text-align: center;
+  text-align:
+    center;
 }
 
 .detail-stat {
@@ -316,18 +520,22 @@ body {
   justify-content:
     space-between;
 
-  margin-top: 4px;
+  margin-top:
+    4px;
 
   color:
     var(--dim);
 
-  font-size: 7px;
+  font-size:
+    7px;
 }
 
 .detail-meter {
-  height: 4px;
+  height:
+    4px;
 
-  margin-top: 1px;
+  margin-top:
+    1px;
 
   border:
     1px solid
@@ -363,9 +571,11 @@ body {
 
   display: flex;
 
-  gap: 2px;
+  gap:
+    2px;
 
-  padding: 4px;
+  padding:
+    4px;
 
   border:
     1px solid
@@ -385,11 +595,13 @@ body {
   transform:
     translate(-50%, 18px);
 
-  pointer-events: none;
+  pointer-events:
+    none;
 }
 
 .action {
-  min-width: 34px;
+  min-width:
+    34px;
 
   padding:
     3px 2px;
@@ -425,25 +637,25 @@ body {
   color:
     var(--purple-soft);
 
-  font-size: 11px;
+  font-size:
+    11px;
 
-  text-align: center;
+  text-align:
+    center;
 }
 
 .action-label {
   display: block;
 
-  margin-top: 1px;
+  margin-top:
+    1px;
 
-  font-size: 6px;
+  font-size:
+    6px;
 
-  text-align: center;
+  text-align:
+    center;
 }
-
-
-/* ============================================================
-   CONTROL HINT
-============================================================ */
 
 .control-hint {
   position: absolute;
@@ -459,35 +671,37 @@ body {
   color:
     rgba(180, 160, 210, 0.30);
 
-  font-size: 5px;
+  font-size:
+    5px;
 
-  white-space: nowrap;
+  white-space:
+    nowrap;
 
-  pointer-events: none;
+  pointer-events:
+    none;
 }
 
 
 /* ============================================================
-   META / BROWSER FOCUS
+   FOCUS
 ============================================================ */
-
-/*
-   Focus remains functional for the
-   Neural Band, but native browser focus
-   rings are hidden. Pocket Furry uses
-   the purple .selected state instead.
-*/
 
 #app:focus,
 #app:focus-visible,
 .action:focus,
-.action:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
+.action:focus-visible,
+.list-item:focus,
+.list-item:focus-visible {
+  outline:
+    none !important;
+
+  box-shadow:
+    none !important;
 }
 
 #app,
-.action {
+.action,
+.list-item {
   -webkit-tap-highlight-color:
     transparent;
 }
