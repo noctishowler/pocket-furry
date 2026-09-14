@@ -125,18 +125,6 @@
       background.file;
 
 
-    /*
-       Keep the whole scene visible.
-
-       "contain" preserves the original
-       image proportions as the screen
-       changes size.
-
-       Bottom-center anchoring also keeps
-       the ground/floor aligned with the
-       companion.
-    */
-
     gameScreen.style.backgroundImage =
       `url("${path}")`;
 
@@ -186,6 +174,10 @@
       "button";
 
 
+    button.tabIndex =
+      -1;
+
+
     button.className =
       "list-item focusable background-select";
 
@@ -210,32 +202,15 @@
 
 
     button.addEventListener(
-      "focus",
-      () => {
-
-        const buttons =
-          getMainMenuButtons();
-
-
-        mainMenuIndex =
-          buttons.indexOf(
-            button
-          );
-
-
-        updateMainMenuSelection(
-          false
-        );
-
-      }
-    );
-
-
-    button.addEventListener(
       "click",
       () => {
 
         openBackgroundPicker();
+
+
+        requestAnimationFrame(
+          focusApp
+        );
 
       }
     );
@@ -338,6 +313,10 @@
           "button";
 
 
+        button.tabIndex =
+          -1;
+
+
         button.className =
           "list-item focusable";
 
@@ -371,24 +350,12 @@
 
 
         button.addEventListener(
-          "focus",
+          "click",
           () => {
 
             pickerIndex =
               index;
 
-
-            updatePickerSelection(
-              false
-            );
-
-          }
-        );
-
-
-        button.addEventListener(
-          "click",
-          () => {
 
             applyBackground(
               backgroundId
@@ -409,10 +376,6 @@
     );
 
 
-    /* --------------------------------------------------------
-       BACK
-    -------------------------------------------------------- */
-
     const backIndex =
       backgroundIds.length;
 
@@ -427,6 +390,10 @@
       "button";
 
 
+    backButton.tabIndex =
+      -1;
+
+
     backButton.className =
       "list-item focusable back";
 
@@ -437,7 +404,7 @@
 
     backButton.innerHTML = `
       <span class="list-item-primary">
-        ‹ BACK
+        â¹ BACK
       </span>
 
       <span class="list-item-secondary">
@@ -447,24 +414,12 @@
 
 
     backButton.addEventListener(
-      "focus",
+      "click",
       () => {
 
         pickerIndex =
           backIndex;
 
-
-        updatePickerSelection(
-          false
-        );
-
-      }
-    );
-
-
-    backButton.addEventListener(
-      "click",
-      () => {
 
         openMainMenu();
 
@@ -574,17 +529,8 @@
 
 
   /* ==========================================================
-     HANDLE SCREEN RESIZE
+     SCREEN RESIZE
   ========================================================== */
-
-  /*
-     Reapply the selected background when
-     the viewport changes dimensions.
-
-     This helps when switching orientation,
-     resizing a browser, or moving between
-     different Meta/mobile display sizes.
-  */
 
   window.addEventListener(
     "resize",
