@@ -3,6 +3,12 @@
 
 window.PocketFurryBackgrounds = {
 
+  none: {
+    id: "none",
+    name: "None",
+    file: null
+  },
+
   home: {
     id: "home",
     name: "Home",
