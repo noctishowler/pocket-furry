@@ -7,18 +7,6 @@
   --dim: #8d8799;
   --panel: rgba(8, 8, 13, 0.94);
   --critical: #ff4d78;
-
-  /*
-     Pocket Furry native canvas.
-
-     All layout is designed against
-     this fixed landscape resolution.
-  */
-
-  --canvas-width: 1536px;
-  --canvas-height: 1024px;
-
-  --app-scale: 1;
 }
 
 
@@ -32,7 +20,6 @@
   user-select: none;
   -webkit-user-select: none;
 }
-
 
 html,
 body {
@@ -53,43 +40,14 @@ body {
   overscroll-behavior: none;
 }
 
-
 body {
+  display: block;
+}
+
+#app {
   position: fixed;
 
   inset: 0;
-
-  display: block;
-
-  overflow: hidden;
-}
-
-
-/* ============================================================
-   FIXED LANDSCAPE CANVAS
-============================================================ */
-
-#app {
-  position: absolute;
-
-  width: var(--canvas-width);
-  height: var(--canvas-height);
-
-  left: 50%;
-  top: 50%;
-
-  /*
-     Layout always remains 1536 × 1024.
-
-     JavaScript changes only --app-scale.
-  */
-
-  transform:
-    translate(-50%, -50%)
-    scale(var(--app-scale));
-
-  transform-origin:
-    center center;
 
   overflow: hidden;
 
@@ -102,16 +60,11 @@ body {
     var(--bg);
 }
 
-
 .screen {
   position: absolute;
 
   inset: 0;
-
-  width: 100%;
-  height: 100%;
 }
-
 
 .hidden {
   display: none !important;
@@ -130,7 +83,7 @@ body {
     ),
     url("assets/backgrounds/main.PNG")
     center center /
-    100% 100%
+    cover
     no-repeat;
 
   background-color:
@@ -151,12 +104,12 @@ body {
   padding: 18px;
 }
 
-
 .menu-panel {
-  width: 360px;
+  width:
+    min(92vw, 360px);
 
-  max-width: 92%;
-  max-height: 92%;
+  max-height:
+    92vh;
 
   padding: 14px;
 
@@ -176,7 +129,6 @@ body {
     blur(2px);
 }
 
-
 .menu-title {
   color:
     var(--purple-soft);
@@ -190,7 +142,6 @@ body {
   text-align:
     center;
 }
-
 
 .menu-subtitle {
   margin-top:
@@ -227,7 +178,6 @@ body {
     5px;
 }
 
-
 .list-item {
   width: 100%;
 
@@ -254,7 +204,6 @@ body {
     left;
 }
 
-
 .list-item.selected {
   border-color:
     var(--purple);
@@ -265,7 +214,6 @@ body {
   color:
     var(--white);
 }
-
 
 .list-item-primary {
   display: block;
@@ -279,7 +227,6 @@ body {
   letter-spacing:
     0.5px;
 }
-
 
 .list-item-secondary {
   display: block;
@@ -296,7 +243,6 @@ body {
   line-height:
     1.2;
 }
-
 
 .list-item.selected
 .list-item-secondary {
@@ -315,19 +261,16 @@ body {
     var(--purple-soft);
 }
 
-
 .list-item.new-companion.selected
 .list-item-primary {
   color:
     var(--white);
 }
 
-
 .list-item.unavailable {
   opacity:
     0.45;
 }
-
 
 .list-item.unavailable
 .list-item-primary {
@@ -345,7 +288,6 @@ body {
   color:
     var(--purple-soft);
 }
-
 
 .list-item.back.selected
 .list-item-primary {
@@ -408,7 +350,6 @@ body {
     rgba(0, 0, 0, 0.56);
 }
 
-
 .mini-stat {
   display: flex;
 
@@ -416,7 +357,6 @@ body {
 
   gap: 4px;
 }
-
 
 .mini-icon {
   width:
@@ -435,7 +375,6 @@ body {
     center;
 }
 
-
 .mini-meter {
   width:
     32px;
@@ -451,7 +390,6 @@ body {
     rgba(0, 0, 0, 0.7);
 }
 
-
 .mini-fill {
   width:
     100%;
@@ -466,20 +404,17 @@ body {
     width 180ms linear;
 }
 
-
 .mini-stat.critical
 .mini-icon {
   color:
     var(--critical);
 }
 
-
 .mini-stat.critical
 .mini-fill {
   background:
     var(--critical);
 }
-
 
 .mood-stat {
   min-width:
@@ -488,7 +423,6 @@ body {
   justify-content:
     center;
 }
-
 
 .mood-icon {
   width:
@@ -551,7 +485,6 @@ body {
     left;
 }
 
-
 #character {
   display:
     block;
@@ -559,19 +492,11 @@ body {
   width:
     auto;
 
-  /*
-     Fixed native-canvas size.
-
-     The entire app is scaled afterward,
-     so the character no longer needs
-     viewport-dependent vh/vw sizing.
-  */
-
   height:
-    210px;
+    min(72vh, 210px);
 
   max-width:
-    42%;
+    42vw;
 
   object-fit:
     contain;
@@ -651,7 +576,8 @@ body {
   position:
     absolute;
 
-  z-index: 40;
+  z-index:
+    40;
 
   top:
     50%;
@@ -676,7 +602,6 @@ body {
     rgba(5, 5, 9, 0.97);
 }
 
-
 .status-card-title {
   margin-bottom:
     7px;
@@ -693,7 +618,6 @@ body {
   text-align:
     center;
 }
-
 
 .detail-stat {
   display:
@@ -712,7 +636,6 @@ body {
     7px;
 }
 
-
 .detail-meter {
   height:
     4px;
@@ -727,7 +650,6 @@ body {
   background:
     #15131a;
 }
-
 
 .detail-meter > div {
   width:
@@ -782,7 +704,6 @@ body {
     transform 120ms linear;
 }
 
-
 .action-tray.hidden-tray {
   opacity:
     0;
@@ -793,7 +714,6 @@ body {
   pointer-events:
     none;
 }
-
 
 .action {
   min-width:
@@ -816,7 +736,6 @@ body {
     inherit;
 }
 
-
 .action.selected {
   border-color:
     var(--purple);
@@ -827,7 +746,6 @@ body {
   background:
     rgba(138, 53, 255, 0.15);
 }
-
 
 .action-icon {
   display:
@@ -842,7 +760,6 @@ body {
   text-align:
     center;
 }
-
 
 .action-label {
   display:
@@ -909,7 +826,6 @@ body {
   box-shadow:
     none !important;
 }
-
 
 #app,
 .action,
