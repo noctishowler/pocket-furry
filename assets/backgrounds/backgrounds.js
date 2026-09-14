@@ -13,6 +13,12 @@
   const BACKGROUND_SAVE_KEY =
     "pocketFurry_background_v1";
 
+  const BACKGROUND_PROGRESS_KEY =
+    "pocketFurry_background_unlock_day_v1";
+
+  const DAY_MS =
+    24 * 60 * 60 * 1000;
+
 
   const backgrounds =
     window.PocketFurryBackgrounds ||
@@ -27,8 +33,279 @@
     null;
 
 
+  /*
+     Locations unlock by companion age:
+
+     Day 1  Home
+     Day 2  Outside
+     Day 3  Night City
+     Day 4  Day Woods
+     Day 5  Camping
+     Day 6  Night Woods
+
+     "None" is a utility option rather than a location,
+     so it remains available at all times.
+  */
+
+  const BACKGROUND_UNLOCK_DAY = {
+    none: 0,
+    home: 1,
+    outside: 2,
+    nightcity: 3,
+    daywoods: 4,
+    camping: 5,
+    nightwoods: 6
+  };
+
+
+  const BACKGROUND_ORDER = [
+    "none",
+    "home",
+    "outside",
+    "nightcity",
+    "daywoods",
+    "camping",
+    "nightwoods"
+  ];
+
+
   let activeBackgroundId =
     loadBackgroundId();
+
+  let backgroundPickerOpen =
+    false;
+
+
+  /* ==========================================================
+     PROGRESSION
+  ========================================================== */
+
+  function getOldestCompanionCreatedAt() {
+
+    if (
+      typeof appState ===
+        "undefined" ||
+      !appState ||
+      !Array.isArray(
+        appState.slots
+      )
+    ) {
+
+      return null;
+
+    }
+
+
+    const createdTimes =
+      appState.slots
+        .filter(
+          slot =>
+            slot &&
+            Number.isFinite(
+              Number(
+                slot.createdAt
+              )
+            ) &&
+            Number(
+              slot.createdAt
+            ) >
+              0
+        )
+        .map(
+          slot =>
+            Number(
+              slot.createdAt
+            )
+        );
+
+
+    if (
+      !createdTimes.length
+    ) {
+
+      return null;
+
+    }
+
+
+    return Math.min(
+      ...createdTimes
+    );
+
+  }
+
+
+  function getCalculatedProgressDay() {
+
+    const createdAt =
+      getOldestCompanionCreatedAt();
+
+
+    if (
+      !createdAt
+    ) {
+
+      return 1;
+
+    }
+
+
+    const elapsed =
+      Math.max(
+        0,
+        Date.now() -
+        createdAt
+      );
+
+
+    return Math.max(
+      1,
+      Math.floor(
+        elapsed /
+        DAY_MS
+      ) +
+      1
+    );
+
+  }
+
+
+  function loadSavedProgressDay() {
+
+    const saved =
+      Number(
+        localStorage.getItem(
+          BACKGROUND_PROGRESS_KEY
+        )
+      );
+
+
+    if (
+      Number.isFinite(
+        saved
+      ) &&
+      saved >=
+        1
+    ) {
+
+      return Math.floor(
+        saved
+      );
+
+    }
+
+
+    return 1;
+
+  }
+
+
+  function getProgressDay() {
+
+    const calculated =
+      getCalculatedProgressDay();
+
+    const saved =
+      loadSavedProgressDay();
+
+    const progressDay =
+      Math.max(
+        calculated,
+        saved
+      );
+
+
+    /*
+       Once a location has unlocked, do not relock it if
+       an older companion is deleted or the device clock
+       moves backward.
+    */
+
+    if (
+      progressDay >
+        saved
+    ) {
+
+      localStorage.setItem(
+        BACKGROUND_PROGRESS_KEY,
+        String(
+          progressDay
+        )
+      );
+
+    }
+
+
+    return progressDay;
+
+  }
+
+
+  function getUnlockDay(
+    backgroundId
+  ) {
+
+    const day =
+      BACKGROUND_UNLOCK_DAY[
+        backgroundId
+      ];
+
+
+    return Number.isFinite(
+      day
+    )
+      ? day
+      : 1;
+
+  }
+
+
+  function isBackgroundUnlocked(
+    backgroundId
+  ) {
+
+    const unlockDay =
+      getUnlockDay(
+        backgroundId
+      );
+
+
+    return (
+      unlockDay <=
+      getProgressDay()
+    );
+
+  }
+
+
+  function getOrderedBackgroundIds() {
+
+    const known =
+      BACKGROUND_ORDER.filter(
+        backgroundId =>
+          backgrounds[
+            backgroundId
+          ]
+      );
+
+
+    const extras =
+      Object.keys(
+        backgrounds
+      ).filter(
+        backgroundId =>
+          !known.includes(
+            backgroundId
+          )
+      );
+
+
+    return [
+      ...known,
+      ...extras
+    ];
+
+  }
 
 
   /* ==========================================================
@@ -100,7 +377,18 @@
       !background
     ) {
 
-      return;
+      return false;
+
+    }
+
+
+    if (
+      !isBackgroundUnlocked(
+        backgroundId
+      )
+    ) {
+
+      return false;
 
     }
 
@@ -139,7 +427,7 @@
       gameScreen.style.backgroundColor =
         "";
 
-      return;
+      return true;
 
     }
 
@@ -168,6 +456,41 @@
 
     gameScreen.style.backgroundColor =
       "var(--bg)";
+
+
+    return true;
+
+  }
+
+
+  function ensureActiveBackgroundUnlocked() {
+
+    if (
+      isBackgroundUnlocked(
+        activeBackgroundId
+      )
+    ) {
+
+      return;
+
+    }
+
+
+    activeBackgroundId =
+      backgrounds.home
+        ? "home"
+        : defaultBackgroundId;
+
+
+    if (
+      activeBackgroundId
+    ) {
+
+      saveBackgroundId(
+        activeBackgroundId
+      );
+
+    }
 
   }
 
@@ -271,6 +594,10 @@
       0;
 
 
+    backgroundPickerOpen =
+      true;
+
+
     const title =
       pickerScreen.querySelector(
         ".menu-title"
@@ -315,21 +642,30 @@
 
 
     const backgroundIds =
-      Object.keys(
-        backgrounds
-      );
+      getOrderedBackgroundIds();
 
 
     backgroundIds.forEach(
-      (
-        backgroundId,
-        index
-      ) => {
+      backgroundId => {
 
         const background =
           backgrounds[
             backgroundId
           ];
+
+
+        const unlocked =
+          isBackgroundUnlocked(
+            backgroundId
+          );
+
+
+        const selected =
+          (
+            unlocked &&
+            backgroundId ===
+              activeBackgroundId
+          );
 
 
         const button =
@@ -358,9 +694,46 @@
           backgroundId;
 
 
-        const selected =
-          backgroundId ===
-          activeBackgroundId;
+        if (
+          !unlocked
+        ) {
+
+          button.classList.add(
+            "unavailable"
+          );
+
+
+          button.dataset.locked =
+            "true";
+
+        }
+
+
+        let secondaryText;
+
+
+        if (
+          selected
+        ) {
+
+          secondaryText =
+            "CURRENT BACKGROUND";
+
+        } else if (
+          unlocked
+        ) {
+
+          secondaryText =
+            "SELECT BACKGROUND";
+
+        } else {
+
+          secondaryText =
+            `UNLOCKS DAY ${getUnlockDay(
+              backgroundId
+            )}`;
+
+        }
 
 
         button.innerHTML = `
@@ -369,11 +742,7 @@
           </span>
 
           <span class="list-item-secondary">
-            ${
-              selected
-                ? "CURRENT BACKGROUND"
-                : "SELECT BACKGROUND"
-            }
+            ${secondaryText}
           </span>
         `;
 
@@ -382,13 +751,24 @@
           "click",
           () => {
 
-            pickerIndex =
-              index;
+            if (
+              !isBackgroundUnlocked(
+                backgroundId
+              )
+            ) {
+
+              return;
+
+            }
 
 
             applyBackground(
               backgroundId
             );
+
+
+            backgroundPickerOpen =
+              false;
 
 
             openMainMenu();
@@ -403,10 +783,6 @@
 
       }
     );
-
-
-    const backIndex =
-      backgroundIds.length;
 
 
     const backButton =
@@ -446,8 +822,8 @@
       "click",
       () => {
 
-        pickerIndex =
-          backIndex;
+        backgroundPickerOpen =
+          false;
 
 
         openMainMenu();
@@ -464,6 +840,131 @@
 
 
   /* ==========================================================
+     PICKER NAVIGATION
+
+     Locked locations remain visible but Neural Band / keyboard
+     navigation skips over them.
+  ========================================================== */
+
+  const originalGetPickerButtons =
+    getPickerButtons;
+
+
+  getPickerButtons =
+    function () {
+
+      const buttons =
+        originalGetPickerButtons();
+
+
+      if (
+        !backgroundPickerOpen
+      ) {
+
+        return buttons;
+
+      }
+
+
+      return buttons.filter(
+        button =>
+          !button.classList.contains(
+            "unavailable"
+          )
+      );
+
+    };
+
+
+  const originalActivatePickerSelection =
+    activatePickerSelection;
+
+
+  activatePickerSelection =
+    function () {
+
+      if (
+        !backgroundPickerOpen
+      ) {
+
+        return originalActivatePickerSelection();
+
+      }
+
+
+      const buttons =
+        getPickerButtons();
+
+
+      const button =
+        buttons[
+          pickerIndex
+        ];
+
+
+      if (
+        !button
+      ) {
+
+        return;
+
+      }
+
+
+      if (
+        button.dataset.kind ===
+          "back"
+      ) {
+
+        backgroundPickerOpen =
+          false;
+
+
+        openMainMenu();
+
+
+        return;
+
+      }
+
+
+      if (
+        button.dataset.kind ===
+          "background-option"
+      ) {
+
+        const backgroundId =
+          button.dataset.backgroundId;
+
+
+        if (
+          !isBackgroundUnlocked(
+            backgroundId
+          )
+        ) {
+
+          return;
+
+        }
+
+
+        applyBackground(
+          backgroundId
+        );
+
+
+        backgroundPickerOpen =
+          false;
+
+
+        openMainMenu();
+
+      }
+
+    };
+
+
+  /* ==========================================================
      RESTORE CHARACTER PICKER TITLE
   ========================================================== */
 
@@ -475,6 +976,10 @@
     function (
       slotIndex
     ) {
+
+      backgroundPickerOpen =
+        false;
+
 
       const title =
         pickerScreen.querySelector(
@@ -509,6 +1014,14 @@
 
   renderMainMenu =
     function () {
+
+      /*
+         Refresh progression whenever the
+         menu is rebuilt.
+      */
+
+      getProgressDay();
+
 
       originalRenderMainMenu();
 
@@ -577,6 +1090,12 @@
   /* ==========================================================
      INITIALIZE
   ========================================================== */
+
+  getProgressDay();
+
+
+  ensureActiveBackgroundUnlocked();
+
 
   applyBackground(
     activeBackgroundId,
