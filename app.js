@@ -9,8 +9,7 @@ const characters = {
   noctis: {
     id: "noctis",
     name: "Noctis",
-    path:
-      "assets/characters/noctis/",
+    path: "assets/characters/noctis/",
 
     animations: {
       idle: {
@@ -112,50 +111,18 @@ const characters = {
 };
 
 
-const SLOT_COUNT =
-  4;
+/* ============================================================
+   APP CONSTANTS
+============================================================ */
+
+const SLOT_COUNT = 4;
 
 const APP_SAVE_KEY =
   "pocketFurry_app_v1";
 
-const SAVE_VERSION =
-  5;
+const SAVE_VERSION = 5;
 
-
-let activeSlotIndex =
-  null;
-
-let activeCharacterId =
-  null;
-
-let activeDirection =
-  "right";
-
-let animationPlayId =
-  0;
-
-let state =
-  null;
-
-let appState =
-  loadAppState();
-
-
-function getActiveCharacter() {
-  return activeCharacterId
-    ? characters[
-        activeCharacterId
-      ]
-    : null;
-}
-
-
-/* ============================================================
-   GAME CONSTANTS
-============================================================ */
-
-const MAX_STAT =
-  100;
+const MAX_STAT = 100;
 
 const ENERGY_DRAIN_PER_MINUTE =
   100 / (16 * 60);
@@ -163,8 +130,7 @@ const ENERGY_DRAIN_PER_MINUTE =
 const ENERGY_RECOVERY_PER_MINUTE =
   100 / 10;
 
-const EXHAUSTED_THRESHOLD =
-  10;
+const EXHAUSTED_THRESHOLD = 10;
 
 const HEALTH_RECOVERY_PER_MINUTE =
   100 / (24 * 60);
@@ -172,17 +138,11 @@ const HEALTH_RECOVERY_PER_MINUTE =
 const HEALTH_DRAIN_PER_MINUTE =
   100 / (24 * 60);
 
-const FOOD_HEALTH_RECOVERY =
-  25;
+const FOOD_HEALTH_RECOVERY = 25;
 
-const HEALTH_MIN_HUNGER =
-  20;
-
-const HEALTH_MIN_HAPPINESS =
-  25;
-
-const HEALTH_MIN_CLEANLINESS =
-  25;
+const HEALTH_MIN_HUNGER = 20;
+const HEALTH_MIN_HAPPINESS = 25;
+const HEALTH_MIN_CLEANLINESS = 25;
 
 const FOOD_DURATION_MS =
   24 * 60 * 60 * 1000;
@@ -199,69 +159,81 @@ const SIT_ANGRY_MS =
 const GAME_TICK_INTERVAL =
   30 * 1000;
 
-const FETCH_DURATION_MS =
-  3030;
+const FETCH_DURATION_MS = 3030;
+const CLEAN_DURATION_MS = 5390;
 
-const CLEAN_DURATION_MS =
-  5390;
+const WALK_SPEED = 38;
+const BOUND_SPEED = 120;
+
+const WALK_MARGIN = 0;
+const MIN_PAUSE_MS = 2200;
+const MAX_PAUSE_MS = 6200;
+const MIN_TRAVEL_DISTANCE = 35;
+
+const MIDSCREEN_STOP_CHANCE = 0.30;
+const CONTINUE_DIRECTION_CHANCE = 0.60;
+
+const MOOD_REACTION_CHANCE = 0.07;
+const BOUND_CHANCE = 0.12;
+const BORED_CHANCE = 0.22;
+
+const SWIPE_DISTANCE = 28;
+const LONG_PRESS_TIME = 700;
 
 
 /* ============================================================
-   MOVEMENT CONSTANTS
+   ACTIVE GAME STATE
 ============================================================ */
 
-const WALK_SPEED =
-  38;
+let activeSlotIndex = null;
+let activeCharacterId = null;
+let activeDirection = "right";
 
-const BOUND_SPEED =
-  120;
+let animationPlayId = 0;
 
-const WALK_MARGIN =
-  0;
+let state = null;
 
-const MIN_PAUSE_MS =
-  2200;
+let appState =
+  loadAppState();
 
-const MAX_PAUSE_MS =
-  6200;
+let currentScreen = "main";
 
-const MIN_TRAVEL_DISTANCE =
-  35;
+let mainMenuIndex = 0;
+let pickerIndex = 0;
 
-const MIDSCREEN_STOP_CHANCE =
-  0.30;
+let pendingSlotIndex = null;
 
-const CONTINUE_DIRECTION_CHANCE =
-  0.60;
+let selectedAction = 0;
 
+let interactionMode = false;
+let statusCardVisible = false;
 
-/* ============================================================
-   AMBIENT CONSTANTS
-============================================================ */
+let currentAnimation = "";
+let currentAnimationDirection = "";
 
-const MOOD_REACTION_CHANCE =
-  0.07;
+let temporaryAnimation = false;
 
-const BOUND_CHANCE =
-  0.12;
+let animationTimer = null;
+let sleepTimer = null;
 
-const BORED_CHANCE =
-  0.22;
+let walking = false;
+let walkTimer = null;
+let ambientTimer = null;
 
+let currentX = 0;
+let nextWalkDirection = "right";
 
-/* ============================================================
-   INPUT CONSTANTS
-============================================================ */
+let pointerStartX = 0;
+let pointerStartY = 0;
 
-const SWIPE_DISTANCE =
-  28;
+let longPressTimer = null;
+let longPressTriggered = false;
 
-const LONG_PRESS_TIME =
-  700;
+let messageTimer = null;
 
 
 /* ============================================================
-   DEFAULT COMPANION STATE
+   DEFAULT STATE
 ============================================================ */
 
 function createDefaultState() {
@@ -281,25 +253,19 @@ function createDefaultState() {
     forcedSit: false,
     sitStartedAt: null,
 
-    recoveryMood:
-      "happy",
+    recoveryMood: "happy",
 
     alive: true,
 
-    lastUpdate:
-      now,
-
-    lastMealAt:
-      now,
-
-    lastInteraction:
-      now
+    lastUpdate: now,
+    lastMealAt: now,
+    lastInteraction: now
   };
 }
 
 
 /* ============================================================
-   APP / SLOT SAVE DATA
+   SAVE / LOAD
 ============================================================ */
 
 function blankAppState() {
@@ -314,20 +280,31 @@ function blankAppState() {
 }
 
 
+function getSlotSaveKey(
+  slotIndex,
+  characterId
+) {
+  return (
+    "pocketFurry_slot_" +
+    slotIndex +
+    "_" +
+    characterId +
+    "_v" +
+    SAVE_VERSION
+  );
+}
+
+
 function loadAppState() {
   const raw =
     localStorage.getItem(
       APP_SAVE_KEY
     );
 
-  if (
-    raw
-  ) {
+  if (raw) {
     try {
       const parsed =
-        JSON.parse(
-          raw
-        );
+        JSON.parse(raw);
 
       const slots =
         Array.isArray(
@@ -343,9 +320,7 @@ function loadAppState() {
         slots.length <
         SLOT_COUNT
       ) {
-        slots.push(
-          null
-        );
+        slots.push(null);
       }
 
       return {
@@ -353,13 +328,14 @@ function loadAppState() {
       };
 
     } catch {
-      // Fall through.
+      // Continue to migration.
     }
   }
 
 
   /*
-     MIGRATE EXISTING NOCTIS SAVE
+     MIGRATE EXISTING PRE-MENU
+     NOCTIS SAVE INTO SLOT 1.
   */
 
   const migrated =
@@ -373,9 +349,7 @@ function loadAppState() {
       legacyKey
     );
 
-  if (
-    legacyState
-  ) {
+  if (legacyState) {
     migrated.slots[0] = {
       characterId:
         "noctis",
@@ -414,23 +388,9 @@ function saveAppState() {
 }
 
 
-function getSlotSaveKey(
-  slotIndex,
-  characterId
-) {
-  return (
-    `pocketFurry_slot_` +
-    `${slotIndex}_` +
-    `${characterId}_v` +
-    `${SAVE_VERSION}`
-  );
-}
-
-
 function saveState() {
   if (
-    activeSlotIndex ===
-      null ||
+    activeSlotIndex === null ||
     !activeCharacterId ||
     !state
   ) {
@@ -456,6 +416,9 @@ function loadSlotState(
   slotIndex,
   characterId
 ) {
+  const defaults =
+    createDefaultState();
+
   const raw =
     localStorage.getItem(
       getSlotSaveKey(
@@ -464,20 +427,13 @@ function loadSlotState(
       )
     );
 
-  const defaults =
-    createDefaultState();
-
-  if (
-    !raw
-  ) {
+  if (!raw) {
     return defaults;
   }
 
   try {
     const loaded =
-      JSON.parse(
-        raw
-      );
+      JSON.parse(raw);
 
     return {
       ...defaults,
@@ -503,6 +459,8 @@ function createCompanion(
   characterId
 ) {
   if (
+    slotIndex < 0 ||
+    slotIndex >= SLOT_COUNT ||
     !characters[
       characterId
     ]
@@ -574,7 +532,6 @@ const characterPickerList =
     "characterPickerList"
   );
 
-
 const characterSprite =
   document.getElementById(
     "character"
@@ -620,7 +577,6 @@ const moodEmoji =
     "moodEmoji"
   );
 
-
 const healthBar =
   document.getElementById(
     "healthBar"
@@ -640,7 +596,6 @@ const energyBar =
   document.getElementById(
     "energyBar"
   );
-
 
 const happinessValue =
   document.getElementById(
@@ -667,7 +622,6 @@ const cleanValue =
     "cleanValue"
   );
 
-
 const detailHappiness =
   document.getElementById(
     "detailHappiness"
@@ -693,30 +647,69 @@ const detailClean =
     "detailClean"
   );
 
-
 const actionButtons = [
   ...document.querySelectorAll(
     ".action"
   )
 ];
 
+const actions = [
+  "feed",
+  "play",
+  "pet",
+  "clean",
+  "sit",
+  "sleep",
+  "medicine"
+];
+
 
 /* ============================================================
-   SCREEN / MENU STATE
+   HELPERS
 ============================================================ */
 
-let currentScreen =
-  "main";
+function clamp(value) {
+  return Math.max(
+    0,
+    Math.min(
+      MAX_STAT,
+      value
+    )
+  );
+}
 
-let mainMenuIndex =
-  0;
 
-let pickerIndex =
-  0;
+function rounded(value) {
+  return Math.round(
+    clamp(value)
+  );
+}
 
-let pendingSlotIndex =
-  null;
 
+function randomBetween(
+  min,
+  max
+) {
+  return (
+    min +
+    Math.random() *
+    (max - min)
+  );
+}
+
+
+function getActiveCharacter() {
+  return activeCharacterId
+    ? characters[
+        activeCharacterId
+      ]
+    : null;
+}
+
+
+/* ============================================================
+   SCREEN HANDLING
+============================================================ */
 
 function showOnlyScreen(
   screenName
@@ -726,20 +719,17 @@ function showOnlyScreen(
 
   mainMenuScreen.classList.toggle(
     "hidden",
-    screenName !==
-      "main"
+    screenName !== "main"
   );
 
   pickerScreen.classList.toggle(
     "hidden",
-    screenName !==
-      "picker"
+    screenName !== "picker"
   );
 
   gameScreen.classList.toggle(
     "hidden",
-    screenName !==
-      "game"
+    screenName !== "game"
   );
 }
 
@@ -758,9 +748,7 @@ function getStateSummary(
       characterId
     );
 
-  if (
-    !saved.alive
-  ) {
+  if (!saved.alive) {
     return "Gone";
   }
 
@@ -770,8 +758,7 @@ function getStateSummary(
   if (
     saved.recoveryMood ===
       "angry" ||
-    saved.happiness <
-      15
+    saved.happiness < 15
   ) {
     mood =
       "Upset";
@@ -779,22 +766,19 @@ function getStateSummary(
   } else if (
     saved.recoveryMood ===
       "sad" ||
-    saved.happiness <
-      35
+    saved.happiness < 35
   ) {
     mood =
       "Sad";
 
   } else if (
-    saved.happiness >=
-      85
+    saved.happiness >= 85
   ) {
     mood =
       "Happy";
 
   } else if (
-    saved.happiness >=
-      60
+    saved.happiness >= 60
   ) {
     mood =
       "Content";
@@ -811,15 +795,51 @@ function getStateSummary(
 }
 
 
+function getFirstEmptySlot() {
+  return appState.slots.findIndex(
+    slot =>
+      !slot
+  );
+}
+
+
+function getMainMenuButtons() {
+  return [
+    ...companionList.querySelectorAll(
+      ".list-item:not(.placeholder)"
+    )
+  ];
+}
+
+
 function renderMainMenu() {
   companionList.innerHTML =
     "";
 
+
+  /*
+     EXISTING COMPANIONS
+  */
+
   appState.slots.forEach(
     (
       slot,
-      index
+      slotIndex
     ) => {
+
+      if (
+        !slot ||
+        !characters[
+          slot.characterId
+        ]
+      ) {
+        return;
+      }
+
+      const character =
+        characters[
+          slot.characterId
+        ];
 
       const button =
         document.createElement(
@@ -830,58 +850,39 @@ function renderMainMenu() {
         "button";
 
       button.className =
-        "list-item focusable";
+        "list-item focusable companion-entry";
 
-      button.dataset.index =
+      button.dataset.kind =
+        "companion";
+
+      button.dataset.slotIndex =
         String(
-          index
+          slotIndex
         );
 
+      button.innerHTML = `
+        <span class="list-item-primary">
+          ${character.name.toUpperCase()}
+        </span>
 
-      if (
-        slot &&
-        characters[
-          slot.characterId
-        ]
-      ) {
-        const character =
-          characters[
+        <span class="list-item-secondary">
+          ${getStateSummary(
+            slotIndex,
             slot.characterId
-          ];
-
-        button.innerHTML = `
-          <span class="list-item-primary">
-            ${character.name.toUpperCase()}
-          </span>
-
-          <span class="list-item-secondary">
-            ${getStateSummary(index, slot.characterId)}
-          </span>
-        `;
-
-      } else {
-        button.classList.add(
-          "empty"
-        );
-
-        button.innerHTML = `
-          <span class="list-item-primary">
-            ＋ NEW COMPANION
-          </span>
-
-          <span class="list-item-secondary">
-            EMPTY SLOT ${index + 1}
-          </span>
-        `;
-      }
-
+          )}
+        </span>
+      `;
 
       button.addEventListener(
         "focus",
         () => {
+          const buttons =
+            getMainMenuButtons();
 
           mainMenuIndex =
-            index;
+            buttons.indexOf(
+              button
+            );
 
           updateMainMenuSelection(
             false
@@ -889,18 +890,15 @@ function renderMainMenu() {
         }
       );
 
-
       button.addEventListener(
         "click",
         () => {
 
-          mainMenuIndex =
-            index;
-
-          activateMainMenuSelection();
+          openCompanion(
+            slotIndex
+          );
         }
       );
-
 
       companionList.appendChild(
         button
@@ -909,12 +907,161 @@ function renderMainMenu() {
   );
 
 
+  /*
+     EXPLICIT NEW COMPANION BUTTON
+  */
+
+  const emptySlot =
+    getFirstEmptySlot();
+
+  const newButton =
+    document.createElement(
+      "button"
+    );
+
+  newButton.type =
+    "button";
+
+  newButton.className =
+    "list-item focusable new-companion";
+
+  newButton.dataset.kind =
+    "new";
+
+
+  if (
+    emptySlot >= 0
+  ) {
+    newButton.innerHTML = `
+      <span class="list-item-primary">
+        ＋ NEW COMPANION
+      </span>
+
+      <span class="list-item-secondary">
+        ADD A COMPANION
+      </span>
+    `;
+
+    newButton.addEventListener(
+      "click",
+      () => {
+
+        openCharacterPicker(
+          getFirstEmptySlot()
+        );
+      }
+    );
+
+  } else {
+    newButton.classList.add(
+      "unavailable"
+    );
+
+    newButton.innerHTML = `
+      <span class="list-item-primary">
+        ＋ NEW COMPANION
+      </span>
+
+      <span class="list-item-secondary">
+        NO EMPTY SLOTS
+      </span>
+    `;
+  }
+
+
+  newButton.addEventListener(
+    "focus",
+    () => {
+
+      const buttons =
+        getMainMenuButtons();
+
+      mainMenuIndex =
+        buttons.indexOf(
+          newButton
+        );
+
+      updateMainMenuSelection(
+        false
+      );
+    }
+  );
+
+
+  companionList.appendChild(
+    newButton
+  );
+
+
+  /*
+     DIVIDER
+  */
+
+  const divider =
+    document.createElement(
+      "div"
+    );
+
+  divider.className =
+    "list-divider";
+
+  companionList.appendChild(
+    divider
+  );
+
+
+  /*
+     EMPTY SLOT PLACEHOLDERS
+  */
+
+  appState.slots.forEach(
+    (
+      slot,
+      slotIndex
+    ) => {
+
+      if (slot) {
+        return;
+      }
+
+      const placeholder =
+        document.createElement(
+          "div"
+        );
+
+      placeholder.className =
+        "list-item placeholder";
+
+      placeholder.innerHTML = `
+        <span class="list-item-primary">
+          EMPTY SLOT
+        </span>
+
+        <span class="list-item-secondary">
+          SLOT ${slotIndex + 1}
+        </span>
+      `;
+
+      companionList.appendChild(
+        placeholder
+      );
+    }
+  );
+
+
+  const buttons =
+    getMainMenuButtons();
+
+  if (!buttons.length) {
+    return;
+  }
+
   mainMenuIndex =
     Math.max(
       0,
       Math.min(
         mainMenuIndex,
-        SLOT_COUNT - 1
+        buttons.length - 1
       )
     );
 
@@ -927,11 +1074,19 @@ function renderMainMenu() {
 function updateMainMenuSelection(
   moveFocus = true
 ) {
-  const buttons = [
-    ...companionList.querySelectorAll(
-      ".list-item"
-    )
-  ];
+  const buttons =
+    getMainMenuButtons();
+
+  if (!buttons.length) {
+    return;
+  }
+
+  mainMenuIndex =
+    (
+      mainMenuIndex +
+      buttons.length
+    ) %
+    buttons.length;
 
   buttons.forEach(
     (
@@ -947,7 +1102,6 @@ function updateMainMenuSelection(
     }
   );
 
-
   if (
     moveFocus &&
     buttons[
@@ -957,8 +1111,7 @@ function updateMainMenuSelection(
     buttons[
       mainMenuIndex
     ].focus({
-      preventScroll:
-        true
+      preventScroll: true
     });
   }
 }
@@ -967,13 +1120,20 @@ function updateMainMenuSelection(
 function moveMainMenu(
   delta
 ) {
+  const buttons =
+    getMainMenuButtons();
+
+  if (!buttons.length) {
+    return;
+  }
+
   mainMenuIndex =
     (
       mainMenuIndex +
       delta +
-      SLOT_COUNT
+      buttons.length
     ) %
-    SLOT_COUNT;
+    buttons.length;
 
   updateMainMenuSelection(
     true
@@ -982,27 +1142,49 @@ function moveMainMenu(
 
 
 function activateMainMenuSelection() {
-  const slot =
-    appState.slots[
+  const buttons =
+    getMainMenuButtons();
+
+  const button =
+    buttons[
       mainMenuIndex
     ];
 
+  if (!button) {
+    return;
+  }
+
   if (
-    slot &&
-    characters[
-      slot.characterId
-    ]
+    button.dataset.kind ===
+    "companion"
   ) {
     openCompanion(
-      mainMenuIndex
+      Number(
+        button.dataset.slotIndex
+      )
     );
 
     return;
   }
 
-  openCharacterPicker(
-    mainMenuIndex
-  );
+
+  if (
+    button.dataset.kind ===
+    "new"
+  ) {
+    const emptySlot =
+      getFirstEmptySlot();
+
+    if (
+      emptySlot < 0
+    ) {
+      return;
+    }
+
+    openCharacterPicker(
+      emptySlot
+    );
+  }
 }
 
 
@@ -1036,10 +1218,11 @@ function openMainMenu() {
   renderMainMenu();
 
   requestAnimationFrame(
-    () =>
+    () => {
       updateMainMenuSelection(
         true
-      )
+      );
+    }
   );
 }
 
@@ -1051,6 +1234,13 @@ function openMainMenu() {
 function openCharacterPicker(
   slotIndex
 ) {
+  if (
+    slotIndex < 0 ||
+    slotIndex >= SLOT_COUNT
+  ) {
+    return;
+  }
+
   pendingSlotIndex =
     slotIndex;
 
@@ -1064,10 +1254,11 @@ function openCharacterPicker(
   );
 
   requestAnimationFrame(
-    () =>
+    () => {
       updatePickerSelection(
         true
-      )
+      );
+    }
   );
 }
 
@@ -1080,7 +1271,6 @@ function renderCharacterPicker() {
     Object.keys(
       characters
     );
-
 
   characterIds.forEach(
     (
@@ -1110,11 +1300,6 @@ function renderCharacterPicker() {
       button.dataset.characterId =
         characterId;
 
-      button.dataset.index =
-        String(
-          index
-        );
-
       button.innerHTML = `
         <span class="list-item-primary">
           ${character.name.toUpperCase()}
@@ -1124,7 +1309,6 @@ function renderCharacterPicker() {
           SELECT COMPANION
         </span>
       `;
-
 
       button.addEventListener(
         "focus",
@@ -1139,7 +1323,6 @@ function renderCharacterPicker() {
         }
       );
 
-
       button.addEventListener(
         "click",
         () => {
@@ -1151,7 +1334,6 @@ function renderCharacterPicker() {
         }
       );
 
-
       characterPickerList.appendChild(
         button
       );
@@ -1162,26 +1344,21 @@ function renderCharacterPicker() {
   const backIndex =
     characterIds.length;
 
-  const back =
+  const backButton =
     document.createElement(
       "button"
     );
 
-  back.type =
+  backButton.type =
     "button";
 
-  back.className =
+  backButton.className =
     "list-item focusable back";
 
-  back.dataset.kind =
+  backButton.dataset.kind =
     "back";
 
-  back.dataset.index =
-    String(
-      backIndex
-    );
-
-  back.innerHTML = `
+  backButton.innerHTML = `
     <span class="list-item-primary">
       ‹ BACK
     </span>
@@ -1191,8 +1368,7 @@ function renderCharacterPicker() {
     </span>
   `;
 
-
-  back.addEventListener(
+  backButton.addEventListener(
     "focus",
     () => {
 
@@ -1205,8 +1381,7 @@ function renderCharacterPicker() {
     }
   );
 
-
-  back.addEventListener(
+  backButton.addEventListener(
     "click",
     () => {
 
@@ -1217,9 +1392,8 @@ function renderCharacterPicker() {
     }
   );
 
-
   characterPickerList.appendChild(
-    back
+    backButton
   );
 }
 
@@ -1239,12 +1413,9 @@ function updatePickerSelection(
   const buttons =
     getPickerButtons();
 
-  if (
-    !buttons.length
-  ) {
+  if (!buttons.length) {
     return;
   }
-
 
   pickerIndex =
     (
@@ -1252,7 +1423,6 @@ function updatePickerSelection(
       buttons.length
     ) %
     buttons.length;
-
 
   buttons.forEach(
     (
@@ -1268,7 +1438,6 @@ function updatePickerSelection(
     }
   );
 
-
   if (
     moveFocus &&
     buttons[
@@ -1278,8 +1447,7 @@ function updatePickerSelection(
     buttons[
       pickerIndex
     ].focus({
-      preventScroll:
-        true
+      preventScroll: true
     });
   }
 }
@@ -1291,9 +1459,7 @@ function movePicker(
   const buttons =
     getPickerButtons();
 
-  if (
-    !buttons.length
-  ) {
+  if (!buttons.length) {
     return;
   }
 
@@ -1320,12 +1486,9 @@ function activatePickerSelection() {
       pickerIndex
     ];
 
-  if (
-    !button
-  ) {
+  if (!button) {
     return;
   }
-
 
   if (
     button.dataset.kind ===
@@ -1336,16 +1499,13 @@ function activatePickerSelection() {
     return;
   }
 
-
   if (
-    pendingSlotIndex ===
-    null
+    pendingSlotIndex === null
   ) {
     openMainMenu();
 
     return;
   }
-
 
   createCompanion(
     pendingSlotIndex,
@@ -1355,7 +1515,7 @@ function activatePickerSelection() {
 
 
 /* ============================================================
-   ACTIVE COMPANION
+   OPEN COMPANION
 ============================================================ */
 
 function resetRuntimeState() {
@@ -1379,60 +1539,33 @@ function resetRuntimeState() {
     messageTimer
   );
 
+  animationTimer = null;
+  sleepTimer = null;
+  walkTimer = null;
+  ambientTimer = null;
+  messageTimer = null;
 
-  animationTimer =
-    null;
+  currentAnimation = "";
+  currentAnimationDirection = "";
 
-  sleepTimer =
-    null;
+  temporaryAnimation = false;
+  walking = false;
 
-  walkTimer =
-    null;
+  interactionMode = false;
+  statusCardVisible = false;
 
-  ambientTimer =
-    null;
+  selectedAction = 0;
 
-  messageTimer =
-    null;
+  currentX = 0;
 
-
-  currentAnimation =
-    "";
-
-  currentAnimationDirection =
-    "";
-
-  temporaryAnimation =
-    false;
-
-  walking =
-    false;
-
-  interactionMode =
-    false;
-
-  statusCardVisible =
-    false;
-
-  selectedAction =
-    0;
-
-  currentX =
-    0;
-
-  activeDirection =
-    "right";
-
-  nextWalkDirection =
-    "right";
-
+  activeDirection = "right";
+  nextWalkDirection = "right";
 
   characterMover.style.transition =
     "none";
 
   characterMover.style.left =
     "50%";
-
 
   actionTray.classList.add(
     "hidden-tray"
@@ -1444,6 +1577,10 @@ function resetRuntimeState() {
   );
 
   statusCard.classList.add(
+    "hidden"
+  );
+
+  message.classList.add(
     "hidden"
   );
 
@@ -1461,20 +1598,14 @@ function openCompanion(
       slotIndex
     ];
 
-
   if (
     !slot ||
     !characters[
       slot.characterId
     ]
   ) {
-    openCharacterPicker(
-      slotIndex
-    );
-
     return;
   }
-
 
   activeSlotIndex =
     slotIndex;
@@ -1488,23 +1619,19 @@ function openCompanion(
       activeCharacterId
     );
 
-
   resetRuntimeState();
 
   showOnlyScreen(
     "game"
   );
 
-
   statusCardTitle.textContent =
     getActiveCharacter()
       .name
       .toUpperCase();
 
-
   controlHint.textContent =
     "↑ MENU • ↓ INTERACT";
-
 
   preloadAnimations();
 
@@ -1519,15 +1646,11 @@ function openCompanion(
 
   updateMoodAnimation();
 
-
   requestAnimationFrame(
     focusApp
   );
 
-
-  if (
-    !state.alive
-  ) {
+  if (!state.alive) {
     setAnimation(
       "death",
       activeDirection
@@ -1536,10 +1659,7 @@ function openCompanion(
     return;
   }
 
-
-  if (
-    state.forcedSit
-  ) {
+  if (state.forcedSit) {
     temporaryAnimation =
       false;
 
@@ -1551,10 +1671,7 @@ function openCompanion(
     return;
   }
 
-
-  if (
-    state.sleeping
-  ) {
+  if (state.sleeping) {
     temporaryAnimation =
       false;
 
@@ -1566,122 +1683,8 @@ function openCompanion(
     return;
   }
 
-
   resumeAmbient(
     1800
-  );
-}
-
-
-/* ============================================================
-   GAME RUNTIME STATE
-============================================================ */
-
-const actions = [
-  "feed",
-  "play",
-  "pet",
-  "clean",
-  "sit",
-  "sleep",
-  "medicine"
-];
-
-
-let selectedAction =
-  0;
-
-let interactionMode =
-  false;
-
-let statusCardVisible =
-  false;
-
-
-let currentAnimation =
-  "";
-
-let currentAnimationDirection =
-  "";
-
-let temporaryAnimation =
-  false;
-
-let animationTimer =
-  null;
-
-let sleepTimer =
-  null;
-
-
-let walking =
-  false;
-
-let walkTimer =
-  null;
-
-let ambientTimer =
-  null;
-
-let currentX =
-  0;
-
-let nextWalkDirection =
-  "right";
-
-
-let pointerStartX =
-  0;
-
-let pointerStartY =
-  0;
-
-let longPressTimer =
-  null;
-
-let longPressTriggered =
-  false;
-
-let messageTimer =
-  null;
-
-
-/* ============================================================
-   UTILITIES
-============================================================ */
-
-function clamp(
-  value
-) {
-  return Math.max(
-    0,
-    Math.min(
-      MAX_STAT,
-      value
-    )
-  );
-}
-
-
-function rounded(
-  value
-) {
-  return Math.round(
-    clamp(
-      value
-    )
-  );
-}
-
-
-function randomBetween(
-  min,
-  max
-) {
-  return (
-    min +
-    Math.random() *
-    (max - min)
   );
 }
 
@@ -1698,24 +1701,18 @@ function getAnimationPath(
   const character =
     getActiveCharacter();
 
-  if (
-    !character
-  ) {
+  if (!character) {
     return null;
   }
-
 
   const animation =
     character.animations[
       name
     ];
 
-  if (
-    !animation
-  ) {
+  if (!animation) {
     return null;
   }
-
 
   const filename =
     animation[
@@ -1724,11 +1721,14 @@ function getAnimationPath(
     animation.right ||
     animation.left;
 
+  if (!filename) {
+    return null;
+  }
 
-  return filename
-    ? character.path +
-        filename
-    : null;
+  return (
+    character.path +
+    filename
+  );
 }
 
 
@@ -1745,10 +1745,7 @@ function setAnimation(
       direction
     );
 
-
-  if (
-    !path
-  ) {
+  if (!path) {
     console.warn(
       "Missing animation:",
       name
@@ -1757,17 +1754,14 @@ function setAnimation(
     return;
   }
 
-
   if (
     !restart &&
-    currentAnimation ===
-      name &&
+    currentAnimation === name &&
     currentAnimationDirection ===
       direction
   ) {
     return;
   }
-
 
   currentAnimation =
     name;
@@ -1777,7 +1771,6 @@ function setAnimation(
 
   activeDirection =
     direction;
-
 
   characterSprite.src =
     restart
@@ -1821,13 +1814,14 @@ function getHungerStage() {
 
 
 function updateFoodFromClock() {
+  const remaining =
+    1 -
+    getFoodAge() /
+      FOOD_DURATION_MS;
+
   state.hunger =
     clamp(
-      (
-        1 -
-        getFoodAge() /
-        FOOD_DURATION_MS
-      ) *
+      remaining *
       100
     );
 }
@@ -1853,21 +1847,16 @@ function areHealthNeedsMet() {
 function updateHealthFromClock(
   minutes
 ) {
-  if (
-    !state.alive
-  ) {
+  if (!state.alive) {
     return;
   }
 
   const hungerStage =
     getHungerStage();
 
-
   if (
-    hungerStage ===
-      "sick" ||
-    hungerStage ===
-      "critical"
+    hungerStage === "sick" ||
+    hungerStage === "critical"
   ) {
     state.health =
       clamp(
@@ -1887,10 +1876,8 @@ function updateHealthFromClock(
       );
   }
 
-
   if (
-    state.health <=
-    0
+    state.health <= 0
   ) {
     killCharacter();
   }
@@ -1902,34 +1889,20 @@ function updateHealthFromClock(
 ============================================================ */
 
 function killCharacter() {
-  if (
-    !state.alive
-  ) {
+  if (!state.alive) {
     return;
   }
 
+  state.health = 0;
+  state.alive = false;
 
-  state.health =
-    0;
+  state.sleeping = false;
+  state.forcedSleep = false;
 
-  state.alive =
-    false;
+  state.forcedSit = false;
+  state.sitStartedAt = null;
 
-  state.sleeping =
-    false;
-
-  state.forcedSleep =
-    false;
-
-  state.forcedSit =
-    false;
-
-  state.sitStartedAt =
-    null;
-
-  temporaryAnimation =
-    false;
-
+  temporaryAnimation = false;
 
   clearTimeout(
     animationTimer
@@ -1939,32 +1912,24 @@ function killCharacter() {
     sleepTimer
   );
 
-
   pauseAmbient();
-
   stopWalking();
-
 
   setAnimation(
     "death",
     activeDirection
   );
 
-
   saveState();
 }
 
 
 function getMoodEmoji() {
-  if (
-    !state.alive
-  ) {
+  if (!state.alive) {
     return "😵";
   }
 
-  if (
-    state.forcedSit
-  ) {
+  if (state.forcedSit) {
     return "😐";
   }
 
@@ -1990,29 +1955,25 @@ function getMoodEmoji() {
   }
 
   if (
-    state.happiness >=
-    85
+    state.happiness >= 85
   ) {
     return "🥰";
   }
 
   if (
-    state.happiness >=
-    60
+    state.happiness >= 60
   ) {
     return "😊";
   }
 
   if (
-    state.happiness >=
-    35
+    state.happiness >= 35
   ) {
     return "😐";
   }
 
   if (
-    state.happiness >=
-    15
+    state.happiness >= 15
   ) {
     return "😢";
   }
@@ -2022,37 +1983,32 @@ function getMoodEmoji() {
 
 
 function applyPositiveInteraction() {
-  if (
-    state.forcedSit
-  ) {
+  if (state.forcedSit) {
     return;
   }
 
-
-  if (
-    state.recoveryMood ===
-    "angry"
+  switch (
+    state.recoveryMood
   ) {
-    state.recoveryMood =
-      "sad";
+    case "angry":
+      state.recoveryMood =
+        "sad";
+      break;
 
-  } else if (
-    state.recoveryMood ===
-    "sad"
-  ) {
-    state.recoveryMood =
-      "neutral";
+    case "sad":
+      state.recoveryMood =
+        "neutral";
+      break;
 
-  } else if (
-    state.recoveryMood ===
-    "neutral"
-  ) {
-    state.recoveryMood =
-      "happy";
+    case "neutral":
+      state.recoveryMood =
+        "happy";
+      break;
 
-  } else {
-    state.recoveryMood =
-      "happy";
+    default:
+      state.recoveryMood =
+        "happy";
+      break;
   }
 }
 
@@ -2069,20 +2025,15 @@ function startForcedSit() {
     return;
   }
 
-
   pauseAmbient();
-
   stopWalking();
-
 
   clearTimeout(
     animationTimer
   );
 
-
   temporaryAnimation =
     false;
-
 
   state.forcedSit =
     true;
@@ -2090,17 +2041,14 @@ function startForcedSit() {
   state.sitStartedAt =
     Date.now();
 
-
   setAnimation(
     "bored",
     activeDirection
   );
 
-
   showMessage(
     "Sit."
   );
-
 
   updateStatusDisplay();
 
@@ -2120,7 +2068,6 @@ function applySitPenalty(
 
     return;
   }
-
 
   if (
     elapsed >=
@@ -2144,20 +2091,20 @@ function releaseForcedSit(
     return;
   }
 
-
   const startedAt =
     state.sitStartedAt ||
     Date.now();
 
-
-  applySitPenalty(
+  const elapsed =
     Math.max(
       0,
       Date.now() -
       startedAt
-    )
-  );
+    );
 
+  applySitPenalty(
+    elapsed
+  );
 
   state.forcedSit =
     false;
@@ -2168,18 +2115,14 @@ function releaseForcedSit(
   temporaryAnimation =
     false;
 
-
   clearTimeout(
     animationTimer
   );
 
-
   saveState();
 
   updateMoodAnimation();
-
   updateStatusDisplay();
-
 
   if (
     state.recoveryMood ===
@@ -2203,7 +2146,6 @@ function releaseForcedSit(
     );
   }
 
-
   if (
     resumeMovement &&
     interactionMode
@@ -2212,7 +2154,6 @@ function releaseForcedSit(
 
     return;
   }
-
 
   if (
     resumeMovement &&
@@ -2227,9 +2168,7 @@ function releaseForcedSit(
 
 
 function toggleForcedSit() {
-  if (
-    state.forcedSit
-  ) {
+  if (state.forcedSit) {
     releaseForcedSit();
 
   } else {
@@ -2239,20 +2178,16 @@ function toggleForcedSit() {
 
 
 /* ============================================================
-   PERSISTENT TIME
+   TIME
 ============================================================ */
 
 function updatePersistentTime() {
-  if (
-    !state
-  ) {
+  if (!state) {
     return;
   }
 
-
   const now =
     Date.now();
-
 
   const elapsed =
     Math.max(
@@ -2261,15 +2196,11 @@ function updatePersistentTime() {
       state.lastUpdate
     );
 
-
   const minutes =
     elapsed /
     60000;
 
-
-  if (
-    !state.alive
-  ) {
+  if (!state.alive) {
     state.lastUpdate =
       now;
 
@@ -2278,10 +2209,7 @@ function updatePersistentTime() {
     return;
   }
 
-
-  if (
-    state.sleeping
-  ) {
+  if (state.sleeping) {
     state.energy =
       clamp(
         state.energy +
@@ -2289,13 +2217,10 @@ function updatePersistentTime() {
         minutes
       );
 
-
     if (
-      state.energy >=
-      100
+      state.energy >= 100
     ) {
-      state.energy =
-        100;
+      state.energy = 100;
 
       state.sleeping =
         false;
@@ -2312,23 +2237,16 @@ function updatePersistentTime() {
         minutes
       );
 
-
     if (
-      state.energy <=
-      0
+      state.energy <= 0
     ) {
-      state.energy =
-        0;
+      state.energy = 0;
 
-
-      if (
-        state.forcedSit
-      ) {
+      if (state.forcedSit) {
         releaseForcedSit(
           false
         );
       }
-
 
       state.sleeping =
         true;
@@ -2336,11 +2254,9 @@ function updatePersistentTime() {
       state.forcedSleep =
         true;
 
-
       stopWalking();
     }
   }
-
 
   updateFoodFromClock();
 
@@ -2348,26 +2264,21 @@ function updatePersistentTime() {
     minutes
   );
 
-
   state.lastUpdate =
     now;
-
 
   saveState();
 }
 
 
 /* ============================================================
-   STATUS DISPLAY
+   STATUS
 ============================================================ */
 
 function updateStatusDisplay() {
-  if (
-    !state
-  ) {
+  if (!state) {
     return;
   }
-
 
   const happiness =
     rounded(
@@ -2394,10 +2305,8 @@ function updateStatusDisplay() {
       state.cleanliness
     );
 
-
   moodEmoji.textContent =
     getMoodEmoji();
-
 
   healthBar.style.width =
     `${health}%`;
@@ -2410,7 +2319,6 @@ function updateStatusDisplay() {
 
   energyBar.style.width =
     `${energy}%`;
-
 
   happinessValue.textContent =
     happiness;
@@ -2427,7 +2335,6 @@ function updateStatusDisplay() {
   cleanValue.textContent =
     clean;
 
-
   detailHappiness.style.width =
     `${happiness}%`;
 
@@ -2443,48 +2350,43 @@ function updateStatusDisplay() {
   detailClean.style.width =
     `${clean}%`;
 
-
   document
     .querySelector(
       '[data-stat="health"]'
     )
-    .classList.toggle(
+    ?.classList.toggle(
       "critical",
-      state.health <
-      25
+      state.health < 25
     );
-
 
   document
     .querySelector(
       '[data-stat="hunger"]'
     )
-    .classList.toggle(
+    ?.classList.toggle(
       "critical",
       getHungerStage() ===
-      "critical"
+        "critical"
     );
-
 
   document
     .querySelector(
       '[data-stat="cleanliness"]'
     )
-    .classList.toggle(
+    ?.classList.toggle(
       "critical",
       state.cleanliness <
-      HEALTH_MIN_CLEANLINESS
+        HEALTH_MIN_CLEANLINESS
     );
-
 
   document
     .querySelector(
       '[data-stat="energy"]'
     )
-    .classList.toggle(
+    ?.classList.toggle(
       "critical",
       state.energy <=
-      EXHAUSTED_THRESHOLD
+        EXHAUSTED_THRESHOLD
     );
 }
 
@@ -2504,10 +2406,7 @@ function updateMoodAnimation() {
     return;
   }
 
-
-  if (
-    !state.alive
-  ) {
+  if (!state.alive) {
     setAnimation(
       "death"
     );
@@ -2515,10 +2414,7 @@ function updateMoodAnimation() {
     return;
   }
 
-
-  if (
-    state.sleeping
-  ) {
+  if (state.sleeping) {
     setAnimation(
       "sleep"
     );
@@ -2526,10 +2422,7 @@ function updateMoodAnimation() {
     return;
   }
 
-
-  if (
-    state.forcedSit
-  ) {
+  if (state.forcedSit) {
     setAnimation(
       "bored",
       activeDirection
@@ -2538,10 +2431,8 @@ function updateMoodAnimation() {
     return;
   }
 
-
   const hungerStage =
     getHungerStage();
-
 
   if (
     hungerStage ===
@@ -2556,10 +2447,8 @@ function updateMoodAnimation() {
     return;
   }
 
-
   if (
-    state.hunger <
-    20
+    state.hunger < 20
   ) {
     setAnimation(
       "hungry"
@@ -2568,10 +2457,9 @@ function updateMoodAnimation() {
     return;
   }
 
-
   if (
     state.energy <=
-    EXHAUSTED_THRESHOLD
+      EXHAUSTED_THRESHOLD
   ) {
     setAnimation(
       "angry"
@@ -2580,10 +2468,8 @@ function updateMoodAnimation() {
     return;
   }
 
-
   if (
-    state.happiness <
-    25
+    state.happiness < 25
   ) {
     setAnimation(
       "sad"
@@ -2591,7 +2477,6 @@ function updateMoodAnimation() {
 
     return;
   }
-
 
   setAnimation(
     "idleFront",
@@ -2601,7 +2486,7 @@ function updateMoodAnimation() {
 
 
 /* ============================================================
-   TEMPORARY ANIMATIONS
+   TEMPORARY ANIMATION
 ============================================================ */
 
 function playTemporaryAnimation(
@@ -2611,18 +2496,14 @@ function playTemporaryAnimation(
     activeDirection
 ) {
   pauseAmbient();
-
   stopWalking();
-
 
   clearTimeout(
     animationTimer
   );
 
-
   temporaryAnimation =
     true;
-
 
   setAnimation(
     name,
@@ -2633,7 +2514,6 @@ function playTemporaryAnimation(
       "clean"
   );
 
-
   animationTimer =
     setTimeout(
       () => {
@@ -2641,16 +2521,14 @@ function playTemporaryAnimation(
         temporaryAnimation =
           false;
 
-
         updateMoodAnimation();
 
-
         if (
+          currentScreen ===
+            "game" &&
           !state.forcedSit &&
           !state.sleeping &&
-          state.alive &&
-          currentScreen ===
-            "game"
+          state.alive
         ) {
           resumeAmbient(
             1500
@@ -2671,10 +2549,8 @@ function getHorizontalLimits() {
   const stageWidth =
     petStage.clientWidth;
 
-
   const characterWidth =
     characterMover.offsetWidth;
-
 
   const halfAvailable =
     Math.max(
@@ -2684,7 +2560,6 @@ function getHorizontalLimits() {
         0.28 -
       WALK_MARGIN
     );
-
 
   return {
     min:
@@ -2700,18 +2575,15 @@ function getNextRoamTarget() {
   const limits =
     getHorizontalLimits();
 
-
   const edgeTarget =
     nextWalkDirection ===
       "right"
       ? limits.max
       : limits.min;
 
-
   const remainingDistance =
     edgeTarget -
     currentX;
-
 
   if (
     Math.abs(
@@ -2725,10 +2597,8 @@ function getNextRoamTarget() {
         ? "left"
         : "right";
 
-
     return getNextRoamTarget();
   }
-
 
   const travelFraction =
     Math.random() <
@@ -2739,15 +2609,13 @@ function getNextRoamTarget() {
         )
       : randomBetween(
           0.94,
-          1.0
+          1
         );
-
 
   const target =
     currentX +
     remainingDistance *
       travelFraction;
-
 
   return Math.max(
     limits.min,
@@ -2763,7 +2631,6 @@ function chooseNextWalkDirection() {
   const limits =
     getHorizontalLimits();
 
-
   const roomAhead =
     activeDirection ===
       "right"
@@ -2771,7 +2638,6 @@ function chooseNextWalkDirection() {
         currentX
       : currentX -
         limits.min;
-
 
   if (
     roomAhead >
@@ -2797,8 +2663,7 @@ function moveCharacter(
   animation,
   speed,
   minimumDuration,
-  special =
-    false
+  special = false
 ) {
   if (
     currentScreen !==
@@ -2814,15 +2679,12 @@ function moveCharacter(
     return;
   }
 
-
   const targetX =
     getNextRoamTarget();
-
 
   const distance =
     targetX -
     currentX;
-
 
   if (
     Math.abs(
@@ -2835,13 +2697,10 @@ function moveCharacter(
     return;
   }
 
-
   activeDirection =
-    distance >
-      0
+    distance > 0
       ? "right"
       : "left";
-
 
   walking =
     true;
@@ -2849,12 +2708,10 @@ function moveCharacter(
   temporaryAnimation =
     special;
 
-
   setAnimation(
     animation,
     activeDirection
   );
-
 
   const duration =
     Math.max(
@@ -2868,26 +2725,20 @@ function moveCharacter(
       1000
     );
 
-
   characterMover.style.transition =
     "none";
 
-
   void characterMover.offsetWidth;
-
 
   characterMover.style.transition =
     `left ${duration}ms linear`;
 
-
   characterMover.style.left =
     `calc(50% + ${targetX}px)`;
-
 
   clearTimeout(
     walkTimer
   );
-
 
   walkTimer =
     setTimeout(
@@ -2896,17 +2747,14 @@ function moveCharacter(
         currentX =
           targetX;
 
-
         walking =
           false;
 
         temporaryAnimation =
           false;
 
-
         characterMover.style.transition =
           "none";
-
 
         chooseNextWalkDirection();
 
@@ -2915,8 +2763,7 @@ function moveCharacter(
         beginRestPeriod();
 
       },
-      duration +
-      25
+      duration + 25
     );
 }
 
@@ -2942,50 +2789,38 @@ function boundAcrossScreen() {
 
 
 function stopWalking() {
-  if (
-    !walking
-  ) {
+  if (!walking) {
     return;
   }
-
 
   clearTimeout(
     walkTimer
   );
 
-
   const stageRect =
     petStage
       .getBoundingClientRect();
-
 
   const moverRect =
     characterMover
       .getBoundingClientRect();
 
-
   currentX =
     moverRect.left +
-    moverRect.width /
-      2 -
+    moverRect.width / 2 -
     (
       stageRect.left +
-      stageRect.width /
-        2
+      stageRect.width / 2
     );
-
 
   characterMover.style.transition =
     "none";
 
-
   characterMover.style.left =
     `calc(50% + ${currentX}px)`;
 
-
   walking =
     false;
-
 
   if (
     currentAnimation ===
@@ -2998,28 +2833,24 @@ function stopWalking() {
 
 
 /* ============================================================
-   AMBIENT
+   AMBIENT BEHAVIOR
 ============================================================ */
 
 function playAmbientReaction(
   animation,
-  duration =
-    1600
+  duration = 1600
 ) {
   temporaryAnimation =
     true;
-
 
   setAnimation(
     animation,
     activeDirection
   );
 
-
   clearTimeout(
     animationTimer
   );
-
 
   animationTimer =
     setTimeout(
@@ -3028,16 +2859,14 @@ function playAmbientReaction(
         temporaryAnimation =
           false;
 
-
         updateMoodAnimation();
 
-
         if (
+          currentScreen ===
+            "game" &&
           !state.forcedSit &&
           !state.sleeping &&
-          state.alive &&
-          currentScreen ===
-            "game"
+          state.alive
         ) {
           resumeAmbient(
             randomBetween(
@@ -3066,23 +2895,19 @@ function beginRestPeriod() {
     return;
   }
 
-
   const pauseDuration =
     randomBetween(
       MIN_PAUSE_MS,
       MAX_PAUSE_MS
     );
 
-
   if (
     getHungerStage() !==
       "normal" ||
     state.energy <=
       EXHAUSTED_THRESHOLD ||
-    state.hunger <
-      20 ||
-    state.happiness <
-      25
+    state.hunger < 20 ||
+    state.happiness < 25
   ) {
     updateMoodAnimation();
 
@@ -3093,15 +2918,12 @@ function beginRestPeriod() {
     return;
   }
 
-
   const roll =
     Math.random();
-
 
   const positiveBehaviorEnd =
     MOOD_REACTION_CHANCE +
     BOUND_CHANCE;
-
 
   if (
     state.recoveryMood ===
@@ -3117,7 +2939,6 @@ function beginRestPeriod() {
     return;
   }
 
-
   if (
     state.recoveryMood ===
       "sad" &&
@@ -3132,7 +2953,6 @@ function beginRestPeriod() {
     return;
   }
 
-
   if (
     state.recoveryMood ===
       "neutral" &&
@@ -3144,14 +2964,12 @@ function beginRestPeriod() {
       activeDirection
     );
 
-
     resumeAmbient(
       pauseDuration
     );
 
     return;
   }
-
 
   if (
     state.recoveryMood ===
@@ -3160,8 +2978,7 @@ function beginRestPeriod() {
       MOOD_REACTION_CHANCE
   ) {
     playAmbientReaction(
-      state.happiness >=
-        50
+      state.happiness >= 50
         ? "happy"
         : "sad",
       1500
@@ -3169,7 +2986,6 @@ function beginRestPeriod() {
 
     return;
   }
-
 
   if (
     state.recoveryMood ===
@@ -3182,7 +2998,6 @@ function beginRestPeriod() {
     return;
   }
 
-
   if (
     roll <
     positiveBehaviorEnd +
@@ -3193,7 +3008,6 @@ function beginRestPeriod() {
       activeDirection
     );
 
-
     resumeAmbient(
       pauseDuration
     );
@@ -3201,12 +3015,10 @@ function beginRestPeriod() {
     return;
   }
 
-
   setAnimation(
     "idleFront",
     activeDirection
   );
-
 
   resumeAmbient(
     pauseDuration
@@ -3225,17 +3037,14 @@ function pauseAmbient() {
 
 
 function resumeAmbient(
-  delay =
-    1500
+  delay = 1500
 ) {
   clearTimeout(
     ambientTimer
   );
 
-
   ambientTimer =
     null;
-
 
   if (
     currentScreen !==
@@ -3248,14 +3057,12 @@ function resumeAmbient(
     return;
   }
 
-
   ambientTimer =
     setTimeout(
       () => {
 
         ambientTimer =
           null;
-
 
         if (
           currentScreen !==
@@ -3266,7 +3073,6 @@ function resumeAmbient(
         ) {
           return;
         }
-
 
         if (
           interactionMode ||
@@ -3280,7 +3086,6 @@ function resumeAmbient(
 
           return;
         }
-
 
         walkAcrossScreen();
 
@@ -3296,22 +3101,18 @@ function resumeAmbient(
 
 function showMessage(
   text,
-  duration =
-    1300
+  duration = 1300
 ) {
   clearTimeout(
     messageTimer
   );
 
-
   message.textContent =
     text;
-
 
   message.classList.remove(
     "hidden"
   );
-
 
   messageTimer =
     setTimeout(
@@ -3335,18 +3136,13 @@ function showStatusCard() {
     return;
   }
 
-
   pauseAmbient();
-
   stopWalking();
-
 
   statusCardVisible =
     true;
 
-
   updateStatusDisplay();
-
 
   statusCard.classList.remove(
     "hidden"
@@ -3355,17 +3151,14 @@ function showStatusCard() {
 
 
 function hideStatusCard(
-  resume =
-    true
+  resume = true
 ) {
   statusCardVisible =
     false;
 
-
   statusCard.classList.add(
     "hidden"
   );
-
 
   if (
     currentScreen ===
@@ -3373,7 +3166,6 @@ function hideStatusCard(
   ) {
     focusApp();
   }
-
 
   if (
     resume &&
@@ -3431,7 +3223,6 @@ function focusSelectedAction() {
       selectedAction
     ];
 
-
   if (
     button &&
     typeof button.focus ===
@@ -3458,36 +3249,28 @@ function openInteractionTray() {
     return;
   }
 
-
   pauseAmbient();
-
   stopWalking();
-
 
   hideStatusCard(
     false
   );
 
-
   interactionMode =
     true;
-
 
   actionTray.classList.remove(
     "hidden-tray"
   );
-
 
   actionTray.setAttribute(
     "aria-hidden",
     "false"
   );
 
-
   setActionButtonsFocusable(
     true
   );
-
 
   if (
     state.alive &&
@@ -3501,10 +3284,8 @@ function openInteractionTray() {
     );
   }
 
-
   controlHint.textContent =
     "◀ ▶ SELECT • PINCH • ↑ CLOSE";
-
 
   requestAnimationFrame(
     focusSelectedAction
@@ -3513,8 +3294,7 @@ function openInteractionTray() {
 
 
 function closeInteractionTray(
-  resume =
-    true
+  resume = true
 ) {
   if (
     !interactionMode
@@ -3522,30 +3302,24 @@ function closeInteractionTray(
     return;
   }
 
-
   interactionMode =
     false;
-
 
   actionTray.classList.add(
     "hidden-tray"
   );
-
 
   actionTray.setAttribute(
     "aria-hidden",
     "true"
   );
 
-
   setActionButtonsFocusable(
     false
   );
 
-
   controlHint.textContent =
     "↑ MENU • ↓ INTERACT";
-
 
   if (
     currentScreen ===
@@ -3555,7 +3329,6 @@ function closeInteractionTray(
       focusApp
     );
   }
-
 
   if (
     resume &&
@@ -3575,8 +3348,7 @@ function closeInteractionTray(
 
 function selectAction(
   index,
-  moveFocus =
-    true
+  moveFocus = true
 ) {
   selectedAction =
     (
@@ -3584,7 +3356,6 @@ function selectAction(
       actions.length
     ) %
     actions.length;
-
 
   actionButtons.forEach(
     (
@@ -3600,7 +3371,6 @@ function selectAction(
     }
   );
 
-
   if (
     interactionMode &&
     moveFocus
@@ -3612,16 +3382,14 @@ function selectAction(
 
 function nextAction() {
   selectAction(
-    selectedAction +
-    1
+    selectedAction + 1
   );
 }
 
 
 function previousAction() {
   selectAction(
-    selectedAction -
-    1
+    selectedAction - 1
   );
 }
 
@@ -3631,8 +3399,7 @@ function previousAction() {
 ============================================================ */
 
 function putCharacterToSleep(
-  forced =
-    false
+  forced = false
 ) {
   if (
     !state.alive ||
@@ -3641,11 +3408,8 @@ function putCharacterToSleep(
     return;
   }
 
-
   pauseAmbient();
-
   stopWalking();
-
 
   clearTimeout(
     sleepTimer
@@ -3655,15 +3419,11 @@ function putCharacterToSleep(
     animationTimer
   );
 
-
-  if (
-    state.forcedSit
-  ) {
+  if (state.forcedSit) {
     releaseForcedSit(
       false
     );
   }
-
 
   state.sleeping =
     true;
@@ -3674,11 +3434,9 @@ function putCharacterToSleep(
   temporaryAnimation =
     true;
 
-
   setAnimation(
     "sleepy"
   );
-
 
   showMessage(
     forced
@@ -3686,9 +3444,7 @@ function putCharacterToSleep(
       : "Sleepy..."
   );
 
-
   saveState();
-
 
   sleepTimer =
     setTimeout(
@@ -3701,11 +3457,9 @@ function putCharacterToSleep(
           return;
         }
 
-
         setAnimation(
           "lieDown"
         );
-
 
         sleepTimer =
           setTimeout(
@@ -3718,15 +3472,12 @@ function putCharacterToSleep(
                 return;
               }
 
-
               temporaryAnimation =
                 false;
-
 
               setAnimation(
                 "sleep"
               );
-
 
               saveState();
 
@@ -3748,11 +3499,9 @@ function wakeCharacter() {
     return;
   }
 
-
   if (
     state.forcedSleep &&
-    state.energy <
-      20
+    state.energy < 20
   ) {
     showMessage(
       "Too tired"
@@ -3761,7 +3510,6 @@ function wakeCharacter() {
     return;
   }
 
-
   clearTimeout(
     sleepTimer
   );
@@ -3769,7 +3517,6 @@ function wakeCharacter() {
   clearTimeout(
     animationTimer
   );
-
 
   state.sleeping =
     false;
@@ -3780,11 +3527,9 @@ function wakeCharacter() {
   temporaryAnimation =
     true;
 
-
   setAnimation(
     "wakeUp"
   );
-
 
   animationTimer =
     setTimeout(
@@ -3799,13 +3544,10 @@ function wakeCharacter() {
           return;
         }
 
-
         temporaryAnimation =
           false;
 
-
         updateMoodAnimation();
-
 
         resumeAmbient(
           1500
@@ -3814,7 +3556,6 @@ function wakeCharacter() {
       },
       1500
     );
-
 
   saveState();
 }
@@ -3836,53 +3577,40 @@ function performAction(
     return;
   }
 
-
   state.lastInteraction =
     Date.now();
 
-
   if (
     state.forcedSit &&
-    action !==
-      "sit"
+    action !== "sit"
   ) {
     showMessage(
       "Still sitting."
     );
-
 
     setAnimation(
       "bored",
       activeDirection
     );
 
-
     return;
   }
 
 
-  switch (
-    action
-  ) {
+  switch (action) {
 
     case "feed":
 
-      if (
-        state.sleeping
-      ) {
+      if (state.sleeping) {
         wakeCharacter();
 
         return;
       }
 
-
       state.lastMealAt =
         Date.now();
 
-
-      state.hunger =
-        100;
-
+      state.hunger = 100;
 
       state.health =
         clamp(
@@ -3890,25 +3618,19 @@ function performAction(
           FOOD_HEALTH_RECOVERY
         );
 
-
       state.happiness =
         clamp(
-          state.happiness +
-          5
+          state.happiness + 5
         );
-
 
       applyPositiveInteraction();
 
-
       updateStatusDisplay();
-
 
       playTemporaryAnimation(
         "eat",
         2200
       );
-
 
       showMessage(
         "Eating"
@@ -3919,12 +3641,9 @@ function performAction(
 
     case "play":
 
-      if (
-        state.sleeping
-      ) {
+      if (state.sleeping) {
         return;
       }
-
 
       if (
         state.energy <=
@@ -3935,35 +3654,26 @@ function performAction(
           1500
         );
 
-
         showMessage(
           "Too tired"
         );
 
-
         break;
       }
 
-
       state.happiness =
         clamp(
-          state.happiness +
-          15
+          state.happiness + 15
         );
-
 
       state.energy =
         clamp(
-          state.energy -
-          2
+          state.energy - 2
         );
-
 
       applyPositiveInteraction();
 
-
       updateStatusDisplay();
-
 
       playTemporaryAnimation(
         "chaseBall",
@@ -3976,25 +3686,18 @@ function performAction(
 
     case "pet":
 
-      if (
-        state.sleeping
-      ) {
+      if (state.sleeping) {
         return;
       }
 
-
       state.happiness =
         clamp(
-          state.happiness +
-          8
+          state.happiness + 8
         );
-
 
       applyPositiveInteraction();
 
-
       updateStatusDisplay();
-
 
       playTemporaryAnimation(
         "happy",
@@ -4009,9 +3712,7 @@ function performAction(
       state.cleanliness =
         100;
 
-
       updateStatusDisplay();
-
 
       playTemporaryAnimation(
         "clean",
@@ -4030,9 +3731,7 @@ function performAction(
 
     case "sleep":
 
-      if (
-        state.sleeping
-      ) {
+      if (state.sleeping) {
         wakeCharacter();
 
       } else {
@@ -4047,8 +3746,7 @@ function performAction(
     case "medicine":
 
       if (
-        state.health >=
-        95
+        state.health >= 95
       ) {
         showMessage(
           "Healthy"
@@ -4057,16 +3755,12 @@ function performAction(
         break;
       }
 
-
       state.health =
         clamp(
-          state.health +
-          25
+          state.health + 25
         );
 
-
       updateStatusDisplay();
-
 
       playTemporaryAnimation(
         "angry",
@@ -4076,7 +3770,6 @@ function performAction(
       break;
   }
 
-
   updateStatusDisplay();
 
   saveState();
@@ -4084,7 +3777,7 @@ function performAction(
 
 
 /* ============================================================
-   ACTION BUTTON INPUT
+   ACTION BUTTONS
 ============================================================ */
 
 actionButtons.forEach(
@@ -4108,13 +3801,11 @@ actionButtons.forEach(
       }
     );
 
-
     button.addEventListener(
       "click",
       event => {
 
         event.stopPropagation();
-
 
         if (
           !interactionMode
@@ -4122,12 +3813,10 @@ actionButtons.forEach(
           return;
         }
 
-
         selectAction(
           index,
           false
         );
-
 
         performAction(
           actions[
@@ -4141,7 +3830,7 @@ actionButtons.forEach(
 
 
 /* ============================================================
-   POINTER / TOUCH INPUT
+   TOUCH / POINTER
 ============================================================ */
 
 document.addEventListener(
@@ -4157,11 +3846,9 @@ document.addEventListener(
     longPressTriggered =
       false;
 
-
     clearTimeout(
       longPressTimer
     );
-
 
     if (
       currentScreen ===
@@ -4176,7 +3863,6 @@ document.addEventListener(
 
             longPressTriggered =
               true;
-
 
             showStatusCard();
 
@@ -4198,19 +3884,15 @@ document.addEventListener(
         pointerStartX
       );
 
-
     const dy =
       Math.abs(
         event.clientY -
         pointerStartY
       );
 
-
     if (
-      dx >
-        12 ||
-      dy >
-        12
+      dx > 12 ||
+      dy > 12
     ) {
       clearTimeout(
         longPressTimer
@@ -4228,13 +3910,11 @@ document.addEventListener(
       longPressTimer
     );
 
-
     if (
       longPressTriggered
     ) {
       return;
     }
-
 
     if (
       currentScreen !==
@@ -4243,42 +3923,30 @@ document.addEventListener(
       return;
     }
 
-
     const dx =
       event.clientX -
       pointerStartX;
-
 
     const dy =
       event.clientY -
       pointerStartY;
 
-
     const ax =
-      Math.abs(
-        dx
-      );
-
+      Math.abs(dx);
 
     const ay =
-      Math.abs(
-        dy
-      );
+      Math.abs(dy);
 
 
     if (
       ax >
         SWIPE_DISTANCE &&
-      ax >
-        ay
+      ax > ay
     ) {
       if (
         interactionMode
       ) {
-        if (
-          dx >
-          0
-        ) {
+        if (dx > 0) {
           previousAction();
 
         } else {
@@ -4293,13 +3961,10 @@ document.addEventListener(
     if (
       ay >
         SWIPE_DISTANCE &&
-      ay >
-        ax
+      ay > ax
     ) {
-      if (
-        dy >
-        0
-      ) {
+      if (dy > 0) {
+
         if (
           !interactionMode
         ) {
@@ -4307,6 +3972,7 @@ document.addEventListener(
         }
 
       } else {
+
         if (
           interactionMode
         ) {
@@ -4343,7 +4009,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   META / NEURAL BAND / KEYBOARD INPUT
+   META / KEYBOARD / NEURAL BAND
 ============================================================ */
 
 function getNavigationKey(
@@ -4355,70 +4021,47 @@ function getNavigationKey(
   const code =
     event.code;
 
-
   if (
-    key ===
-      "ArrowLeft" ||
-    key ===
-      "Left" ||
-    code ===
-      "ArrowLeft"
+    key === "ArrowLeft" ||
+    key === "Left" ||
+    code === "ArrowLeft"
   ) {
     return "left";
   }
 
-
   if (
-    key ===
-      "ArrowRight" ||
-    key ===
-      "Right" ||
-    code ===
-      "ArrowRight"
+    key === "ArrowRight" ||
+    key === "Right" ||
+    code === "ArrowRight"
   ) {
     return "right";
   }
 
-
   if (
-    key ===
-      "ArrowUp" ||
-    key ===
-      "Up" ||
-    code ===
-      "ArrowUp"
+    key === "ArrowUp" ||
+    key === "Up" ||
+    code === "ArrowUp"
   ) {
     return "up";
   }
 
-
   if (
-    key ===
-      "ArrowDown" ||
-    key ===
-      "Down" ||
-    code ===
-      "ArrowDown"
+    key === "ArrowDown" ||
+    key === "Down" ||
+    code === "ArrowDown"
   ) {
     return "down";
   }
 
-
   if (
-    key ===
-      "Enter" ||
-    code ===
-      "Enter" ||
-    code ===
-      "NumpadEnter" ||
-    key ===
-      " " ||
-    code ===
-      "Space"
+    key === "Enter" ||
+    code === "Enter" ||
+    code === "NumpadEnter" ||
+    key === " " ||
+    code === "Space"
   ) {
     return "activate";
   }
-
 
   return null;
 }
@@ -4428,14 +4071,12 @@ function focusedNativeButtonForCurrentScreen() {
   const active =
     document.activeElement;
 
-
   if (
     !active ||
     !active.classList
   ) {
     return false;
   }
-
 
   if (
     currentScreen ===
@@ -4449,7 +4090,6 @@ function focusedNativeButtonForCurrentScreen() {
     );
   }
 
-
   if (
     currentScreen ===
       "main" ||
@@ -4460,7 +4100,6 @@ function focusedNativeButtonForCurrentScreen() {
       "list-item"
     );
   }
-
 
   return false;
 }
@@ -4474,7 +4113,6 @@ function handleNavigationInput(
       event
     );
 
-
   if (
     !input ||
     event.repeat
@@ -4482,25 +4120,20 @@ function handleNavigationInput(
     return;
   }
 
-
   /*
-     Let focused buttons handle
-     activation natively so one
-     Neural Band pinch produces
-     one click only.
+     Let actual focused buttons
+     process Enter/Space normally.
+     This prevents double activation.
   */
 
   if (
-    input ===
-      "activate" &&
+    input === "activate" &&
     focusedNativeButtonForCurrentScreen()
   ) {
     return;
   }
 
-
   event.preventDefault();
-
   event.stopPropagation();
 
 
@@ -4509,24 +4142,21 @@ function handleNavigationInput(
     "main"
   ) {
     if (
-      input ===
-      "up"
+      input === "up"
     ) {
       moveMainMenu(
         -1
       );
 
     } else if (
-      input ===
-      "down"
+      input === "down"
     ) {
       moveMainMenu(
         1
       );
 
     } else if (
-      input ===
-      "activate"
+      input === "activate"
     ) {
       activateMainMenuSelection();
     }
@@ -4540,30 +4170,26 @@ function handleNavigationInput(
     "picker"
   ) {
     if (
-      input ===
-      "up"
+      input === "up"
     ) {
       movePicker(
         -1
       );
 
     } else if (
-      input ===
-      "down"
+      input === "down"
     ) {
       movePicker(
         1
       );
 
     } else if (
-      input ===
-      "left"
+      input === "left"
     ) {
       openMainMenu();
 
     } else if (
-      input ===
-      "activate"
+      input === "activate"
     ) {
       activatePickerSelection();
     }
@@ -4580,9 +4206,7 @@ function handleNavigationInput(
   }
 
 
-  switch (
-    input
-  ) {
+  switch (input) {
 
     case "left":
 
@@ -4673,17 +4297,12 @@ function gameTick() {
     return;
   }
 
-
   const wasSleeping =
     state.sleeping;
 
-
   updatePersistentTime();
 
-
-  if (
-    !state.alive
-  ) {
+  if (!state.alive) {
     updateStatusDisplay();
 
     updateMoodAnimation();
@@ -4691,18 +4310,15 @@ function gameTick() {
     return;
   }
 
-
   if (
     !wasSleeping &&
     state.sleeping &&
-    state.energy <=
-      0
+    state.energy <= 0
   ) {
     putCharacterToSleep(
       true
     );
   }
-
 
   updateStatusDisplay();
 
@@ -4753,7 +4369,6 @@ document.addEventListener(
 
       updateMoodAnimation();
 
-
       if (
         interactionMode
       ) {
@@ -4766,7 +4381,6 @@ document.addEventListener(
           focusApp
         );
       }
-
 
       if (
         !state.sleeping &&
@@ -4784,12 +4398,12 @@ document.addEventListener(
     ) {
       renderMainMenu();
 
-
       requestAnimationFrame(
-        () =>
+        () => {
           updateMainMenuSelection(
             true
-          )
+          );
+        }
       );
 
     } else if (
@@ -4797,10 +4411,11 @@ document.addEventListener(
       "picker"
     ) {
       requestAnimationFrame(
-        () =>
+        () => {
           updatePickerSelection(
             true
-          )
+          );
+        }
       );
     }
   }
@@ -4833,10 +4448,11 @@ window.addEventListener(
       "main"
     ) {
       requestAnimationFrame(
-        () =>
+        () => {
           updateMainMenuSelection(
             true
-          )
+          );
+        }
       );
 
     } else if (
@@ -4844,10 +4460,11 @@ window.addEventListener(
       "picker"
     ) {
       requestAnimationFrame(
-        () =>
+        () => {
           updatePickerSelection(
             true
-          )
+          );
+        }
       );
     }
   }
@@ -4862,17 +4479,12 @@ function preloadAnimations() {
   const character =
     getActiveCharacter();
 
-
-  if (
-    !character
-  ) {
+  if (!character) {
     return;
   }
 
-
   const filenames =
     new Set();
-
 
   Object.values(
     character.animations
@@ -4892,13 +4504,11 @@ function preloadAnimations() {
     }
   );
 
-
   filenames.forEach(
     filename => {
 
       const img =
         new Image();
-
 
       img.src =
         character.path +
@@ -4917,12 +4527,10 @@ function init() {
     false
   );
 
-
   actionTray.setAttribute(
     "aria-hidden",
     "true"
   );
-
 
   characterSprite.addEventListener(
     "dragstart",
@@ -4933,20 +4541,18 @@ function init() {
     }
   );
 
-
   renderMainMenu();
-
 
   showOnlyScreen(
     "main"
   );
 
-
   requestAnimationFrame(
-    () =>
+    () => {
       updateMainMenuSelection(
         true
-      )
+      );
+    }
   );
 }
 
