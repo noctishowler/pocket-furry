@@ -121,7 +121,7 @@
 
 
     /*
-       NONE clears the scene artwork
+       NONE removes the scene artwork
        and leaves the normal app
        background visible.
     */
@@ -156,23 +156,30 @@
 
 
     /*
-       Fit the artwork independently
-       to both viewport dimensions.
+       SCALE FROM WIDTH ONLY
 
-       This prevents the vertical image
-       from becoming oversized on tall
-       screens while keeping the full
-       scene visible.
+       The image always matches the
+       viewport width.
+
+       Height remains proportional.
+
+       If the resulting image is taller
+       than the display, the extra image
+       is cropped vertically rather than
+       distorted.
+
+       Bottom anchoring keeps the ground
+       aligned with the companion.
     */
 
     gameScreen.style.backgroundImage =
       `url("${path}")`;
 
     gameScreen.style.backgroundSize =
-      "100% 100%";
+      "100% auto";
 
     gameScreen.style.backgroundPosition =
-      "center center";
+      "center bottom";
 
     gameScreen.style.backgroundRepeat =
       "no-repeat";
