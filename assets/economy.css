@@ -1,0 +1,23 @@
+/* ============================================================
+   POCKET FURRY ECONOMY
+============================================================ */
+
+.coin-stat {
+  min-width: 34px;
+}
+
+.coin-icon {
+  width: auto;
+  min-width: 8px;
+}
+
+.coin-value {
+  color: var(--white);
+  font-size: 7px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.economy-detail {
+  margin-top: 7px;
+}
