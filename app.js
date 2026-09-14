@@ -1,14 +1,16 @@
 "use strict";
 
+
 /* ============================================================
-   CHARACTER PACK
+   CHARACTER PACKS
 ============================================================ */
 
 const characters = {
   noctis: {
     id: "noctis",
     name: "Noctis",
-    path: "assets/characters/noctis/",
+    path:
+      "assets/characters/noctis/",
 
     animations: {
       idle: {
@@ -109,8 +111,22 @@ const characters = {
   }
 };
 
+
+const SLOT_COUNT =
+  4;
+
+const APP_SAVE_KEY =
+  "pocketFurry_app_v1";
+
+const SAVE_VERSION =
+  5;
+
+
+let activeSlotIndex =
+  null;
+
 let activeCharacterId =
-  "noctis";
+  null;
 
 let activeDirection =
   "right";
@@ -118,10 +134,19 @@ let activeDirection =
 let animationPlayId =
   0;
 
+let state =
+  null;
+
+let appState =
+  loadAppState();
+
+
 function getActiveCharacter() {
-  return characters[
-    activeCharacterId
-  ];
+  return activeCharacterId
+    ? characters[
+        activeCharacterId
+      ]
+    : null;
 }
 
 
@@ -182,7 +207,7 @@ const CLEAN_DURATION_MS =
 
 
 /* ============================================================
-   MOVEMENT
+   MOVEMENT CONSTANTS
 ============================================================ */
 
 const WALK_SPEED =
@@ -211,7 +236,7 @@ const CONTINUE_DIRECTION_CHANCE =
 
 
 /* ============================================================
-   AMBIENT BEHAVIOR
+   AMBIENT CONSTANTS
 ============================================================ */
 
 const MOOD_REACTION_CHANCE =
@@ -225,7 +250,7 @@ const BORED_CHANCE =
 
 
 /* ============================================================
-   INPUT
+   INPUT CONSTANTS
 ============================================================ */
 
 const SWIPE_DISTANCE =
@@ -236,50 +261,283 @@ const LONG_PRESS_TIME =
 
 
 /* ============================================================
-   SAVE
+   DEFAULT COMPANION STATE
 ============================================================ */
 
-const SAVE_VERSION =
-  5;
+function createDefaultState() {
+  const now =
+    Date.now();
 
-function getSaveKey() {
-  return (
-    "pocketFurry_" +
-    activeCharacterId +
-    "_v" +
-    SAVE_VERSION
-  );
+  return {
+    hunger: 100,
+    happiness: 85,
+    energy: 100,
+    health: 100,
+    cleanliness: 100,
+
+    sleeping: false,
+    forcedSleep: false,
+
+    forcedSit: false,
+    sitStartedAt: null,
+
+    recoveryMood:
+      "happy",
+
+    alive: true,
+
+    lastUpdate:
+      now,
+
+    lastMealAt:
+      now,
+
+    lastInteraction:
+      now
+  };
 }
 
 
 /* ============================================================
-   DEFAULT STATE
+   APP / SLOT SAVE DATA
 ============================================================ */
 
-const defaultState = {
-  hunger: 100,
-  happiness: 85,
-  energy: 100,
-  health: 100,
-  cleanliness: 100,
+function blankAppState() {
+  return {
+    slots:
+      Array(
+        SLOT_COUNT
+      ).fill(
+        null
+      )
+  };
+}
 
-  sleeping: false,
-  forcedSleep: false,
 
-  forcedSit: false,
-  sitStartedAt: null,
+function loadAppState() {
+  const raw =
+    localStorage.getItem(
+      APP_SAVE_KEY
+    );
 
-  recoveryMood: "happy",
+  if (
+    raw
+  ) {
+    try {
+      const parsed =
+        JSON.parse(
+          raw
+        );
 
-  alive: true,
+      const slots =
+        Array.isArray(
+          parsed.slots
+        )
+          ? parsed.slots.slice(
+              0,
+              SLOT_COUNT
+            )
+          : [];
 
-  lastUpdate: Date.now(),
-  lastMealAt: Date.now(),
-  lastInteraction: Date.now()
-};
+      while (
+        slots.length <
+        SLOT_COUNT
+      ) {
+        slots.push(
+          null
+        );
+      }
 
-let state =
-  loadState();
+      return {
+        slots
+      };
+
+    } catch {
+      // Fall through.
+    }
+  }
+
+
+  /*
+     MIGRATE EXISTING NOCTIS SAVE
+  */
+
+  const migrated =
+    blankAppState();
+
+  const legacyKey =
+    `pocketFurry_noctis_v${SAVE_VERSION}`;
+
+  const legacyState =
+    localStorage.getItem(
+      legacyKey
+    );
+
+  if (
+    legacyState
+  ) {
+    migrated.slots[0] = {
+      characterId:
+        "noctis",
+
+      createdAt:
+        Date.now()
+    };
+
+    localStorage.setItem(
+      getSlotSaveKey(
+        0,
+        "noctis"
+      ),
+      legacyState
+    );
+  }
+
+  localStorage.setItem(
+    APP_SAVE_KEY,
+    JSON.stringify(
+      migrated
+    )
+  );
+
+  return migrated;
+}
+
+
+function saveAppState() {
+  localStorage.setItem(
+    APP_SAVE_KEY,
+    JSON.stringify(
+      appState
+    )
+  );
+}
+
+
+function getSlotSaveKey(
+  slotIndex,
+  characterId
+) {
+  return (
+    `pocketFurry_slot_` +
+    `${slotIndex}_` +
+    `${characterId}_v` +
+    `${SAVE_VERSION}`
+  );
+}
+
+
+function saveState() {
+  if (
+    activeSlotIndex ===
+      null ||
+    !activeCharacterId ||
+    !state
+  ) {
+    return;
+  }
+
+  state.lastUpdate =
+    Date.now();
+
+  localStorage.setItem(
+    getSlotSaveKey(
+      activeSlotIndex,
+      activeCharacterId
+    ),
+    JSON.stringify(
+      state
+    )
+  );
+}
+
+
+function loadSlotState(
+  slotIndex,
+  characterId
+) {
+  const raw =
+    localStorage.getItem(
+      getSlotSaveKey(
+        slotIndex,
+        characterId
+      )
+    );
+
+  const defaults =
+    createDefaultState();
+
+  if (
+    !raw
+  ) {
+    return defaults;
+  }
+
+  try {
+    const loaded =
+      JSON.parse(
+        raw
+      );
+
+    return {
+      ...defaults,
+      ...loaded,
+
+      lastMealAt:
+        loaded.lastMealAt ||
+        Date.now(),
+
+      recoveryMood:
+        loaded.recoveryMood ||
+        "happy"
+    };
+
+  } catch {
+    return defaults;
+  }
+}
+
+
+function createCompanion(
+  slotIndex,
+  characterId
+) {
+  if (
+    !characters[
+      characterId
+    ]
+  ) {
+    return;
+  }
+
+  appState.slots[
+    slotIndex
+  ] = {
+    characterId,
+
+    createdAt:
+      Date.now()
+  };
+
+  saveAppState();
+
+  const newState =
+    createDefaultState();
+
+  localStorage.setItem(
+    getSlotSaveKey(
+      slotIndex,
+      characterId
+    ),
+    JSON.stringify(
+      newState
+    )
+  );
+
+  openCompanion(
+    slotIndex
+  );
+}
 
 
 /* ============================================================
@@ -290,6 +548,32 @@ const app =
   document.getElementById(
     "app"
   );
+
+const mainMenuScreen =
+  document.getElementById(
+    "mainMenuScreen"
+  );
+
+const pickerScreen =
+  document.getElementById(
+    "pickerScreen"
+  );
+
+const gameScreen =
+  document.getElementById(
+    "gameScreen"
+  );
+
+const companionList =
+  document.getElementById(
+    "companionList"
+  );
+
+const characterPickerList =
+  document.getElementById(
+    "characterPickerList"
+  );
+
 
 const characterSprite =
   document.getElementById(
@@ -326,10 +610,16 @@ const statusCard =
     "statusCard"
   );
 
+const statusCardTitle =
+  document.getElementById(
+    "statusCardTitle"
+  );
+
 const moodEmoji =
   document.getElementById(
     "moodEmoji"
   );
+
 
 const healthBar =
   document.getElementById(
@@ -350,6 +640,7 @@ const energyBar =
   document.getElementById(
     "energyBar"
   );
+
 
 const happinessValue =
   document.getElementById(
@@ -376,6 +667,7 @@ const cleanValue =
     "cleanValue"
   );
 
+
 const detailHappiness =
   document.getElementById(
     "detailHappiness"
@@ -401,6 +693,7 @@ const detailClean =
     "detailClean"
   );
 
+
 const actionButtons = [
   ...document.querySelectorAll(
     ".action"
@@ -409,7 +702,879 @@ const actionButtons = [
 
 
 /* ============================================================
-   ACTION MENU
+   SCREEN / MENU STATE
+============================================================ */
+
+let currentScreen =
+  "main";
+
+let mainMenuIndex =
+  0;
+
+let pickerIndex =
+  0;
+
+let pendingSlotIndex =
+  null;
+
+
+function showOnlyScreen(
+  screenName
+) {
+  currentScreen =
+    screenName;
+
+  mainMenuScreen.classList.toggle(
+    "hidden",
+    screenName !==
+      "main"
+  );
+
+  pickerScreen.classList.toggle(
+    "hidden",
+    screenName !==
+      "picker"
+  );
+
+  gameScreen.classList.toggle(
+    "hidden",
+    screenName !==
+      "game"
+  );
+}
+
+
+/* ============================================================
+   MAIN MENU
+============================================================ */
+
+function getStateSummary(
+  slotIndex,
+  characterId
+) {
+  const saved =
+    loadSlotState(
+      slotIndex,
+      characterId
+    );
+
+  if (
+    !saved.alive
+  ) {
+    return "Gone";
+  }
+
+  let mood =
+    "Okay";
+
+  if (
+    saved.recoveryMood ===
+      "angry" ||
+    saved.happiness <
+      15
+  ) {
+    mood =
+      "Upset";
+
+  } else if (
+    saved.recoveryMood ===
+      "sad" ||
+    saved.happiness <
+      35
+  ) {
+    mood =
+      "Sad";
+
+  } else if (
+    saved.happiness >=
+      85
+  ) {
+    mood =
+      "Happy";
+
+  } else if (
+    saved.happiness >=
+      60
+  ) {
+    mood =
+      "Content";
+  }
+
+  const sleep =
+    saved.sleeping
+      ? "Asleep"
+      : "Awake";
+
+  return (
+    `${mood} • ${sleep}`
+  );
+}
+
+
+function renderMainMenu() {
+  companionList.innerHTML =
+    "";
+
+  appState.slots.forEach(
+    (
+      slot,
+      index
+    ) => {
+
+      const button =
+        document.createElement(
+          "button"
+        );
+
+      button.type =
+        "button";
+
+      button.className =
+        "list-item focusable";
+
+      button.dataset.index =
+        String(
+          index
+        );
+
+
+      if (
+        slot &&
+        characters[
+          slot.characterId
+        ]
+      ) {
+        const character =
+          characters[
+            slot.characterId
+          ];
+
+        button.innerHTML = `
+          <span class="list-item-primary">
+            ${character.name.toUpperCase()}
+          </span>
+
+          <span class="list-item-secondary">
+            ${getStateSummary(index, slot.characterId)}
+          </span>
+        `;
+
+      } else {
+        button.classList.add(
+          "empty"
+        );
+
+        button.innerHTML = `
+          <span class="list-item-primary">
+            ＋ NEW COMPANION
+          </span>
+
+          <span class="list-item-secondary">
+            EMPTY SLOT ${index + 1}
+          </span>
+        `;
+      }
+
+
+      button.addEventListener(
+        "focus",
+        () => {
+
+          mainMenuIndex =
+            index;
+
+          updateMainMenuSelection(
+            false
+          );
+        }
+      );
+
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          mainMenuIndex =
+            index;
+
+          activateMainMenuSelection();
+        }
+      );
+
+
+      companionList.appendChild(
+        button
+      );
+    }
+  );
+
+
+  mainMenuIndex =
+    Math.max(
+      0,
+      Math.min(
+        mainMenuIndex,
+        SLOT_COUNT - 1
+      )
+    );
+
+  updateMainMenuSelection(
+    false
+  );
+}
+
+
+function updateMainMenuSelection(
+  moveFocus = true
+) {
+  const buttons = [
+    ...companionList.querySelectorAll(
+      ".list-item"
+    )
+  ];
+
+  buttons.forEach(
+    (
+      button,
+      index
+    ) => {
+
+      button.classList.toggle(
+        "selected",
+        index ===
+          mainMenuIndex
+      );
+    }
+  );
+
+
+  if (
+    moveFocus &&
+    buttons[
+      mainMenuIndex
+    ]
+  ) {
+    buttons[
+      mainMenuIndex
+    ].focus({
+      preventScroll:
+        true
+    });
+  }
+}
+
+
+function moveMainMenu(
+  delta
+) {
+  mainMenuIndex =
+    (
+      mainMenuIndex +
+      delta +
+      SLOT_COUNT
+    ) %
+    SLOT_COUNT;
+
+  updateMainMenuSelection(
+    true
+  );
+}
+
+
+function activateMainMenuSelection() {
+  const slot =
+    appState.slots[
+      mainMenuIndex
+    ];
+
+  if (
+    slot &&
+    characters[
+      slot.characterId
+    ]
+  ) {
+    openCompanion(
+      mainMenuIndex
+    );
+
+    return;
+  }
+
+  openCharacterPicker(
+    mainMenuIndex
+  );
+}
+
+
+function openMainMenu() {
+  if (
+    currentScreen ===
+    "game"
+  ) {
+    saveState();
+
+    pauseAmbient();
+
+    stopWalking();
+
+    closeInteractionTray(
+      false
+    );
+
+    hideStatusCard(
+      false
+    );
+  }
+
+  pendingSlotIndex =
+    null;
+
+  showOnlyScreen(
+    "main"
+  );
+
+  renderMainMenu();
+
+  requestAnimationFrame(
+    () =>
+      updateMainMenuSelection(
+        true
+      )
+  );
+}
+
+
+/* ============================================================
+   CHARACTER PICKER
+============================================================ */
+
+function openCharacterPicker(
+  slotIndex
+) {
+  pendingSlotIndex =
+    slotIndex;
+
+  pickerIndex =
+    0;
+
+  renderCharacterPicker();
+
+  showOnlyScreen(
+    "picker"
+  );
+
+  requestAnimationFrame(
+    () =>
+      updatePickerSelection(
+        true
+      )
+  );
+}
+
+
+function renderCharacterPicker() {
+  characterPickerList.innerHTML =
+    "";
+
+  const characterIds =
+    Object.keys(
+      characters
+    );
+
+
+  characterIds.forEach(
+    (
+      characterId,
+      index
+    ) => {
+
+      const character =
+        characters[
+          characterId
+        ];
+
+      const button =
+        document.createElement(
+          "button"
+        );
+
+      button.type =
+        "button";
+
+      button.className =
+        "list-item focusable";
+
+      button.dataset.kind =
+        "character";
+
+      button.dataset.characterId =
+        characterId;
+
+      button.dataset.index =
+        String(
+          index
+        );
+
+      button.innerHTML = `
+        <span class="list-item-primary">
+          ${character.name.toUpperCase()}
+        </span>
+
+        <span class="list-item-secondary">
+          SELECT COMPANION
+        </span>
+      `;
+
+
+      button.addEventListener(
+        "focus",
+        () => {
+
+          pickerIndex =
+            index;
+
+          updatePickerSelection(
+            false
+          );
+        }
+      );
+
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          pickerIndex =
+            index;
+
+          activatePickerSelection();
+        }
+      );
+
+
+      characterPickerList.appendChild(
+        button
+      );
+    }
+  );
+
+
+  const backIndex =
+    characterIds.length;
+
+  const back =
+    document.createElement(
+      "button"
+    );
+
+  back.type =
+    "button";
+
+  back.className =
+    "list-item focusable back";
+
+  back.dataset.kind =
+    "back";
+
+  back.dataset.index =
+    String(
+      backIndex
+    );
+
+  back.innerHTML = `
+    <span class="list-item-primary">
+      ‹ BACK
+    </span>
+
+    <span class="list-item-secondary">
+      RETURN WITHOUT CREATING
+    </span>
+  `;
+
+
+  back.addEventListener(
+    "focus",
+    () => {
+
+      pickerIndex =
+        backIndex;
+
+      updatePickerSelection(
+        false
+      );
+    }
+  );
+
+
+  back.addEventListener(
+    "click",
+    () => {
+
+      pickerIndex =
+        backIndex;
+
+      activatePickerSelection();
+    }
+  );
+
+
+  characterPickerList.appendChild(
+    back
+  );
+}
+
+
+function getPickerButtons() {
+  return [
+    ...characterPickerList.querySelectorAll(
+      ".list-item"
+    )
+  ];
+}
+
+
+function updatePickerSelection(
+  moveFocus = true
+) {
+  const buttons =
+    getPickerButtons();
+
+  if (
+    !buttons.length
+  ) {
+    return;
+  }
+
+
+  pickerIndex =
+    (
+      pickerIndex +
+      buttons.length
+    ) %
+    buttons.length;
+
+
+  buttons.forEach(
+    (
+      button,
+      index
+    ) => {
+
+      button.classList.toggle(
+        "selected",
+        index ===
+          pickerIndex
+      );
+    }
+  );
+
+
+  if (
+    moveFocus &&
+    buttons[
+      pickerIndex
+    ]
+  ) {
+    buttons[
+      pickerIndex
+    ].focus({
+      preventScroll:
+        true
+    });
+  }
+}
+
+
+function movePicker(
+  delta
+) {
+  const buttons =
+    getPickerButtons();
+
+  if (
+    !buttons.length
+  ) {
+    return;
+  }
+
+  pickerIndex =
+    (
+      pickerIndex +
+      delta +
+      buttons.length
+    ) %
+    buttons.length;
+
+  updatePickerSelection(
+    true
+  );
+}
+
+
+function activatePickerSelection() {
+  const buttons =
+    getPickerButtons();
+
+  const button =
+    buttons[
+      pickerIndex
+    ];
+
+  if (
+    !button
+  ) {
+    return;
+  }
+
+
+  if (
+    button.dataset.kind ===
+    "back"
+  ) {
+    openMainMenu();
+
+    return;
+  }
+
+
+  if (
+    pendingSlotIndex ===
+    null
+  ) {
+    openMainMenu();
+
+    return;
+  }
+
+
+  createCompanion(
+    pendingSlotIndex,
+    button.dataset.characterId
+  );
+}
+
+
+/* ============================================================
+   ACTIVE COMPANION
+============================================================ */
+
+function resetRuntimeState() {
+  clearTimeout(
+    animationTimer
+  );
+
+  clearTimeout(
+    sleepTimer
+  );
+
+  clearTimeout(
+    walkTimer
+  );
+
+  clearTimeout(
+    ambientTimer
+  );
+
+  clearTimeout(
+    messageTimer
+  );
+
+
+  animationTimer =
+    null;
+
+  sleepTimer =
+    null;
+
+  walkTimer =
+    null;
+
+  ambientTimer =
+    null;
+
+  messageTimer =
+    null;
+
+
+  currentAnimation =
+    "";
+
+  currentAnimationDirection =
+    "";
+
+  temporaryAnimation =
+    false;
+
+  walking =
+    false;
+
+  interactionMode =
+    false;
+
+  statusCardVisible =
+    false;
+
+  selectedAction =
+    0;
+
+  currentX =
+    0;
+
+  activeDirection =
+    "right";
+
+  nextWalkDirection =
+    "right";
+
+
+  characterMover.style.transition =
+    "none";
+
+  characterMover.style.left =
+    "50%";
+
+
+  actionTray.classList.add(
+    "hidden-tray"
+  );
+
+  actionTray.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+
+  statusCard.classList.add(
+    "hidden"
+  );
+
+  setActionButtonsFocusable(
+    false
+  );
+}
+
+
+function openCompanion(
+  slotIndex
+) {
+  const slot =
+    appState.slots[
+      slotIndex
+    ];
+
+
+  if (
+    !slot ||
+    !characters[
+      slot.characterId
+    ]
+  ) {
+    openCharacterPicker(
+      slotIndex
+    );
+
+    return;
+  }
+
+
+  activeSlotIndex =
+    slotIndex;
+
+  activeCharacterId =
+    slot.characterId;
+
+  state =
+    loadSlotState(
+      slotIndex,
+      activeCharacterId
+    );
+
+
+  resetRuntimeState();
+
+  showOnlyScreen(
+    "game"
+  );
+
+
+  statusCardTitle.textContent =
+    getActiveCharacter()
+      .name
+      .toUpperCase();
+
+
+  controlHint.textContent =
+    "↑ MENU • ↓ INTERACT";
+
+
+  preloadAnimations();
+
+  updatePersistentTime();
+
+  selectAction(
+    0,
+    false
+  );
+
+  updateStatusDisplay();
+
+  updateMoodAnimation();
+
+
+  requestAnimationFrame(
+    focusApp
+  );
+
+
+  if (
+    !state.alive
+  ) {
+    setAnimation(
+      "death",
+      activeDirection
+    );
+
+    return;
+  }
+
+
+  if (
+    state.forcedSit
+  ) {
+    temporaryAnimation =
+      false;
+
+    setAnimation(
+      "bored",
+      activeDirection
+    );
+
+    return;
+  }
+
+
+  if (
+    state.sleeping
+  ) {
+    temporaryAnimation =
+      false;
+
+    setAnimation(
+      "sleep",
+      activeDirection
+    );
+
+    return;
+  }
+
+
+  resumeAmbient(
+    1800
+  );
+}
+
+
+/* ============================================================
+   GAME RUNTIME STATE
 ============================================================ */
 
 const actions = [
@@ -422,6 +1587,7 @@ const actions = [
   "medicine"
 ];
 
+
 let selectedAction =
   0;
 
@@ -431,10 +1597,6 @@ let interactionMode =
 let statusCardVisible =
   false;
 
-
-/* ============================================================
-   ANIMATION STATE
-============================================================ */
 
 let currentAnimation =
   "";
@@ -452,10 +1614,6 @@ let sleepTimer =
   null;
 
 
-/* ============================================================
-   MOVEMENT STATE
-============================================================ */
-
 let walking =
   false;
 
@@ -471,10 +1629,6 @@ let currentX =
 let nextWalkDirection =
   "right";
 
-
-/* ============================================================
-   POINTER STATE
-============================================================ */
 
 let pointerStartX =
   0;
@@ -496,7 +1650,9 @@ let messageTimer =
    UTILITIES
 ============================================================ */
 
-function clamp(value) {
+function clamp(
+  value
+) {
   return Math.max(
     0,
     Math.min(
@@ -506,11 +1662,17 @@ function clamp(value) {
   );
 }
 
-function rounded(value) {
+
+function rounded(
+  value
+) {
   return Math.round(
-    clamp(value)
+    clamp(
+      value
+    )
   );
 }
+
 
 function randomBetween(
   min,
@@ -525,91 +1687,57 @@ function randomBetween(
 
 
 /* ============================================================
-   SAVE / LOAD
-============================================================ */
-
-function saveState() {
-  state.lastUpdate =
-    Date.now();
-
-  localStorage.setItem(
-    getSaveKey(),
-    JSON.stringify(state)
-  );
-}
-
-function loadState() {
-  const saved =
-    localStorage.getItem(
-      getSaveKey()
-    );
-
-  if (!saved) {
-    return {
-      ...defaultState
-    };
-  }
-
-  try {
-    const loaded =
-      JSON.parse(saved);
-
-    return {
-      ...defaultState,
-      ...loaded,
-
-      lastMealAt:
-        loaded.lastMealAt ||
-        Date.now(),
-
-      recoveryMood:
-        loaded.recoveryMood ||
-        "happy"
-    };
-
-  } catch {
-    return {
-      ...defaultState
-    };
-  }
-}
-
-
-/* ============================================================
    ANIMATIONS
 ============================================================ */
 
 function getAnimationPath(
   name,
-  direction = activeDirection
+  direction =
+    activeDirection
 ) {
-  const animation =
-    getActiveCharacter()
-      .animations[name];
+  const character =
+    getActiveCharacter();
 
-  if (!animation) {
+  if (
+    !character
+  ) {
     return null;
   }
 
+
+  const animation =
+    character.animations[
+      name
+    ];
+
+  if (
+    !animation
+  ) {
+    return null;
+  }
+
+
   const filename =
-    animation[direction] ||
+    animation[
+      direction
+    ] ||
     animation.right ||
     animation.left;
 
-  if (!filename) {
-    return null;
-  }
 
-  return (
-    getActiveCharacter().path +
-    filename
-  );
+  return filename
+    ? character.path +
+        filename
+    : null;
 }
+
 
 function setAnimation(
   name,
-  direction = activeDirection,
-  restart = false
+  direction =
+    activeDirection,
+  restart =
+    false
 ) {
   const path =
     getAnimationPath(
@@ -617,7 +1745,10 @@ function setAnimation(
       direction
     );
 
-  if (!path) {
+
+  if (
+    !path
+  ) {
     console.warn(
       "Missing animation:",
       name
@@ -626,14 +1757,17 @@ function setAnimation(
     return;
   }
 
+
   if (
     !restart &&
-    currentAnimation === name &&
+    currentAnimation ===
+      name &&
     currentAnimationDirection ===
       direction
   ) {
     return;
   }
+
 
   currentAnimation =
     name;
@@ -644,6 +1778,7 @@ function setAnimation(
   activeDirection =
     direction;
 
+
   characterSprite.src =
     restart
       ? `${path}?play=${++animationPlayId}`
@@ -652,7 +1787,7 @@ function setAnimation(
 
 
 /* ============================================================
-   FOOD
+   FOOD / HEALTH
 ============================================================ */
 
 function getFoodAge() {
@@ -661,6 +1796,7 @@ function getFoodAge() {
     state.lastMealAt
   );
 }
+
 
 function getHungerStage() {
   const age =
@@ -683,23 +1819,19 @@ function getHungerStage() {
   return "normal";
 }
 
-function updateFoodFromClock() {
-  const remaining =
-    1 -
-    getFoodAge() /
-      FOOD_DURATION_MS;
 
+function updateFoodFromClock() {
   state.hunger =
     clamp(
-      remaining *
+      (
+        1 -
+        getFoodAge() /
+        FOOD_DURATION_MS
+      ) *
       100
     );
 }
 
-
-/* ============================================================
-   HEALTH
-============================================================ */
 
 function areHealthNeedsMet() {
   return (
@@ -717,6 +1849,7 @@ function areHealthNeedsMet() {
   );
 }
 
+
 function updateHealthFromClock(
   minutes
 ) {
@@ -729,9 +1862,12 @@ function updateHealthFromClock(
   const hungerStage =
     getHungerStage();
 
+
   if (
-    hungerStage === "sick" ||
-    hungerStage === "critical"
+    hungerStage ===
+      "sick" ||
+    hungerStage ===
+      "critical"
   ) {
     state.health =
       clamp(
@@ -751,6 +1887,7 @@ function updateHealthFromClock(
       );
   }
 
+
   if (
     state.health <=
     0
@@ -761,7 +1898,7 @@ function updateHealthFromClock(
 
 
 /* ============================================================
-   DEATH
+   DEATH / MOOD
 ============================================================ */
 
 function killCharacter() {
@@ -770,6 +1907,7 @@ function killCharacter() {
   ) {
     return;
   }
+
 
   state.health =
     0;
@@ -792,6 +1930,7 @@ function killCharacter() {
   temporaryAnimation =
     false;
 
+
   clearTimeout(
     animationTimer
   );
@@ -800,21 +1939,21 @@ function killCharacter() {
     sleepTimer
   );
 
+
   pauseAmbient();
+
   stopWalking();
+
 
   setAnimation(
     "death",
     activeDirection
   );
 
+
   saveState();
 }
 
-
-/* ============================================================
-   MOOD
-============================================================ */
 
 function getMoodEmoji() {
   if (
@@ -881,6 +2020,7 @@ function getMoodEmoji() {
   return "😠";
 }
 
+
 function applyPositiveInteraction() {
   if (
     state.forcedSit
@@ -888,28 +2028,31 @@ function applyPositiveInteraction() {
     return;
   }
 
-  switch (
-    state.recoveryMood
+
+  if (
+    state.recoveryMood ===
+    "angry"
   ) {
-    case "angry":
-      state.recoveryMood =
-        "sad";
-      break;
+    state.recoveryMood =
+      "sad";
 
-    case "sad":
-      state.recoveryMood =
-        "neutral";
-      break;
+  } else if (
+    state.recoveryMood ===
+    "sad"
+  ) {
+    state.recoveryMood =
+      "neutral";
 
-    case "neutral":
-      state.recoveryMood =
-        "happy";
-      break;
+  } else if (
+    state.recoveryMood ===
+    "neutral"
+  ) {
+    state.recoveryMood =
+      "happy";
 
-    default:
-      state.recoveryMood =
-        "happy";
-      break;
+  } else {
+    state.recoveryMood =
+      "happy";
   }
 }
 
@@ -926,15 +2069,20 @@ function startForcedSit() {
     return;
   }
 
+
   pauseAmbient();
+
   stopWalking();
+
 
   clearTimeout(
     animationTimer
   );
 
+
   temporaryAnimation =
     false;
+
 
   state.forcedSit =
     true;
@@ -942,19 +2090,23 @@ function startForcedSit() {
   state.sitStartedAt =
     Date.now();
 
+
   setAnimation(
     "bored",
     activeDirection
   );
 
+
   showMessage(
     "Sit."
   );
+
 
   updateStatusDisplay();
 
   saveState();
 }
+
 
 function applySitPenalty(
   elapsed
@@ -969,6 +2121,7 @@ function applySitPenalty(
     return;
   }
 
+
   if (
     elapsed >=
       SIT_SAD_MS &&
@@ -980,8 +2133,10 @@ function applySitPenalty(
   }
 }
 
+
 function releaseForcedSit(
-  resumeMovement = true
+  resumeMovement =
+    true
 ) {
   if (
     !state.forcedSit
@@ -989,20 +2144,20 @@ function releaseForcedSit(
     return;
   }
 
+
   const startedAt =
     state.sitStartedAt ||
     Date.now();
 
-  const elapsed =
+
+  applySitPenalty(
     Math.max(
       0,
       Date.now() -
       startedAt
-    );
-
-  applySitPenalty(
-    elapsed
+    )
   );
+
 
   state.forcedSit =
     false;
@@ -1013,15 +2168,18 @@ function releaseForcedSit(
   temporaryAnimation =
     false;
 
+
   clearTimeout(
     animationTimer
   );
+
 
   saveState();
 
   updateMoodAnimation();
 
   updateStatusDisplay();
+
 
   if (
     state.recoveryMood ===
@@ -1045,6 +2203,7 @@ function releaseForcedSit(
     );
   }
 
+
   if (
     resumeMovement &&
     interactionMode
@@ -1053,6 +2212,7 @@ function releaseForcedSit(
 
     return;
   }
+
 
   if (
     resumeMovement &&
@@ -1064,6 +2224,7 @@ function releaseForcedSit(
     );
   }
 }
+
 
 function toggleForcedSit() {
   if (
@@ -1082,8 +2243,16 @@ function toggleForcedSit() {
 ============================================================ */
 
 function updatePersistentTime() {
+  if (
+    !state
+  ) {
+    return;
+  }
+
+
   const now =
     Date.now();
+
 
   const elapsed =
     Math.max(
@@ -1092,9 +2261,11 @@ function updatePersistentTime() {
       state.lastUpdate
     );
 
+
   const minutes =
     elapsed /
     60000;
+
 
   if (
     !state.alive
@@ -1107,6 +2278,7 @@ function updatePersistentTime() {
     return;
   }
 
+
   if (
     state.sleeping
   ) {
@@ -1116,6 +2288,7 @@ function updatePersistentTime() {
         ENERGY_RECOVERY_PER_MINUTE *
         minutes
       );
+
 
     if (
       state.energy >=
@@ -1139,12 +2312,14 @@ function updatePersistentTime() {
         minutes
       );
 
+
     if (
       state.energy <=
       0
     ) {
       state.energy =
         0;
+
 
       if (
         state.forcedSit
@@ -1154,15 +2329,18 @@ function updatePersistentTime() {
         );
       }
 
+
       state.sleeping =
         true;
 
       state.forcedSleep =
         true;
 
+
       stopWalking();
     }
   }
+
 
   updateFoodFromClock();
 
@@ -1170,8 +2348,10 @@ function updatePersistentTime() {
     minutes
   );
 
+
   state.lastUpdate =
     now;
+
 
   saveState();
 }
@@ -1182,6 +2362,13 @@ function updatePersistentTime() {
 ============================================================ */
 
 function updateStatusDisplay() {
+  if (
+    !state
+  ) {
+    return;
+  }
+
+
   const happiness =
     rounded(
       state.happiness
@@ -1207,174 +2394,98 @@ function updateStatusDisplay() {
       state.cleanliness
     );
 
-  if (
-    moodEmoji
-  ) {
-    moodEmoji.textContent =
-      getMoodEmoji();
-  }
 
-  if (
-    healthBar
-  ) {
-    healthBar.style.width =
-      `${health}%`;
-  }
+  moodEmoji.textContent =
+    getMoodEmoji();
 
-  if (
-    hungerBar
-  ) {
-    hungerBar.style.width =
-      `${food}%`;
-  }
 
-  if (
-    cleanlinessBar
-  ) {
-    cleanlinessBar.style.width =
-      `${clean}%`;
-  }
+  healthBar.style.width =
+    `${health}%`;
 
-  if (
-    energyBar
-  ) {
-    energyBar.style.width =
-      `${energy}%`;
-  }
+  hungerBar.style.width =
+    `${food}%`;
 
-  if (
-    happinessValue
-  ) {
-    happinessValue.textContent =
-      happiness;
-  }
+  cleanlinessBar.style.width =
+    `${clean}%`;
 
-  if (
-    hungerValue
-  ) {
-    hungerValue.textContent =
-      food;
-  }
+  energyBar.style.width =
+    `${energy}%`;
 
-  if (
-    energyValue
-  ) {
-    energyValue.textContent =
-      energy;
-  }
 
-  if (
-    healthValue
-  ) {
-    healthValue.textContent =
-      health;
-  }
+  happinessValue.textContent =
+    happiness;
 
-  if (
-    cleanValue
-  ) {
-    cleanValue.textContent =
-      clean;
-  }
+  hungerValue.textContent =
+    food;
 
-  if (
-    detailHappiness
-  ) {
-    detailHappiness.style.width =
-      `${happiness}%`;
-  }
+  energyValue.textContent =
+    energy;
 
-  if (
-    detailHunger
-  ) {
-    detailHunger.style.width =
-      `${food}%`;
-  }
+  healthValue.textContent =
+    health;
 
-  if (
-    detailEnergy
-  ) {
-    detailEnergy.style.width =
-      `${energy}%`;
-  }
+  cleanValue.textContent =
+    clean;
 
-  if (
-    detailHealth
-  ) {
-    detailHealth.style.width =
-      `${health}%`;
-  }
 
-  if (
-    detailClean
-  ) {
-    detailClean.style.width =
-      `${clean}%`;
-  }
+  detailHappiness.style.width =
+    `${happiness}%`;
 
-  updateCriticalIndicators();
-}
+  detailHunger.style.width =
+    `${food}%`;
 
-function updateCriticalIndicators() {
-  const healthNode =
-    document.querySelector(
+  detailEnergy.style.width =
+    `${energy}%`;
+
+  detailHealth.style.width =
+    `${health}%`;
+
+  detailClean.style.width =
+    `${clean}%`;
+
+
+  document
+    .querySelector(
       '[data-stat="health"]'
-    );
-
-  const foodNode =
-    document.querySelector(
-      '[data-stat="hunger"]'
-    );
-
-  const cleanNode =
-    document.querySelector(
-      '[data-stat="cleanliness"]'
-    );
-
-  const energyNode =
-    document.querySelector(
-      '[data-stat="energy"]'
-    );
-
-  if (
-    healthNode
-  ) {
-    healthNode.classList.toggle(
+    )
+    .classList.toggle(
       "critical",
       state.health <
       25
     );
-  }
 
-  if (
-    foodNode
-  ) {
-    foodNode.classList.toggle(
+
+  document
+    .querySelector(
+      '[data-stat="hunger"]'
+    )
+    .classList.toggle(
       "critical",
       getHungerStage() ===
       "critical"
     );
-  }
 
-  if (
-    cleanNode
-  ) {
-    cleanNode.classList.toggle(
+
+  document
+    .querySelector(
+      '[data-stat="cleanliness"]'
+    )
+    .classList.toggle(
       "critical",
       state.cleanliness <
       HEALTH_MIN_CLEANLINESS
     );
-  }
 
-  if (
-    energyNode
-  ) {
-    energyNode.classList.toggle(
+
+  document
+    .querySelector(
+      '[data-stat="energy"]'
+    )
+    .classList.toggle(
       "critical",
       state.energy <=
       EXHAUSTED_THRESHOLD
     );
-  }
 }
 
 
@@ -1384,11 +2495,15 @@ function updateCriticalIndicators() {
 
 function updateMoodAnimation() {
   if (
+    !state ||
+    currentScreen !==
+      "game" ||
     temporaryAnimation ||
     walking
   ) {
     return;
   }
+
 
   if (
     !state.alive
@@ -1400,6 +2515,7 @@ function updateMoodAnimation() {
     return;
   }
 
+
   if (
     state.sleeping
   ) {
@@ -1409,6 +2525,7 @@ function updateMoodAnimation() {
 
     return;
   }
+
 
   if (
     state.forcedSit
@@ -1421,8 +2538,10 @@ function updateMoodAnimation() {
     return;
   }
 
+
   const hungerStage =
     getHungerStage();
+
 
   if (
     hungerStage ===
@@ -1437,6 +2556,7 @@ function updateMoodAnimation() {
     return;
   }
 
+
   if (
     state.hunger <
     20
@@ -1447,6 +2567,7 @@ function updateMoodAnimation() {
 
     return;
   }
+
 
   if (
     state.energy <=
@@ -1459,6 +2580,7 @@ function updateMoodAnimation() {
     return;
   }
 
+
   if (
     state.happiness <
     25
@@ -1470,6 +2592,7 @@ function updateMoodAnimation() {
     return;
   }
 
+
   setAnimation(
     "idleFront",
     activeDirection
@@ -1478,30 +2601,38 @@ function updateMoodAnimation() {
 
 
 /* ============================================================
-   TEMPORARY ANIMATION
+   TEMPORARY ANIMATIONS
 ============================================================ */
 
 function playTemporaryAnimation(
   name,
   duration,
-  direction = activeDirection
+  direction =
+    activeDirection
 ) {
   pauseAmbient();
+
   stopWalking();
+
 
   clearTimeout(
     animationTimer
   );
 
+
   temporaryAnimation =
     true;
+
 
   setAnimation(
     name,
     direction,
-    name === "chaseBall" ||
-    name === "clean"
+    name ===
+      "chaseBall" ||
+    name ===
+      "clean"
   );
+
 
   animationTimer =
     setTimeout(
@@ -1510,12 +2641,16 @@ function playTemporaryAnimation(
         temporaryAnimation =
           false;
 
+
         updateMoodAnimation();
+
 
         if (
           !state.forcedSit &&
           !state.sleeping &&
-          state.alive
+          state.alive &&
+          currentScreen ===
+            "game"
         ) {
           resumeAmbient(
             1500
@@ -1536,17 +2671,20 @@ function getHorizontalLimits() {
   const stageWidth =
     petStage.clientWidth;
 
+
   const characterWidth =
     characterMover.offsetWidth;
+
 
   const halfAvailable =
     Math.max(
       0,
       stageWidth / 2 -
       characterWidth *
-      0.28 -
+        0.28 -
       WALK_MARGIN
     );
+
 
   return {
     min:
@@ -1557,19 +2695,23 @@ function getHorizontalLimits() {
   };
 }
 
+
 function getNextRoamTarget() {
   const limits =
     getHorizontalLimits();
 
+
   const edgeTarget =
     nextWalkDirection ===
-    "right"
+      "right"
       ? limits.max
       : limits.min;
+
 
   const remainingDistance =
     edgeTarget -
     currentX;
+
 
   if (
     Math.abs(
@@ -1579,12 +2721,14 @@ function getNextRoamTarget() {
   ) {
     nextWalkDirection =
       nextWalkDirection ===
-      "right"
+        "right"
         ? "left"
         : "right";
 
+
     return getNextRoamTarget();
   }
+
 
   const travelFraction =
     Math.random() <
@@ -1598,10 +2742,12 @@ function getNextRoamTarget() {
           1.0
         );
 
+
   const target =
     currentX +
     remainingDistance *
-    travelFraction;
+      travelFraction;
+
 
   return Math.max(
     limits.min,
@@ -1612,22 +2758,25 @@ function getNextRoamTarget() {
   );
 }
 
+
 function chooseNextWalkDirection() {
   const limits =
     getHorizontalLimits();
 
+
   const roomAhead =
     activeDirection ===
-    "right"
+      "right"
       ? limits.max -
         currentX
       : currentX -
         limits.min;
 
+
   if (
     roomAhead >
       MIN_TRAVEL_DISTANCE *
-      1.5 &&
+        1.5 &&
     Math.random() <
       CONTINUE_DIRECTION_CHANCE
   ) {
@@ -1637,19 +2786,23 @@ function chooseNextWalkDirection() {
   } else {
     nextWalkDirection =
       activeDirection ===
-      "right"
+        "right"
         ? "left"
         : "right";
   }
 }
 
+
 function moveCharacter(
   animation,
   speed,
   minimumDuration,
-  special = false
+  special =
+    false
 ) {
   if (
+    currentScreen !==
+      "game" ||
     walking ||
     temporaryAnimation ||
     interactionMode ||
@@ -1661,12 +2814,15 @@ function moveCharacter(
     return;
   }
 
+
   const targetX =
     getNextRoamTarget();
+
 
   const distance =
     targetX -
     currentX;
+
 
   if (
     Math.abs(
@@ -1679,11 +2835,13 @@ function moveCharacter(
     return;
   }
 
+
   activeDirection =
     distance >
-    0
+      0
       ? "right"
       : "left";
+
 
   walking =
     true;
@@ -1691,35 +2849,45 @@ function moveCharacter(
   temporaryAnimation =
     special;
 
+
   setAnimation(
     animation,
     activeDirection
   );
 
+
   const duration =
     Math.max(
       minimumDuration,
       (
-        Math.abs(distance) /
+        Math.abs(
+          distance
+        ) /
         speed
       ) *
       1000
     );
 
+
   characterMover.style.transition =
     "none";
 
+
   void characterMover.offsetWidth;
+
 
   characterMover.style.transition =
     `left ${duration}ms linear`;
 
+
   characterMover.style.left =
     `calc(50% + ${targetX}px)`;
+
 
   clearTimeout(
     walkTimer
   );
+
 
   walkTimer =
     setTimeout(
@@ -1728,14 +2896,17 @@ function moveCharacter(
         currentX =
           targetX;
 
+
         walking =
           false;
 
         temporaryAnimation =
           false;
 
+
         characterMover.style.transition =
           "none";
+
 
         chooseNextWalkDirection();
 
@@ -1744,9 +2915,11 @@ function moveCharacter(
         beginRestPeriod();
 
       },
-      duration + 25
+      duration +
+      25
     );
 }
+
 
 function walkAcrossScreen() {
   moveCharacter(
@@ -1757,6 +2930,7 @@ function walkAcrossScreen() {
   );
 }
 
+
 function boundAcrossScreen() {
   moveCharacter(
     "bound",
@@ -1766,6 +2940,7 @@ function boundAcrossScreen() {
   );
 }
 
+
 function stopWalking() {
   if (
     !walking
@@ -1773,34 +2948,44 @@ function stopWalking() {
     return;
   }
 
+
   clearTimeout(
     walkTimer
   );
+
 
   const stageRect =
     petStage
       .getBoundingClientRect();
 
+
   const moverRect =
     characterMover
       .getBoundingClientRect();
 
+
   currentX =
     moverRect.left +
-    moverRect.width / 2 -
+    moverRect.width /
+      2 -
     (
       stageRect.left +
-      stageRect.width / 2
+      stageRect.width /
+        2
     );
+
 
   characterMover.style.transition =
     "none";
 
+
   characterMover.style.left =
     `calc(50% + ${currentX}px)`;
 
+
   walking =
     false;
+
 
   if (
     currentAnimation ===
@@ -1818,19 +3003,23 @@ function stopWalking() {
 
 function playAmbientReaction(
   animation,
-  duration = 1600
+  duration =
+    1600
 ) {
   temporaryAnimation =
     true;
+
 
   setAnimation(
     animation,
     activeDirection
   );
 
+
   clearTimeout(
     animationTimer
   );
+
 
   animationTimer =
     setTimeout(
@@ -1839,12 +3028,16 @@ function playAmbientReaction(
         temporaryAnimation =
           false;
 
+
         updateMoodAnimation();
+
 
         if (
           !state.forcedSit &&
           !state.sleeping &&
-          state.alive
+          state.alive &&
+          currentScreen ===
+            "game"
         ) {
           resumeAmbient(
             randomBetween(
@@ -1859,8 +3052,11 @@ function playAmbientReaction(
     );
 }
 
+
 function beginRestPeriod() {
   if (
+    currentScreen !==
+      "game" ||
     state.sleeping ||
     state.forcedSit ||
     interactionMode ||
@@ -1870,11 +3066,13 @@ function beginRestPeriod() {
     return;
   }
 
+
   const pauseDuration =
     randomBetween(
       MIN_PAUSE_MS,
       MAX_PAUSE_MS
     );
+
 
   if (
     getHungerStage() !==
@@ -1895,12 +3093,15 @@ function beginRestPeriod() {
     return;
   }
 
+
   const roll =
     Math.random();
+
 
   const positiveBehaviorEnd =
     MOOD_REACTION_CHANCE +
     BOUND_CHANCE;
+
 
   if (
     state.recoveryMood ===
@@ -1916,6 +3117,7 @@ function beginRestPeriod() {
     return;
   }
 
+
   if (
     state.recoveryMood ===
       "sad" &&
@@ -1930,6 +3132,7 @@ function beginRestPeriod() {
     return;
   }
 
+
   if (
     state.recoveryMood ===
       "neutral" &&
@@ -1941,12 +3144,14 @@ function beginRestPeriod() {
       activeDirection
     );
 
+
     resumeAmbient(
       pauseDuration
     );
 
     return;
   }
+
 
   if (
     state.recoveryMood ===
@@ -1965,6 +3170,7 @@ function beginRestPeriod() {
     return;
   }
 
+
   if (
     state.recoveryMood ===
       "happy" &&
@@ -1976,6 +3182,7 @@ function beginRestPeriod() {
     return;
   }
 
+
   if (
     roll <
     positiveBehaviorEnd +
@@ -1986,6 +3193,7 @@ function beginRestPeriod() {
       activeDirection
     );
 
+
     resumeAmbient(
       pauseDuration
     );
@@ -1993,15 +3201,18 @@ function beginRestPeriod() {
     return;
   }
 
+
   setAnimation(
     "idleFront",
     activeDirection
   );
 
+
   resumeAmbient(
     pauseDuration
   );
 }
+
 
 function pauseAmbient() {
   clearTimeout(
@@ -2012,23 +3223,31 @@ function pauseAmbient() {
     null;
 }
 
+
 function resumeAmbient(
-  delay = 1500
+  delay =
+    1500
 ) {
   clearTimeout(
     ambientTimer
   );
 
+
   ambientTimer =
     null;
 
+
   if (
+    currentScreen !==
+      "game" ||
+    !state ||
     state.forcedSit ||
     state.sleeping ||
     !state.alive
   ) {
     return;
   }
+
 
   ambientTimer =
     setTimeout(
@@ -2037,13 +3256,17 @@ function resumeAmbient(
         ambientTimer =
           null;
 
+
         if (
+          currentScreen !==
+            "game" ||
           state.forcedSit ||
           state.sleeping ||
           !state.alive
         ) {
           return;
         }
+
 
         if (
           interactionMode ||
@@ -2058,6 +3281,7 @@ function resumeAmbient(
           return;
         }
 
+
         walkAcrossScreen();
 
       },
@@ -2067,23 +3291,27 @@ function resumeAmbient(
 
 
 /* ============================================================
-   MESSAGE
+   MESSAGE / STATUS CARD
 ============================================================ */
 
 function showMessage(
   text,
-  duration = 1300
+  duration =
+    1300
 ) {
   clearTimeout(
     messageTimer
   );
 
+
   message.textContent =
     text;
+
 
   message.classList.remove(
     "hidden"
   );
+
 
   messageTimer =
     setTimeout(
@@ -2099,36 +3327,60 @@ function showMessage(
 }
 
 
-/* ============================================================
-   STATUS CARD
-============================================================ */
-
 function showStatusCard() {
+  if (
+    currentScreen !==
+    "game"
+  ) {
+    return;
+  }
+
+
   pauseAmbient();
+
   stopWalking();
+
 
   statusCardVisible =
     true;
 
+
   updateStatusDisplay();
+
 
   statusCard.classList.remove(
     "hidden"
   );
 }
 
-function hideStatusCard() {
+
+function hideStatusCard(
+  resume =
+    true
+) {
   statusCardVisible =
     false;
+
 
   statusCard.classList.add(
     "hidden"
   );
 
-  focusApp();
 
   if (
+    currentScreen ===
+    "game"
+  ) {
+    focusApp();
+  }
+
+
+  if (
+    resume &&
+    currentScreen ===
+      "game" &&
     !interactionMode &&
+    state &&
     !state.sleeping &&
     !state.forcedSit &&
     state.alive
@@ -2146,17 +3398,17 @@ function hideStatusCard() {
 
 function focusApp() {
   if (
-    !app ||
-    typeof app.focus !==
+    app &&
+    typeof app.focus ===
       "function"
   ) {
-    return;
+    app.focus({
+      preventScroll:
+        true
+    });
   }
-
-  app.focus({
-    preventScroll: true
-  });
 }
+
 
 function setActionButtonsFocusable(
   enabled
@@ -2172,23 +3424,24 @@ function setActionButtonsFocusable(
   );
 }
 
+
 function focusSelectedAction() {
   const button =
     actionButtons[
       selectedAction
     ];
 
+
   if (
-    !button ||
-    typeof button.focus !==
+    button &&
+    typeof button.focus ===
       "function"
   ) {
-    return;
+    button.focus({
+      preventScroll:
+        true
+    });
   }
-
-  button.focus({
-    preventScroll: true
-  });
 }
 
 
@@ -2198,36 +3451,43 @@ function focusSelectedAction() {
 
 function openInteractionTray() {
   if (
+    currentScreen !==
+      "game" ||
     interactionMode
   ) {
     return;
   }
 
+
   pauseAmbient();
+
   stopWalking();
 
-  statusCardVisible =
-    false;
 
-  statusCard.classList.add(
-    "hidden"
+  hideStatusCard(
+    false
   );
+
 
   interactionMode =
     true;
 
+
   actionTray.classList.remove(
     "hidden-tray"
   );
+
 
   actionTray.setAttribute(
     "aria-hidden",
     "false"
   );
 
+
   setActionButtonsFocusable(
     true
   );
+
 
   if (
     state.alive &&
@@ -2241,51 +3501,67 @@ function openInteractionTray() {
     );
   }
 
+
   controlHint.textContent =
     "◀ ▶ SELECT • PINCH • ↑ CLOSE";
+
 
   requestAnimationFrame(
     focusSelectedAction
   );
 }
 
-function closeInteractionTray() {
+
+function closeInteractionTray(
+  resume =
+    true
+) {
   if (
     !interactionMode
   ) {
     return;
   }
 
+
   interactionMode =
     false;
+
 
   actionTray.classList.add(
     "hidden-tray"
   );
+
 
   actionTray.setAttribute(
     "aria-hidden",
     "true"
   );
 
+
   setActionButtonsFocusable(
     false
   );
 
+
   controlHint.textContent =
-    "SWIPE DOWN TO INTERACT";
+    "↑ MENU • ↓ INTERACT";
 
-  requestAnimationFrame(
-    focusApp
-  );
-
-  /*
-     Deliberately do nothing to sleep
-     state here. Closing the menu must
-     never wake Noctis.
-  */
 
   if (
+    currentScreen ===
+    "game"
+  ) {
+    requestAnimationFrame(
+      focusApp
+    );
+  }
+
+
+  if (
+    resume &&
+    currentScreen ===
+      "game" &&
+    state &&
     !state.sleeping &&
     !state.forcedSit &&
     state.alive
@@ -2297,13 +3573,10 @@ function closeInteractionTray() {
 }
 
 
-/* ============================================================
-   ACTION SELECTION
-============================================================ */
-
 function selectAction(
   index,
-  moveFocus = true
+  moveFocus =
+    true
 ) {
   selectedAction =
     (
@@ -2311,6 +3584,7 @@ function selectAction(
       actions.length
     ) %
     actions.length;
+
 
   actionButtons.forEach(
     (
@@ -2321,10 +3595,11 @@ function selectAction(
       button.classList.toggle(
         "selected",
         i ===
-        selectedAction
+          selectedAction
       );
     }
   );
+
 
   if (
     interactionMode &&
@@ -2334,12 +3609,14 @@ function selectAction(
   }
 }
 
+
 function nextAction() {
   selectAction(
     selectedAction +
     1
   );
 }
+
 
 function previousAction() {
   selectAction(
@@ -2354,7 +3631,8 @@ function previousAction() {
 ============================================================ */
 
 function putCharacterToSleep(
-  forced = false
+  forced =
+    false
 ) {
   if (
     !state.alive ||
@@ -2363,8 +3641,11 @@ function putCharacterToSleep(
     return;
   }
 
+
   pauseAmbient();
+
   stopWalking();
+
 
   clearTimeout(
     sleepTimer
@@ -2374,6 +3655,7 @@ function putCharacterToSleep(
     animationTimer
   );
 
+
   if (
     state.forcedSit
   ) {
@@ -2381,6 +3663,7 @@ function putCharacterToSleep(
       false
     );
   }
+
 
   state.sleeping =
     true;
@@ -2391,9 +3674,11 @@ function putCharacterToSleep(
   temporaryAnimation =
     true;
 
+
   setAnimation(
     "sleepy"
   );
+
 
   showMessage(
     forced
@@ -2401,7 +3686,9 @@ function putCharacterToSleep(
       : "Sleepy..."
   );
 
+
   saveState();
+
 
   sleepTimer =
     setTimeout(
@@ -2414,9 +3701,11 @@ function putCharacterToSleep(
           return;
         }
 
+
         setAnimation(
           "lieDown"
         );
+
 
         sleepTimer =
           setTimeout(
@@ -2429,12 +3718,15 @@ function putCharacterToSleep(
                 return;
               }
 
+
               temporaryAnimation =
                 false;
+
 
               setAnimation(
                 "sleep"
               );
+
 
               saveState();
 
@@ -2447,6 +3739,7 @@ function putCharacterToSleep(
     );
 }
 
+
 function wakeCharacter() {
   if (
     !state.alive ||
@@ -2454,6 +3747,7 @@ function wakeCharacter() {
   ) {
     return;
   }
+
 
   if (
     state.forcedSleep &&
@@ -2467,10 +3761,6 @@ function wakeCharacter() {
     return;
   }
 
-  /*
-     Cancel any pending sleepy /
-     lie-down transition before waking.
-  */
 
   clearTimeout(
     sleepTimer
@@ -2479,6 +3769,7 @@ function wakeCharacter() {
   clearTimeout(
     animationTimer
   );
+
 
   state.sleeping =
     false;
@@ -2489,9 +3780,11 @@ function wakeCharacter() {
   temporaryAnimation =
     true;
 
+
   setAnimation(
     "wakeUp"
   );
+
 
   animationTimer =
     setTimeout(
@@ -2499,15 +3792,20 @@ function wakeCharacter() {
 
         if (
           !state.alive ||
-          state.sleeping
+          state.sleeping ||
+          currentScreen !==
+            "game"
         ) {
           return;
         }
 
+
         temporaryAnimation =
           false;
 
+
         updateMoodAnimation();
+
 
         resumeAmbient(
           1500
@@ -2516,6 +3814,7 @@ function wakeCharacter() {
       },
       1500
     );
+
 
   saveState();
 }
@@ -2529,13 +3828,18 @@ function performAction(
   action
 ) {
   if (
-    !state.alive
+    !state ||
+    !state.alive ||
+    currentScreen !==
+      "game"
   ) {
     return;
   }
 
+
   state.lastInteraction =
     Date.now();
+
 
   if (
     state.forcedSit &&
@@ -2546,13 +3850,16 @@ function performAction(
       "Still sitting."
     );
 
+
     setAnimation(
       "bored",
       activeDirection
     );
 
+
     return;
   }
+
 
   switch (
     action
@@ -2568,11 +3875,14 @@ function performAction(
         return;
       }
 
+
       state.lastMealAt =
         Date.now();
 
+
       state.hunger =
         100;
+
 
       state.health =
         clamp(
@@ -2580,20 +3890,25 @@ function performAction(
           FOOD_HEALTH_RECOVERY
         );
 
+
       state.happiness =
         clamp(
           state.happiness +
           5
         );
 
+
       applyPositiveInteraction();
 
+
       updateStatusDisplay();
+
 
       playTemporaryAnimation(
         "eat",
         2200
       );
+
 
       showMessage(
         "Eating"
@@ -2610,6 +3925,7 @@ function performAction(
         return;
       }
 
+
       if (
         state.energy <=
         EXHAUSTED_THRESHOLD
@@ -2619,12 +3935,15 @@ function performAction(
           1500
         );
 
+
         showMessage(
           "Too tired"
         );
 
+
         break;
       }
+
 
       state.happiness =
         clamp(
@@ -2632,15 +3951,19 @@ function performAction(
           15
         );
 
+
       state.energy =
         clamp(
           state.energy -
           2
         );
 
+
       applyPositiveInteraction();
 
+
       updateStatusDisplay();
+
 
       playTemporaryAnimation(
         "chaseBall",
@@ -2659,15 +3982,19 @@ function performAction(
         return;
       }
 
+
       state.happiness =
         clamp(
           state.happiness +
           8
         );
 
+
       applyPositiveInteraction();
 
+
       updateStatusDisplay();
+
 
       playTemporaryAnimation(
         "happy",
@@ -2682,7 +4009,9 @@ function performAction(
       state.cleanliness =
         100;
 
+
       updateStatusDisplay();
+
 
       playTemporaryAnimation(
         "clean",
@@ -2728,13 +4057,16 @@ function performAction(
         break;
       }
 
+
       state.health =
         clamp(
           state.health +
           25
         );
 
+
       updateStatusDisplay();
+
 
       playTemporaryAnimation(
         "angry",
@@ -2743,6 +4075,7 @@ function performAction(
 
       break;
   }
+
 
   updateStatusDisplay();
 
@@ -2775,11 +4108,13 @@ actionButtons.forEach(
       }
     );
 
+
     button.addEventListener(
       "click",
       event => {
 
         event.stopPropagation();
+
 
         if (
           !interactionMode
@@ -2787,18 +4122,17 @@ actionButtons.forEach(
           return;
         }
 
+
         selectAction(
           index,
           false
         );
 
-        /*
-           This is the single activation
-           path for a focused menu button.
-        */
 
         performAction(
-          actions[index]
+          actions[
+            index
+          ]
         );
       }
     );
@@ -2807,7 +4141,7 @@ actionButtons.forEach(
 
 
 /* ============================================================
-   TOUCH / POINTER INPUT
+   POINTER / TOUCH INPUT
 ============================================================ */
 
 document.addEventListener(
@@ -2823,11 +4157,15 @@ document.addEventListener(
     longPressTriggered =
       false;
 
+
     clearTimeout(
       longPressTimer
     );
 
+
     if (
+      currentScreen ===
+        "game" &&
       event.target ===
         characterSprite &&
       !interactionMode
@@ -2839,6 +4177,7 @@ document.addEventListener(
             longPressTriggered =
               true;
 
+
             showStatusCard();
 
           },
@@ -2847,6 +4186,7 @@ document.addEventListener(
     }
   }
 );
+
 
 document.addEventListener(
   "pointermove",
@@ -2858,11 +4198,13 @@ document.addEventListener(
         pointerStartX
       );
 
+
     const dy =
       Math.abs(
         event.clientY -
         pointerStartY
       );
+
 
     if (
       dx >
@@ -2877,6 +4219,7 @@ document.addEventListener(
   }
 );
 
+
 document.addEventListener(
   "pointerup",
   event => {
@@ -2885,25 +4228,43 @@ document.addEventListener(
       longPressTimer
     );
 
+
     if (
       longPressTriggered
     ) {
       return;
     }
 
+
+    if (
+      currentScreen !==
+      "game"
+    ) {
+      return;
+    }
+
+
     const dx =
       event.clientX -
       pointerStartX;
+
 
     const dy =
       event.clientY -
       pointerStartY;
 
+
     const ax =
-      Math.abs(dx);
+      Math.abs(
+        dx
+      );
+
 
     const ay =
-      Math.abs(dy);
+      Math.abs(
+        dy
+      );
+
 
     if (
       ax >
@@ -2927,6 +4288,7 @@ document.addEventListener(
 
       return;
     }
+
 
     if (
       ay >
@@ -2954,11 +4316,15 @@ document.addEventListener(
           statusCardVisible
         ) {
           hideStatusCard();
+
+        } else {
+          openMainMenu();
         }
       }
 
       return;
     }
+
 
     if (
       interactionMode &&
@@ -2989,50 +4355,116 @@ function getNavigationKey(
   const code =
     event.code;
 
+
   if (
-    key === "ArrowLeft" ||
-    key === "Left" ||
-    code === "ArrowLeft"
+    key ===
+      "ArrowLeft" ||
+    key ===
+      "Left" ||
+    code ===
+      "ArrowLeft"
   ) {
     return "left";
   }
 
+
   if (
-    key === "ArrowRight" ||
-    key === "Right" ||
-    code === "ArrowRight"
+    key ===
+      "ArrowRight" ||
+    key ===
+      "Right" ||
+    code ===
+      "ArrowRight"
   ) {
     return "right";
   }
 
+
   if (
-    key === "ArrowUp" ||
-    key === "Up" ||
-    code === "ArrowUp"
+    key ===
+      "ArrowUp" ||
+    key ===
+      "Up" ||
+    code ===
+      "ArrowUp"
   ) {
     return "up";
   }
 
+
   if (
-    key === "ArrowDown" ||
-    key === "Down" ||
-    code === "ArrowDown"
+    key ===
+      "ArrowDown" ||
+    key ===
+      "Down" ||
+    code ===
+      "ArrowDown"
   ) {
     return "down";
   }
 
+
   if (
-    key === "Enter" ||
-    code === "Enter" ||
-    code === "NumpadEnter" ||
-    key === " " ||
-    code === "Space"
+    key ===
+      "Enter" ||
+    code ===
+      "Enter" ||
+    code ===
+      "NumpadEnter" ||
+    key ===
+      " " ||
+    code ===
+      "Space"
   ) {
     return "activate";
   }
 
+
   return null;
 }
+
+
+function focusedNativeButtonForCurrentScreen() {
+  const active =
+    document.activeElement;
+
+
+  if (
+    !active ||
+    !active.classList
+  ) {
+    return false;
+  }
+
+
+  if (
+    currentScreen ===
+    "game"
+  ) {
+    return (
+      interactionMode &&
+      active.classList.contains(
+        "action"
+      )
+    );
+  }
+
+
+  if (
+    currentScreen ===
+      "main" ||
+    currentScreen ===
+      "picker"
+  ) {
+    return active.classList.contains(
+      "list-item"
+    );
+  }
+
+
+  return false;
+}
+
 
 function handleNavigationInput(
   event
@@ -3042,6 +4474,7 @@ function handleNavigationInput(
       event
     );
 
+
   if (
     !input ||
     event.repeat
@@ -3049,35 +4482,103 @@ function handleNavigationInput(
     return;
   }
 
+
   /*
-     When a real action button has focus,
-     Enter/Space must be allowed through.
-
-     The browser will generate the normal
-     button click exactly once.
-
-     Intercepting it here as well would
-     perform the action twice — which is
-     particularly bad for SLEEP because
-     the second call immediately wakes him.
+     Let focused buttons handle
+     activation natively so one
+     Neural Band pinch produces
+     one click only.
   */
 
   if (
     input ===
       "activate" &&
-    interactionMode &&
-    document.activeElement
-      ?.classList
-      ?.contains(
-        "action"
-      )
+    focusedNativeButtonForCurrentScreen()
   ) {
     return;
   }
 
+
   event.preventDefault();
 
   event.stopPropagation();
+
+
+  if (
+    currentScreen ===
+    "main"
+  ) {
+    if (
+      input ===
+      "up"
+    ) {
+      moveMainMenu(
+        -1
+      );
+
+    } else if (
+      input ===
+      "down"
+    ) {
+      moveMainMenu(
+        1
+      );
+
+    } else if (
+      input ===
+      "activate"
+    ) {
+      activateMainMenuSelection();
+    }
+
+    return;
+  }
+
+
+  if (
+    currentScreen ===
+    "picker"
+  ) {
+    if (
+      input ===
+      "up"
+    ) {
+      movePicker(
+        -1
+      );
+
+    } else if (
+      input ===
+      "down"
+    ) {
+      movePicker(
+        1
+      );
+
+    } else if (
+      input ===
+      "left"
+    ) {
+      openMainMenu();
+
+    } else if (
+      input ===
+      "activate"
+    ) {
+      activatePickerSelection();
+    }
+
+    return;
+  }
+
+
+  if (
+    currentScreen !==
+    "game"
+  ) {
+    return;
+  }
+
 
   switch (
     input
@@ -3127,18 +4628,15 @@ function handleNavigationInput(
         statusCardVisible
       ) {
         hideStatusCard();
+
+      } else {
+        openMainMenu();
       }
 
       break;
 
 
     case "activate":
-
-      /*
-         Fallback only for an environment
-         where activation arrives but an
-         action button somehow lacks focus.
-      */
 
       if (
         interactionMode
@@ -3154,6 +4652,7 @@ function handleNavigationInput(
   }
 }
 
+
 window.addEventListener(
   "keydown",
   handleNavigationInput,
@@ -3166,10 +4665,21 @@ window.addEventListener(
 ============================================================ */
 
 function gameTick() {
+  if (
+    currentScreen !==
+      "game" ||
+    !state
+  ) {
+    return;
+  }
+
+
   const wasSleeping =
     state.sleeping;
 
+
   updatePersistentTime();
+
 
   if (
     !state.alive
@@ -3180,6 +4690,7 @@ function gameTick() {
 
     return;
   }
+
 
   if (
     !wasSleeping &&
@@ -3192,10 +4703,12 @@ function gameTick() {
     );
   }
 
+
   updateStatusDisplay();
 
   updateMoodAnimation();
 }
+
 
 setInterval(
   gameTick,
@@ -3215,60 +4728,126 @@ document.addEventListener(
       document.visibilityState ===
       "hidden"
     ) {
-      pauseAmbient();
+      if (
+        currentScreen ===
+        "game"
+      ) {
+        pauseAmbient();
 
-      stopWalking();
+        stopWalking();
 
-      saveState();
+        saveState();
+      }
 
       return;
     }
 
-    updatePersistentTime();
-
-    updateStatusDisplay();
-
-    updateMoodAnimation();
 
     if (
-      interactionMode
+      currentScreen ===
+      "game"
     ) {
+      updatePersistentTime();
+
+      updateStatusDisplay();
+
+      updateMoodAnimation();
+
+
+      if (
+        interactionMode
+      ) {
+        requestAnimationFrame(
+          focusSelectedAction
+        );
+
+      } else {
+        requestAnimationFrame(
+          focusApp
+        );
+      }
+
+
+      if (
+        !state.sleeping &&
+        !state.forcedSit &&
+        state.alive
+      ) {
+        resumeAmbient(
+          1500
+        );
+      }
+
+    } else if (
+      currentScreen ===
+      "main"
+    ) {
+      renderMainMenu();
+
+
       requestAnimationFrame(
-        focusSelectedAction
+        () =>
+          updateMainMenuSelection(
+            true
+          )
       );
 
-    } else {
-      requestAnimationFrame(
-        focusApp
-      );
-    }
-
-    if (
-      !state.sleeping &&
-      !state.forcedSit &&
-      state.alive
+    } else if (
+      currentScreen ===
+      "picker"
     ) {
-      resumeAmbient(
-        1500
+      requestAnimationFrame(
+        () =>
+          updatePickerSelection(
+            true
+          )
       );
     }
   }
 );
+
 
 window.addEventListener(
   "focus",
   () => {
 
     if (
-      interactionMode
+      currentScreen ===
+      "game"
+    ) {
+      if (
+        interactionMode
+      ) {
+        requestAnimationFrame(
+          focusSelectedAction
+        );
+
+      } else {
+        requestAnimationFrame(
+          focusApp
+        );
+      }
+
+    } else if (
+      currentScreen ===
+      "main"
     ) {
       requestAnimationFrame(
-        focusSelectedAction
+        () =>
+          updateMainMenuSelection(
+            true
+          )
       );
 
-    } else {
+    } else if (
+      currentScreen ===
+      "picker"
+    ) {
       requestAnimationFrame(
-        focusApp
+        () =>
+          updatePickerSelection(
+            true
+          )
       );
     }
   }
@@ -3283,8 +4862,17 @@ function preloadAnimations() {
   const character =
     getActiveCharacter();
 
+
+  if (
+    !character
+  ) {
+    return;
+  }
+
+
   const filenames =
     new Set();
+
 
   Object.values(
     character.animations
@@ -3304,11 +4892,13 @@ function preloadAnimations() {
     }
   );
 
+
   filenames.forEach(
     filename => {
 
       const img =
         new Image();
+
 
       img.src =
         character.path +
@@ -3323,33 +4913,16 @@ function preloadAnimations() {
 ============================================================ */
 
 function init() {
-  preloadAnimations();
-
-  characterMover.style.left =
-    "50%";
-
-  currentX =
-    0;
-
   setActionButtonsFocusable(
     false
   );
+
 
   actionTray.setAttribute(
     "aria-hidden",
     "true"
   );
 
-  updatePersistentTime();
-
-  selectAction(
-    0,
-    false
-  );
-
-  updateStatusDisplay();
-
-  updateMoodAnimation();
 
   characterSprite.addEventListener(
     "dragstart",
@@ -3360,52 +4933,22 @@ function init() {
     }
   );
 
-  requestAnimationFrame(
-    focusApp
+
+  renderMainMenu();
+
+
+  showOnlyScreen(
+    "main"
   );
 
-  if (
-    !state.alive
-  ) {
-    setAnimation(
-      "death",
-      activeDirection
-    );
 
-    return;
-  }
-
-  if (
-    state.forcedSit
-  ) {
-    temporaryAnimation =
-      false;
-
-    setAnimation(
-      "bored",
-      activeDirection
-    );
-
-    return;
-  }
-
-  if (
-    state.sleeping
-  ) {
-    temporaryAnimation =
-      false;
-
-    setAnimation(
-      "sleep",
-      activeDirection
-    );
-
-    return;
-  }
-
-  resumeAmbient(
-    1800
+  requestAnimationFrame(
+    () =>
+      updateMainMenuSelection(
+        true
+      )
   );
 }
+
 
 init();
