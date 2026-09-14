@@ -1,0 +1,5 @@
+/* Noctis-specific presentation */
+
+#character[data-character="noctis"] {
+  height: min(72vh, 210px);
+}
