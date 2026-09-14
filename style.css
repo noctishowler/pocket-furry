@@ -93,7 +93,7 @@ body {
 
   padding: 14px;
 
-  overflow: hidden;
+  overflow-y: auto;
 
   border:
     1px solid
@@ -153,8 +153,7 @@ body {
 }
 
 .list-item {
-  width:
-    100%;
+  width: 100%;
 
   min-height:
     42px;
@@ -191,8 +190,7 @@ body {
 }
 
 .list-item-primary {
-  display:
-    block;
+  display: block;
 
   font-size:
     10px;
@@ -205,8 +203,7 @@ body {
 }
 
 .list-item-secondary {
-  display:
-    block;
+  display: block;
 
   margin-top:
     3px;
@@ -244,33 +241,6 @@ body {
     var(--white);
 }
 
-
-/* ============================================================
-   EMPTY SLOT PLACEHOLDERS
-============================================================ */
-
-.list-item.placeholder {
-  opacity:
-    0.42;
-
-  cursor:
-    default;
-
-  pointer-events:
-    none;
-}
-
-.list-item.placeholder
-.list-item-primary {
-  color:
-    var(--dim);
-}
-
-
-/* ============================================================
-   NO EMPTY SLOTS
-============================================================ */
-
 .list-item.unavailable {
   opacity:
     0.45;
@@ -284,7 +254,7 @@ body {
 
 
 /* ============================================================
-   PICKER BACK BUTTON
+   BACK BUTTON
 ============================================================ */
 
 .list-item.back
@@ -297,22 +267,6 @@ body {
 .list-item-primary {
   color:
     var(--white);
-}
-
-
-/* ============================================================
-   LIST DIVIDER
-============================================================ */
-
-.list-divider {
-  height:
-    1px;
-
-  margin:
-    3px 0;
-
-  background:
-    rgba(138, 53, 255, 0.22);
 }
 
 
