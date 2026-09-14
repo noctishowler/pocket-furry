@@ -121,7 +121,7 @@
 
 
     /*
-       "None" clears the scene image
+       NONE clears the scene artwork
        and leaves the normal app
        background visible.
     */
@@ -155,14 +155,24 @@
       background.file;
 
 
+    /*
+       Fit the artwork independently
+       to both viewport dimensions.
+
+       This prevents the vertical image
+       from becoming oversized on tall
+       screens while keeping the full
+       scene visible.
+    */
+
     gameScreen.style.backgroundImage =
       `url("${path}")`;
 
     gameScreen.style.backgroundSize =
-      "contain";
+      "100% 100%";
 
     gameScreen.style.backgroundPosition =
-      "center bottom";
+      "center center";
 
     gameScreen.style.backgroundRepeat =
       "no-repeat";
@@ -434,7 +444,7 @@
 
     backButton.innerHTML = `
       <span class="list-item-primary">
-        â¹ BACK
+        ‹ BACK
       </span>
 
       <span class="list-item-secondary">
