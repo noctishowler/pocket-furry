@@ -1,7 +1,8 @@
 "use strict";
 
+
 /* ============================================================
-   POCKET FURRY ECONOMY / WORK SYSTEM
+   POCKET FURRY ECONOMY / WORK / HEALTH SYSTEM
 ============================================================ */
 
 (() => {
@@ -9,39 +10,76 @@
   const STARTING_COINS =
     32;
 
+
   const FOOD_COST =
     1;
 
+
+  const MEDICINE_COST =
+    100;
+
+
+  const MEDICINE_HEAL =
+    25;
+
+
+  /*
+     Natural healing is deliberately slow.
+
+     With all needs met and no sickness,
+     0 → 100 health takes seven days.
+  */
+
+  const NATURAL_HEALTH_RECOVERY_PER_MINUTE =
+    100 /
+    (
+      7 *
+      24 *
+      60
+    );
+
+
   const WORK_PAY_INTERVAL_MS =
-    15 * 60 * 1000;
+    15 *
+    60 *
+    1000;
+
 
   const WORK_PAY_PER_INTERVAL =
     1;
 
+
   const WORK_SHIFT_MAX_MS =
-    8 * 60 * 60 * 1000;
+    8 *
+    60 *
+    60 *
+    1000;
+
 
   /*
-     Work uses the normal awake energy drain already handled
-     by app.js.
+     Work uses the normal awake energy
+     drain already handled by app.js.
 
-     Happiness is the additional cost of working:
-     8 points per hour.
+     Happiness is the additional work cost.
   */
 
   const WORK_HAPPINESS_DRAIN_PER_HOUR =
     8;
 
+
   /*
-     At 25 energy or below, switch from the calm office idle
-     animation to the tired office-worker animation.
+     At 25 energy or below, switch from
+     office-worker-idle.gif to the tired
+     office-worker.gif.
   */
 
   const WORK_TIRED_ENERGY =
     25;
 
+
   const WORK_ENTER_MS =
     2300;
+
 
   const WORK_EXIT_MS =
     2300;
@@ -66,6 +104,7 @@
     return {
       ...companionState,
 
+
       coins:
         Number.isFinite(
           Number(
@@ -82,9 +121,23 @@
             )
           : STARTING_COINS,
 
+
+      /*
+         Sickness is persistent.
+
+         Once true, feeding alone does not
+         clear it. Medicine is required.
+      */
+
+      sick:
+        companionState.sick ===
+          true,
+
+
       working:
         companionState.working ===
           true,
+
 
       workStartedAt:
         Number.isFinite(
@@ -97,6 +150,7 @@
             )
           : null,
 
+
       workPaidThroughAt:
         Number.isFinite(
           Number(
@@ -108,6 +162,7 @@
             )
           : null,
 
+
       workHappinessUpdatedAt:
         Number.isFinite(
           Number(
@@ -118,6 +173,7 @@
               companionState.workHappinessUpdatedAt
             )
           : null,
+
 
       workStartEnergy:
         Number.isFinite(
@@ -132,6 +188,7 @@
             )
           : null,
 
+
       lastWorkEndedAt:
         Number.isFinite(
           Number(
@@ -142,6 +199,7 @@
               companionState.lastWorkEndedAt
             )
           : null,
+
 
       lastWorkCoinsEarned:
         Number.isFinite(
@@ -158,6 +216,7 @@
               )
             )
           : 0,
+
 
       lastWorkUpdate:
         Number.isFinite(
@@ -187,6 +246,149 @@
 
     };
 
+
+  /* ==========================================================
+     PERSISTENT SICKNESS
+  ========================================================== */
+
+  function syncPersistentSickness(
+    companionState =
+      state
+  ) {
+
+    if (
+      !companionState ||
+      !companionState.alive
+    ) {
+
+      return;
+
+    }
+
+
+    const lastMealAt =
+      Number(
+        companionState.lastMealAt
+      ) ||
+      Date.now();
+
+
+    const foodAge =
+      Math.max(
+        0,
+        Date.now() -
+        lastMealAt
+      );
+
+
+    /*
+       The existing game reaches zero
+       hunger at FOOD_DURATION_MS.
+
+       Crossing that point causes illness.
+    */
+
+    if (
+      foodAge >=
+        FOOD_DURATION_MS
+    ) {
+
+      companionState.sick =
+        true;
+
+    }
+
+  }
+
+
+  /* ==========================================================
+     HEALTH
+
+     Replace the original health update
+     with persistent sickness behavior.
+  ========================================================== */
+
+  updateHealthFromClock =
+    function (
+      minutes
+    ) {
+
+      if (
+        !state ||
+        !state.alive
+      ) {
+
+        return;
+
+      }
+
+
+      syncPersistentSickness(
+        state
+      );
+
+
+      const hungerStage =
+        getHungerStage();
+
+
+      /*
+         Continued starvation still causes
+         health damage at the original rate.
+      */
+
+      if (
+        hungerStage ===
+          "sick" ||
+        hungerStage ===
+          "critical"
+      ) {
+
+        state.health =
+          clamp(
+            state.health -
+            HEALTH_DRAIN_PER_MINUTE *
+            minutes
+          );
+
+      } else if (
+        !state.sick &&
+        areHealthNeedsMet()
+      ) {
+
+        /*
+           Healthy companions recover very
+           slowly when every need is met.
+
+           Sick companions do NOT naturally
+           recover until medicine cures them.
+        */
+
+        state.health =
+          clamp(
+            state.health +
+            NATURAL_HEALTH_RECOVERY_PER_MINUTE *
+            minutes
+          );
+
+      }
+
+
+      if (
+        state.health <=
+          0
+      ) {
+
+        killCharacter();
+
+      }
+
+    };
+
+
+  /* ==========================================================
+     WORK STATE
+  ========================================================== */
 
   function getMaximumWorkDurationMs(
     companionState
@@ -223,8 +425,8 @@
       Math.max(
         0,
         minutesUntilEmpty *
-          60 *
-          1000
+        60 *
+        1000
       )
     );
 
@@ -241,6 +443,11 @@
       addEconomyDefaults(
         companionState
       );
+
+
+    syncPersistentSickness(
+      companionState
+    );
 
 
     if (
@@ -296,7 +503,7 @@
         Number(
           companionState.workPaidThroughAt
         ) ||
-          startedAt
+        startedAt
       );
 
 
@@ -345,7 +552,7 @@
         Number(
           companionState.workHappinessUpdatedAt
         ) ||
-          startedAt
+        startedAt
       );
 
 
@@ -424,11 +631,14 @@
       companionState.workStartedAt =
         null;
 
+
       companionState.workPaidThroughAt =
         null;
 
+
       companionState.workHappinessUpdatedAt =
         null;
+
 
       companionState.workStartEnergy =
         null;
@@ -486,6 +696,11 @@
         );
 
 
+      syncPersistentSickness(
+        loaded
+      );
+
+
       const result =
         reconcileWorkState(
           loaded
@@ -527,7 +742,9 @@
 
 
   coinHud.innerHTML = `
-    <span class="mini-icon coin-icon">
+    <span
+      class="mini-icon coin-icon"
+    >
       ¢
     </span>
 
@@ -649,6 +866,65 @@
 
 
   /* ==========================================================
+     SICKNESS MOOD / ANIMATION
+  ========================================================== */
+
+  const previousGetMoodEmoji =
+    getMoodEmoji;
+
+
+  getMoodEmoji =
+    function () {
+
+      if (
+        state &&
+        state.sick
+      ) {
+
+        return "🤢";
+
+      }
+
+
+      return previousGetMoodEmoji();
+
+    };
+
+
+  const previousUpdateMoodAnimation =
+    updateMoodAnimation;
+
+
+  updateMoodAnimation =
+    function () {
+
+      if (
+        state &&
+        state.sick &&
+        !state.working &&
+        state.alive &&
+        !state.sleeping &&
+        !temporaryAnimation &&
+        !walking
+      ) {
+
+        setAnimation(
+          "sick",
+          activeDirection
+        );
+
+
+        return;
+
+      }
+
+
+      previousUpdateMoodAnimation();
+
+    };
+
+
+  /* ==========================================================
      WORK ANIMATION STATE
   ========================================================== */
 
@@ -720,13 +996,21 @@
 
         updateWorkAnimation();
 
+      } else if (
+        state &&
+        state.sick
+      ) {
+
+        moodEmoji.textContent =
+          "🤢";
+
       }
 
     };
 
 
   /* ==========================================================
-     MAIN MENU COIN / WORK STATUS
+     MAIN MENU COIN / SICK / WORK STATUS
   ========================================================== */
 
   const originalGetStateSummary =
@@ -752,6 +1036,26 @@
 
         return (
           `💼 Working • ¢${Math.floor(
+            saved.coins
+          )}`
+        );
+
+      }
+
+
+      if (
+        saved.sick &&
+        saved.alive
+      ) {
+
+        const sleep =
+          saved.sleeping
+            ? "Asleep"
+            : "Awake";
+
+
+        return (
+          `🤢 Sick • ${sleep} • ¢${Math.floor(
             saved.coins
           )}`
         );
@@ -798,11 +1102,15 @@
 
 
   workButton.innerHTML = `
-    <span class="action-icon">
+    <span
+      class="action-icon"
+    >
       ¢
     </span>
 
-    <span class="action-label">
+    <span
+      class="action-label"
+    >
       WORK
     </span>
   `;
@@ -987,6 +1295,7 @@
 
 
     pauseAmbient();
+
 
     stopWalking();
 
@@ -1333,11 +1642,14 @@
     state.workStartedAt =
       null;
 
+
     state.workPaidThroughAt =
       null;
 
+
     state.workHappinessUpdatedAt =
       null;
+
 
     state.workStartEnergy =
       null;
@@ -1398,6 +1710,11 @@
             state
           );
 
+
+        syncPersistentSickness(
+          state
+        );
+
       }
 
 
@@ -1411,6 +1728,11 @@
         return;
 
       }
+
+
+      syncPersistentSickness(
+        state
+      );
 
 
       const wasWorking =
@@ -1428,8 +1750,8 @@
 
 
       /*
-         If normal energy handling forces sleep,
-         work ends as well.
+         If normal energy handling forces
+         sleep, the work shift ends too.
       */
 
       if (
@@ -1448,11 +1770,14 @@
         state.workStartedAt =
           null;
 
+
         state.workPaidThroughAt =
           null;
 
+
         state.workHappinessUpdatedAt =
           null;
+
 
         state.workStartEnergy =
           null;
@@ -1559,6 +1884,10 @@
       }
 
 
+      /* ------------------------------------------------------
+         WORK
+      ------------------------------------------------------ */
+
       if (
         action ===
           "work"
@@ -1583,6 +1912,18 @@
 
       }
 
+
+      /* ------------------------------------------------------
+         FOOD
+
+         Food costs one coin and restores hunger.
+
+         It does NOT:
+         - cure sickness
+         - heal health
+         - improve happiness
+         - improve recovery mood
+      ------------------------------------------------------ */
 
       if (
         action ===
@@ -1609,8 +1950,156 @@
         }
 
 
+        const healthBeforeFood =
+          state.health;
+
+
+        const happinessBeforeFood =
+          state.happiness;
+
+
+        const recoveryMoodBeforeFood =
+          state.recoveryMood;
+
+
         state.coins -=
           FOOD_COST;
+
+
+        originalPerformAction(
+          action
+        );
+
+
+        /*
+           app.js currently gives food:
+           - +25 health
+           - +5 happiness
+           - positive mood recovery
+
+           Restore those values so food only
+           affects hunger.
+        */
+
+        state.health =
+          healthBeforeFood;
+
+
+        state.happiness =
+          happinessBeforeFood;
+
+
+        state.recoveryMood =
+          recoveryMoodBeforeFood;
+
+
+        syncPersistentSickness(
+          state
+        );
+
+
+        updateStatusDisplay();
+
+
+        saveState();
+
+
+        return;
+
+      }
+
+
+      /* ------------------------------------------------------
+         MEDICINE
+
+         Medicine is the ONLY cure for the
+         persistent sickness state.
+      ------------------------------------------------------ */
+
+      if (
+        action ===
+          "medicine"
+      ) {
+
+        const needsMedicine =
+          state.sick ||
+          state.health <
+            95;
+
+
+        if (
+          !needsMedicine
+        ) {
+
+          showMessage(
+            "Healthy"
+          );
+
+
+          return;
+
+        }
+
+
+        if (
+          state.coins <
+            MEDICINE_COST
+        ) {
+
+          showMessage(
+            `Medicine costs ${MEDICINE_COST}`
+          );
+
+
+          updateStatusDisplay();
+
+
+          return;
+
+        }
+
+
+        state.coins -=
+          MEDICINE_COST;
+
+
+        state.sick =
+          false;
+
+
+        state.health =
+          clamp(
+            state.health +
+            MEDICINE_HEAL
+          );
+
+
+        /*
+           Medicine cures sickness but does
+           not refill hunger.
+
+           If starvation continues, sickness
+           can return.
+        */
+
+        updateStatusDisplay();
+
+
+        playTemporaryAnimation(
+          "angry",
+          1500
+        );
+
+
+        showMessage(
+          "Medicine"
+        );
+
+
+        saveState();
+
+
+        return;
 
       }
 
@@ -1648,6 +2137,26 @@
 
 
       if (
+        state
+      ) {
+
+        state =
+          addEconomyDefaults(
+            state
+          );
+
+
+        syncPersistentSickness(
+          state
+        );
+
+
+        saveState();
+
+      }
+
+
+      if (
         state &&
         state.working &&
         currentScreen ===
@@ -1656,6 +2165,22 @@
 
         showWorkingVisual(
           false
+        );
+
+      } else if (
+        state &&
+        state.sick &&
+        state.alive &&
+        !state.sleeping
+      ) {
+
+        temporaryAnimation =
+          false;
+
+
+        setAnimation(
+          "sick",
+          activeDirection
         );
 
       }
