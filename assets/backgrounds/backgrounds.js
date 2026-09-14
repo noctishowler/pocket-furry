@@ -120,6 +120,36 @@
     }
 
 
+    /*
+       "None" clears the scene image
+       and leaves the normal app
+       background visible.
+    */
+
+    if (
+      !background.file
+    ) {
+
+      gameScreen.style.backgroundImage =
+        "none";
+
+      gameScreen.style.backgroundSize =
+        "";
+
+      gameScreen.style.backgroundPosition =
+        "";
+
+      gameScreen.style.backgroundRepeat =
+        "";
+
+      gameScreen.style.backgroundColor =
+        "";
+
+      return;
+
+    }
+
+
     const path =
       BACKGROUND_ROOT +
       background.file;
