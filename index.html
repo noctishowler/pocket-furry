@@ -1,14 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
-
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1, viewport-fit=cover"
   />
-
   <meta name="theme-color" content="#09090d" />
 
   <title>Pocket Furry</title>
@@ -24,272 +21,418 @@
     tabindex="0"
   >
 
-    <!-- COMPACT STATUS HUD -->
+    <!-- =====================================================
+         MAIN COMPANION LIST
+    ====================================================== -->
 
     <section
-      id="statusHud"
-      class="status-hud"
+      id="mainMenuScreen"
+      class="screen menu-screen"
     >
 
-      <div
-        id="moodHud"
-        class="mini-stat mood-stat"
-      >
-        <span
-          id="moodEmoji"
-          class="mini-icon mood-icon"
-        >
-          😊
-        </span>
-      </div>
+      <div class="menu-panel">
 
-
-      <div
-        class="mini-stat"
-        data-stat="health"
-      >
-        <span class="mini-icon">+</span>
-
-        <div class="mini-meter">
-          <div
-            id="healthBar"
-            class="mini-fill"
-          ></div>
+        <div class="menu-title">
+          POCKET FURRY
         </div>
-      </div>
 
-
-      <div
-        class="mini-stat"
-        data-stat="hunger"
-      >
-        <span class="mini-icon">◆</span>
-
-        <div class="mini-meter">
-          <div
-            id="hungerBar"
-            class="mini-fill"
-          ></div>
+        <div class="menu-subtitle">
+          COMPANIONS
         </div>
-      </div>
 
+        <div
+          id="companionList"
+          class="list-menu"
+        ></div>
 
-      <div
-        class="mini-stat"
-        data-stat="cleanliness"
-      >
-        <span class="mini-icon">✦</span>
-
-        <div class="mini-meter">
-          <div
-            id="cleanlinessBar"
-            class="mini-fill"
-          ></div>
+        <div class="screen-hint">
+          ▲ ▼ SELECT • PINCH / TAP OPEN
         </div>
-      </div>
 
-
-      <div
-        class="mini-stat"
-        data-stat="energy"
-      >
-        <span class="mini-icon">☾</span>
-
-        <div class="mini-meter">
-          <div
-            id="energyBar"
-            class="mini-fill"
-          ></div>
-        </div>
       </div>
 
     </section>
 
 
-    <!-- CHARACTER AREA -->
+    <!-- =====================================================
+         CHARACTER PICKER
+    ====================================================== -->
 
     <section
-      id="petStage"
-      class="pet-stage"
+      id="pickerScreen"
+      class="screen menu-screen hidden"
     >
 
-      <div id="characterMover">
-        <img
-          id="character"
-          src="assets/characters/noctis/idle.gif"
-          alt="Pocket Furry character"
-          draggable="false"
-        />
+      <div class="menu-panel">
+
+        <div class="menu-title">
+          CHOOSE A COMPANION
+        </div>
+
+        <div
+          id="characterPickerList"
+          class="list-menu"
+        ></div>
+
+        <div class="screen-hint">
+          ▲ ▼ SELECT • PINCH / TAP CHOOSE
+        </div>
+
       </div>
 
-
-      <div
-        id="message"
-        class="message hidden"
-      ></div>
+    </section>
 
 
-      <!-- DETAILED STATUS CARD -->
+    <!-- =====================================================
+         ACTIVE COMPANION
+    ====================================================== -->
+
+    <section
+      id="gameScreen"
+      class="screen hidden"
+    >
+
+      <!-- STATUS HUD -->
 
       <section
-        id="statusCard"
-        class="status-card hidden"
+        id="statusHud"
+        class="status-hud"
       >
 
-        <div class="status-card-title">
-          NOCTIS
+        <div
+          id="moodHud"
+          class="mini-stat mood-stat"
+        >
+          <span
+            id="moodEmoji"
+            class="mini-icon mood-icon"
+          >
+            😊
+          </span>
         </div>
 
 
-        <div class="detail-stat">
-          <span>HAPPINESS</span>
-          <span id="happinessValue">0</span>
-        </div>
+        <div
+          class="mini-stat"
+          data-stat="health"
+        >
+          <span class="mini-icon">
+            +
+          </span>
 
-        <div class="detail-meter">
-          <div id="detailHappiness"></div>
-        </div>
-
-
-        <div class="detail-stat">
-          <span>HUNGER</span>
-          <span id="hungerValue">0</span>
-        </div>
-
-        <div class="detail-meter">
-          <div id="detailHunger"></div>
+          <div class="mini-meter">
+            <div
+              id="healthBar"
+              class="mini-fill"
+            ></div>
+          </div>
         </div>
 
 
-        <div class="detail-stat">
-          <span>ENERGY</span>
-          <span id="energyValue">0</span>
-        </div>
+        <div
+          class="mini-stat"
+          data-stat="hunger"
+        >
+          <span class="mini-icon">
+            ◆
+          </span>
 
-        <div class="detail-meter">
-          <div id="detailEnergy"></div>
-        </div>
-
-
-        <div class="detail-stat">
-          <span>HEALTH</span>
-          <span id="healthValue">0</span>
-        </div>
-
-        <div class="detail-meter">
-          <div id="detailHealth"></div>
+          <div class="mini-meter">
+            <div
+              id="hungerBar"
+              class="mini-fill"
+            ></div>
+          </div>
         </div>
 
 
-        <div class="detail-stat">
-          <span>CLEAN</span>
-          <span id="cleanValue">0</span>
+        <div
+          class="mini-stat"
+          data-stat="cleanliness"
+        >
+          <span class="mini-icon">
+            ✦
+          </span>
+
+          <div class="mini-meter">
+            <div
+              id="cleanlinessBar"
+              class="mini-fill"
+            ></div>
+          </div>
         </div>
 
-        <div class="detail-meter">
-          <div id="detailClean"></div>
+
+        <div
+          class="mini-stat"
+          data-stat="energy"
+        >
+          <span class="mini-icon">
+            ☾
+          </span>
+
+          <div class="mini-meter">
+            <div
+              id="energyBar"
+              class="mini-fill"
+            ></div>
+          </div>
         </div>
 
       </section>
 
+
+      <!-- CHARACTER AREA -->
+
+      <section
+        id="petStage"
+        class="pet-stage"
+      >
+
+        <div id="characterMover">
+
+          <img
+            id="character"
+            src="assets/characters/noctis/idle.gif"
+            alt="Pocket Furry character"
+            draggable="false"
+          />
+
+        </div>
+
+
+        <div
+          id="message"
+          class="message hidden"
+        ></div>
+
+
+        <!-- STATUS CARD -->
+
+        <section
+          id="statusCard"
+          class="status-card hidden"
+        >
+
+          <div
+            id="statusCardTitle"
+            class="status-card-title"
+          >
+            NOCTIS
+          </div>
+
+
+          <div class="detail-stat">
+            <span>
+              HAPPINESS
+            </span>
+
+            <span id="happinessValue">
+              0
+            </span>
+          </div>
+
+          <div class="detail-meter">
+            <div id="detailHappiness"></div>
+          </div>
+
+
+          <div class="detail-stat">
+            <span>
+              HUNGER
+            </span>
+
+            <span id="hungerValue">
+              0
+            </span>
+          </div>
+
+          <div class="detail-meter">
+            <div id="detailHunger"></div>
+          </div>
+
+
+          <div class="detail-stat">
+            <span>
+              ENERGY
+            </span>
+
+            <span id="energyValue">
+              0
+            </span>
+          </div>
+
+          <div class="detail-meter">
+            <div id="detailEnergy"></div>
+          </div>
+
+
+          <div class="detail-stat">
+            <span>
+              HEALTH
+            </span>
+
+            <span id="healthValue">
+              0
+            </span>
+          </div>
+
+          <div class="detail-meter">
+            <div id="detailHealth"></div>
+          </div>
+
+
+          <div class="detail-stat">
+            <span>
+              CLEAN
+            </span>
+
+            <span id="cleanValue">
+              0
+            </span>
+          </div>
+
+          <div class="detail-meter">
+            <div id="detailClean"></div>
+          </div>
+
+        </section>
+
+      </section>
+
+
+      <!-- ===================================================
+           INTERACTION TRAY
+      ==================================================== -->
+
+      <section
+        id="actionTray"
+        class="action-tray hidden-tray"
+        aria-hidden="true"
+      >
+
+        <button
+          type="button"
+          class="action focusable selected"
+          data-action="feed"
+          tabindex="-1"
+        >
+          <span class="action-icon">
+            ◆
+          </span>
+
+          <span class="action-label">
+            FEED
+          </span>
+        </button>
+
+
+        <button
+          type="button"
+          class="action focusable"
+          data-action="play"
+          tabindex="-1"
+        >
+          <span class="action-icon">
+            ▲
+          </span>
+
+          <span class="action-label">
+            PLAY
+          </span>
+        </button>
+
+
+        <button
+          type="button"
+          class="action focusable"
+          data-action="pet"
+          tabindex="-1"
+        >
+          <span class="action-icon">
+            ♥
+          </span>
+
+          <span class="action-label">
+            PET
+          </span>
+        </button>
+
+
+        <button
+          type="button"
+          class="action focusable"
+          data-action="clean"
+          tabindex="-1"
+        >
+          <span class="action-icon">
+            ✦
+          </span>
+
+          <span class="action-label">
+            CLEAN
+          </span>
+        </button>
+
+
+        <button
+          type="button"
+          class="action focusable"
+          data-action="sit"
+          tabindex="-1"
+        >
+          <span class="action-icon">
+            ▼
+          </span>
+
+          <span class="action-label">
+            SIT
+          </span>
+        </button>
+
+
+        <button
+          type="button"
+          class="action focusable"
+          data-action="sleep"
+          tabindex="-1"
+        >
+          <span class="action-icon">
+            ☾
+          </span>
+
+          <span class="action-label">
+            SLEEP
+          </span>
+        </button>
+
+
+        <button
+          type="button"
+          class="action focusable"
+          data-action="medicine"
+          tabindex="-1"
+        >
+          <span class="action-icon">
+            +
+          </span>
+
+          <span class="action-label">
+            MED
+          </span>
+        </button>
+
+      </section>
+
+
+      <div
+        id="controlHint"
+        class="control-hint"
+      >
+        ↑ MENU • ↓ INTERACT
+      </div>
+
     </section>
-
-
-    <!-- INTERACTION TRAY -->
-
-    <section
-      id="actionTray"
-      class="action-tray hidden-tray"
-      aria-hidden="true"
-    >
-
-      <button
-        type="button"
-        class="action focusable selected"
-        data-action="feed"
-        tabindex="-1"
-      >
-        <span class="action-icon">◆</span>
-        <span class="action-label">FEED</span>
-      </button>
-
-
-      <button
-        type="button"
-        class="action focusable"
-        data-action="play"
-        tabindex="-1"
-      >
-        <span class="action-icon">▲</span>
-        <span class="action-label">PLAY</span>
-      </button>
-
-
-      <button
-        type="button"
-        class="action focusable"
-        data-action="pet"
-        tabindex="-1"
-      >
-        <span class="action-icon">♥</span>
-        <span class="action-label">PET</span>
-      </button>
-
-
-      <button
-        type="button"
-        class="action focusable"
-        data-action="clean"
-        tabindex="-1"
-      >
-        <span class="action-icon">✦</span>
-        <span class="action-label">CLEAN</span>
-      </button>
-
-
-      <button
-        type="button"
-        class="action focusable"
-        data-action="sit"
-        tabindex="-1"
-      >
-        <span class="action-icon">▼</span>
-        <span class="action-label">SIT</span>
-      </button>
-
-
-      <button
-        type="button"
-        class="action focusable"
-        data-action="sleep"
-        tabindex="-1"
-      >
-        <span class="action-icon">☾</span>
-        <span class="action-label">SLEEP</span>
-      </button>
-
-
-      <button
-        type="button"
-        class="action focusable"
-        data-action="medicine"
-        tabindex="-1"
-      >
-        <span class="action-icon">+</span>
-        <span class="action-label">MED</span>
-      </button>
-
-    </section>
-
-
-    <!-- CONTROL HINT -->
-
-    <div
-      id="controlHint"
-      class="control-hint"
-    >
-      SWIPE DOWN TO INTERACT
-    </div>
 
   </main>
 
@@ -297,5 +440,4 @@
   <script src="app.js"></script>
 
 </body>
-
 </html>
