@@ -149,14 +149,19 @@
       background.file;
 
 
+    /*
+       Stretch the scene to completely
+       fill the available game screen.
+    */
+
     gameScreen.style.backgroundImage =
       `url("${path}")`;
 
     gameScreen.style.backgroundSize =
-      "contain";
+      "100% 100%";
 
     gameScreen.style.backgroundPosition =
-      "center bottom";
+      "center center";
 
     gameScreen.style.backgroundRepeat =
       "no-repeat";
@@ -428,7 +433,7 @@
 
     backButton.innerHTML = `
       <span class="list-item-primary">
-        â¹ BACK
+        ‹ BACK
       </span>
 
       <span class="list-item-secondary">
