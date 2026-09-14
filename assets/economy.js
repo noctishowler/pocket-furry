@@ -6,6 +6,7 @@
 
 (() => {
   const STARTING_COINS = 32;
+  const WORK_TIRED_ENERGY = 25;
 
   const FOOD_COST = 1;
 
