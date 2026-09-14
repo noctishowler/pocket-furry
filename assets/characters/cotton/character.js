@@ -119,6 +119,11 @@ window.PocketFurryCharacters.cotton = {
       left: "office-worker-enter.gif"
     },
 
+    officeWorkerIdle: {
+      right: "office-worker-idle.gif",
+      left: "office-worker-idle.gif"
+    },
+
     officeWorker: {
       right: "office-worker.gif",
       left: "office-worker.gif"
