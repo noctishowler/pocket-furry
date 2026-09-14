@@ -72,7 +72,7 @@ body {
 
 
 /* ============================================================
-   MAIN / PICKER LISTS
+   MAIN / PICKER SCREENS
 ============================================================ */
 
 .menu-screen {
@@ -92,6 +92,8 @@ body {
     92vh;
 
   padding: 14px;
+
+  overflow: hidden;
 
   border:
     1px solid
@@ -135,6 +137,11 @@ body {
     center;
 }
 
+
+/* ============================================================
+   LIST MENU
+============================================================ */
+
 .list-menu {
   display: flex;
 
@@ -146,7 +153,8 @@ body {
 }
 
 .list-item {
-  width: 100%;
+  width:
+    100%;
 
   min-height:
     42px;
@@ -183,7 +191,8 @@ body {
 }
 
 .list-item-primary {
-  display: block;
+  display:
+    block;
 
   font-size:
     10px;
@@ -196,7 +205,8 @@ body {
 }
 
 .list-item-secondary {
-  display: block;
+  display:
+    block;
 
   margin-top:
     3px;
@@ -217,13 +227,98 @@ body {
     rgba(244, 239, 255, 0.72);
 }
 
-.list-item.empty
-.list-item-primary,
+
+/* ============================================================
+   NEW COMPANION
+============================================================ */
+
+.list-item.new-companion
+.list-item-primary {
+  color:
+    var(--purple-soft);
+}
+
+.list-item.new-companion.selected
+.list-item-primary {
+  color:
+    var(--white);
+}
+
+
+/* ============================================================
+   EMPTY SLOT PLACEHOLDERS
+============================================================ */
+
+.list-item.placeholder {
+  opacity:
+    0.42;
+
+  cursor:
+    default;
+
+  pointer-events:
+    none;
+}
+
+.list-item.placeholder
+.list-item-primary {
+  color:
+    var(--dim);
+}
+
+
+/* ============================================================
+   NO EMPTY SLOTS
+============================================================ */
+
+.list-item.unavailable {
+  opacity:
+    0.45;
+}
+
+.list-item.unavailable
+.list-item-primary {
+  color:
+    var(--dim);
+}
+
+
+/* ============================================================
+   PICKER BACK BUTTON
+============================================================ */
+
 .list-item.back
 .list-item-primary {
   color:
     var(--purple-soft);
 }
+
+.list-item.back.selected
+.list-item-primary {
+  color:
+    var(--white);
+}
+
+
+/* ============================================================
+   LIST DIVIDER
+============================================================ */
+
+.list-divider {
+  height:
+    1px;
+
+  margin:
+    3px 0;
+
+  background:
+    rgba(138, 53, 255, 0.22);
+}
+
+
+/* ============================================================
+   SCREEN HINT
+============================================================ */
 
 .screen-hint {
   margin-top:
@@ -284,7 +379,8 @@ body {
 }
 
 .mini-icon {
-  width: 10px;
+  width:
+    10px;
 
   color:
     var(--purple-soft);
@@ -300,8 +396,11 @@ body {
 }
 
 .mini-meter {
-  width: 32px;
-  height: 4px;
+  width:
+    32px;
+
+  height:
+    4px;
 
   border:
     1px solid
@@ -312,8 +411,11 @@ body {
 }
 
 .mini-fill {
-  width: 100%;
-  height: 100%;
+  width:
+    100%;
+
+  height:
+    100%;
 
   background:
     var(--purple);
@@ -364,11 +466,12 @@ body {
 
 
 /* ============================================================
-   CHARACTER
+   PET STAGE
 ============================================================ */
 
 .pet-stage {
-  position: absolute;
+  position:
+    absolute;
 
   inset:
     28px 0 0 0;
@@ -377,25 +480,37 @@ body {
     hidden;
 }
 
-#characterMover {
-  position: absolute;
 
-  left: 50%;
-  bottom: 5px;
+/* ============================================================
+   CHARACTER
+============================================================ */
+
+#characterMover {
+  position:
+    absolute;
+
+  left:
+    50%;
+
+  bottom:
+    5px;
 
   transform:
     translateX(-50%);
 
-  z-index: 5;
+  z-index:
+    5;
 
   will-change:
     left;
 }
 
 #character {
-  display: block;
+  display:
+    block;
 
-  width: auto;
+  width:
+    auto;
 
   height:
     min(72vh, 210px);
@@ -425,12 +540,17 @@ body {
 ============================================================ */
 
 .message {
-  position: absolute;
+  position:
+    absolute;
 
-  z-index: 15;
+  z-index:
+    15;
 
-  top: 4px;
-  left: 50%;
+  top:
+    4px;
+
+  left:
+    50%;
 
   transform:
     translateX(-50%);
@@ -473,12 +593,17 @@ body {
 ============================================================ */
 
 .status-card {
-  position: absolute;
+  position:
+    absolute;
 
-  z-index: 40;
+  z-index:
+    40;
 
-  top: 50%;
-  left: 50%;
+  top:
+    50%;
+
+  left:
+    50%;
 
   width:
     180px;
@@ -515,7 +640,8 @@ body {
 }
 
 .detail-stat {
-  display: flex;
+  display:
+    flex;
 
   justify-content:
     space-between;
@@ -546,8 +672,11 @@ body {
 }
 
 .detail-meter > div {
-  width: 100%;
-  height: 100%;
+  width:
+    100%;
+
+  height:
+    100%;
 
   background:
     var(--purple);
@@ -559,17 +688,23 @@ body {
 ============================================================ */
 
 .action-tray {
-  position: absolute;
+  position:
+    absolute;
 
-  z-index: 30;
+  z-index:
+    30;
 
-  left: 50%;
-  bottom: 5px;
+  left:
+    50%;
+
+  bottom:
+    5px;
 
   transform:
     translateX(-50%);
 
-  display: flex;
+  display:
+    flex;
 
   gap:
     2px;
@@ -590,7 +725,8 @@ body {
 }
 
 .action-tray.hidden-tray {
-  opacity: 0;
+  opacity:
+    0;
 
   transform:
     translate(-50%, 18px);
@@ -632,7 +768,8 @@ body {
 }
 
 .action-icon {
-  display: block;
+  display:
+    block;
 
   color:
     var(--purple-soft);
@@ -645,7 +782,8 @@ body {
 }
 
 .action-label {
-  display: block;
+  display:
+    block;
 
   margin-top:
     1px;
@@ -657,13 +795,23 @@ body {
     center;
 }
 
+
+/* ============================================================
+   CONTROL HINT
+============================================================ */
+
 .control-hint {
-  position: absolute;
+  position:
+    absolute;
 
-  z-index: 10;
+  z-index:
+    10;
 
-  left: 50%;
-  bottom: 1px;
+  left:
+    50%;
+
+  bottom:
+    1px;
 
   transform:
     translateX(-50%);
