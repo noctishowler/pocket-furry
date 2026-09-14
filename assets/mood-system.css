@@ -1,0 +1,41 @@
+/* ============================================================
+   POCKET FURRY MOOD PRESENTATION
+============================================================ */
+
+
+/* Make the HUD mood face clearly visible. */
+
+.mood-stat {
+  min-width:
+    20px;
+}
+
+
+.mood-icon {
+  width:
+    18px;
+
+  font-size:
+    16px;
+
+  line-height:
+    1;
+
+  text-align:
+    center;
+
+  opacity:
+    1;
+
+  filter:
+    none;
+}
+
+
+/* Keep emoji and mood text readable in companion rows. */
+
+.companion-entry
+.list-item-secondary {
+  line-height:
+    1.3;
+}
