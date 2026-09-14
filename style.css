@@ -72,6 +72,26 @@ body {
 
 
 /* ============================================================
+   MAIN MENU BACKGROUND
+============================================================ */
+
+#mainMenuScreen {
+  background:
+    linear-gradient(
+      rgba(9, 9, 13, 0.18),
+      rgba(9, 9, 13, 0.18)
+    ),
+    url("assets/backgrounds/main.PNG")
+    center center /
+    cover
+    no-repeat;
+
+  background-color:
+    var(--bg);
+}
+
+
+/* ============================================================
    MAIN / PICKER SCREENS
 ============================================================ */
 
@@ -100,7 +120,13 @@ body {
     rgba(138, 53, 255, 0.55);
 
   background:
-    rgba(5, 5, 9, 0.95);
+    rgba(5, 5, 9, 0.82);
+
+  backdrop-filter:
+    blur(2px);
+
+  -webkit-backdrop-filter:
+    blur(2px);
 }
 
 .menu-title {
@@ -166,7 +192,7 @@ body {
     rgba(138, 53, 255, 0.18);
 
   background:
-    rgba(0, 0, 0, 0.32);
+    rgba(0, 0, 0, 0.40);
 
   color:
     var(--dim);
@@ -183,7 +209,7 @@ body {
     var(--purple);
 
   background:
-    rgba(138, 53, 255, 0.15);
+    rgba(55, 12, 92, 0.64);
 
   color:
     var(--white);
