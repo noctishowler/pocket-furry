@@ -2,7 +2,7 @@
 
 
 /* ============================================================
-   POCKET FURRY BACKGROUND / CANVAS SYSTEM
+   POCKET FURRY BACKGROUND SYSTEM
 ============================================================ */
 
 (() => {
@@ -12,22 +12,6 @@
 
   const BACKGROUND_SAVE_KEY =
     "pocketFurry_background_v1";
-
-
-  /*
-     Pocket Furry's native landscape
-     coordinate system.
-
-     Everything inside #app is laid out
-     as if the display were permanently
-     1536 × 1024.
-  */
-
-  const CANVAS_WIDTH =
-    1536;
-
-  const CANVAS_HEIGHT =
-    1024;
 
 
   const backgrounds =
@@ -45,104 +29,6 @@
 
   let activeBackgroundId =
     loadBackgroundId();
-
-
-  /* ==========================================================
-     FIXED CANVAS SCALING
-  ========================================================== */
-
-  function fitCanvasToViewport() {
-
-    /*
-       visualViewport is preferable on
-       iPhone because Safari's browser
-       controls can change the actually
-       visible viewport without changing
-       the layout viewport in the same way.
-    */
-
-    const viewportWidth =
-      window.visualViewport
-        ? window.visualViewport.width
-        : window.innerWidth;
-
-
-    const viewportHeight =
-      window.visualViewport
-        ? window.visualViewport.height
-        : window.innerHeight;
-
-
-    /*
-       Uniform scale only.
-
-       Whichever dimension is more
-       restrictive wins.
-
-       1536 × 1024 itself never changes.
-    */
-
-    const scaleX =
-      viewportWidth /
-      CANVAS_WIDTH;
-
-
-    const scaleY =
-      viewportHeight /
-      CANVAS_HEIGHT;
-
-
-    const scale =
-      Math.min(
-        scaleX,
-        scaleY
-      );
-
-
-    document.documentElement.style.setProperty(
-      "--app-scale",
-      String(scale)
-    );
-
-  }
-
-
-  /*
-     Run immediately before anything
-     becomes visible.
-  */
-
-  fitCanvasToViewport();
-
-
-  window.addEventListener(
-    "resize",
-    fitCanvasToViewport
-  );
-
-
-  window.addEventListener(
-    "orientationchange",
-    () => {
-
-      requestAnimationFrame(
-        fitCanvasToViewport
-      );
-
-    }
-  );
-
-
-  if (
-    window.visualViewport
-  ) {
-
-    window.visualViewport.addEventListener(
-      "resize",
-      fitCanvasToViewport
-    );
-
-  }
 
 
   /* ==========================================================
@@ -234,10 +120,6 @@
     }
 
 
-    /*
-       NONE clears the selected scene.
-    */
-
     if (
       !background.file
     ) {
@@ -267,23 +149,14 @@
       background.file;
 
 
-    /*
-       Background exactly matches the
-       native 1536 × 1024 canvas.
-
-       No cover.
-       No contain.
-       No independent viewport scaling.
-    */
-
     gameScreen.style.backgroundImage =
       `url("${path}")`;
 
     gameScreen.style.backgroundSize =
-      "100% 100%";
+      "contain";
 
     gameScreen.style.backgroundPosition =
-      "center center";
+      "center bottom";
 
     gameScreen.style.backgroundRepeat =
       "no-repeat";
@@ -555,7 +428,7 @@
 
     backButton.innerHTML = `
       <span class="list-item-primary">
-        ‹ BACK
+        â¹ BACK
       </span>
 
       <span class="list-item-secondary">
@@ -677,6 +550,23 @@
       originalActivateMainMenuSelection();
 
     };
+
+
+  /* ==========================================================
+     SCREEN RESIZE
+  ========================================================== */
+
+  window.addEventListener(
+    "resize",
+    () => {
+
+      applyBackground(
+        activeBackgroundId,
+        false
+      );
+
+    }
+  );
 
 
   /* ==========================================================
