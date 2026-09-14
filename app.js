@@ -2,117 +2,170 @@
 
 
 /* ============================================================
-   CHARACTER PACKS
+   CHARACTER PACK SYSTEM
 ============================================================ */
 
-const characters = {
-  noctis: {
-    id: "noctis",
-    name: "Noctis",
-    path: "assets/characters/noctis/",
+const characters = {};
 
-    animations: {
-      idle: {
-        right: "idle.gif",
-        left: "idle-left.gif"
-      },
+const CHARACTER_PACK_ROOT =
+  "assets/characters/";
 
-      idleFront: {
-        right: "idle-front.gif",
-        left: "idle-front.gif"
-      },
 
-      chaseBall: {
-        right: "chase-ball.gif",
-        left: "chase-ball.gif"
-      },
+function loadScript(
+  src
+) {
+  return new Promise(
+    (
+      resolve,
+      reject
+    ) => {
 
-      clean: {
-        right: "clean.gif",
-        left: "clean.gif"
-      },
+      const script =
+        document.createElement(
+          "script"
+        );
 
-      happy: {
-        right: "happy.gif",
-        left: "happy-left.gif"
-      },
+      script.src =
+        src;
 
-      sad: {
-        right: "sad.gif",
-        left: "sad-left.gif"
-      },
+      script.async =
+        false;
 
-      angry: {
-        right: "angry.gif",
-        left: "angry-left.gif"
-      },
+      script.onload =
+        resolve;
 
-      bored: {
-        right: "bored.gif",
-        left: "bored-left.gif"
-      },
+      script.onerror =
+        () => {
 
-      hungry: {
-        right: "hungry.gif",
-        left: "hungry-left.gif"
-      },
+          reject(
+            new Error(
+              `Unable to load ${src}`
+            )
+          );
 
-      sick: {
-        right: "sick.gif",
-        left: "sick-left.gif"
-      },
+        };
 
-      sleepy: {
-        right: "sleepy.gif",
-        left: "sleepy-left.gif"
-      },
 
-      lieDown: {
-        right: "lie-down.gif",
-        left: "lie-down.gif"
-      },
+      document.head.appendChild(
+        script
+      );
 
-      sleep: {
-        right: "sleep.gif",
-        left: "sleep-left.gif"
-      },
+    }
+  );
+}
 
-      wakeUp: {
-        right: "wake-up.gif",
-        left: "wake-up-left.gif"
-      },
 
-      eat: {
-        right: "eat.gif",
-        left: "eat-left.gif"
-      },
+function loadCharacterStyle(
+  characterId
+) {
+  const href =
+    `${CHARACTER_PACK_ROOT}` +
+    `${characterId}/style.css`;
 
-      walk: {
-        right: "walk-right.gif",
-        left: "walk-left.gif"
-      },
 
-      jump: {
-        right: "jump-right.gif",
-        left: "jump-left.gif"
-      },
+  if (
+    document.querySelector(
+      `link[data-character-style="${characterId}"]`
+    )
+  ) {
+    return;
+  }
 
-      bound: {
-        right: "bound-right.gif",
-        left: "bound-left.gif"
-      },
 
-      death: {
-        right: "death.gif",
-        left: "death-left.gif"
+  const link =
+    document.createElement(
+      "link"
+    );
+
+  link.rel =
+    "stylesheet";
+
+  link.href =
+    href;
+
+  link.dataset.characterStyle =
+    characterId;
+
+
+  document.head.appendChild(
+    link
+  );
+}
+
+
+async function loadCharacterPacks() {
+  const packIds =
+    Array.isArray(
+      window.PocketFurryCharacterPacks
+    )
+      ? window.PocketFurryCharacterPacks
+      : [];
+
+
+  window.PocketFurryCharacters =
+    window.PocketFurryCharacters ||
+    {};
+
+
+  for (
+    const characterId
+    of packIds
+  ) {
+
+    loadCharacterStyle(
+      characterId
+    );
+
+
+    try {
+
+      await loadScript(
+        `${CHARACTER_PACK_ROOT}` +
+        `${characterId}/character.js`
+      );
+
+
+      const definition =
+        window.PocketFurryCharacters[
+          characterId
+        ];
+
+
+      if (
+        definition &&
+        definition.id ===
+          characterId
+      ) {
+
+        characters[
+          characterId
+        ] =
+          definition;
+
+      } else {
+
+        console.warn(
+          `Character pack "${characterId}" did not register correctly.`
+        );
+
       }
+
+    } catch (
+      error
+    ) {
+
+      console.warn(
+        `Skipping character pack "${characterId}".`,
+        error
+      );
+
     }
   }
-};
+}
 
 
 /* ============================================================
-   CONSTANTS
+   SAVE / SLOT CONSTANTS
 ============================================================ */
 
 const SLOT_COUNT =
@@ -123,6 +176,43 @@ const APP_SAVE_KEY =
 
 const SAVE_VERSION =
   5;
+
+
+/* ============================================================
+   ACTIVE CHARACTER
+============================================================ */
+
+let activeSlotIndex =
+  null;
+
+let activeCharacterId =
+  null;
+
+let activeDirection =
+  "right";
+
+let animationPlayId =
+  0;
+
+let state =
+  null;
+
+let appState =
+  loadAppState();
+
+
+function getActiveCharacter() {
+  return activeCharacterId
+    ? characters[
+        activeCharacterId
+      ]
+    : null;
+}
+
+
+/* ============================================================
+   GAME CONSTANTS
+============================================================ */
 
 const MAX_STAT =
   100;
@@ -175,6 +265,7 @@ const FETCH_DURATION_MS =
 const CLEAN_DURATION_MS =
   5390;
 
+
 const WALK_SPEED =
   38;
 
@@ -199,6 +290,7 @@ const MIDSCREEN_STOP_CHANCE =
 const CONTINUE_DIRECTION_CHANCE =
   0.60;
 
+
 const MOOD_REACTION_CHANCE =
   0.07;
 
@@ -208,6 +300,7 @@ const BOUND_CHANCE =
 const BORED_CHANCE =
   0.22;
 
+
 const SWIPE_DISTANCE =
   28;
 
@@ -216,119 +309,47 @@ const LONG_PRESS_TIME =
 
 
 /* ============================================================
-   RUNTIME STATE
-============================================================ */
-
-let activeSlotIndex =
-  null;
-
-let activeCharacterId =
-  null;
-
-let activeDirection =
-  "right";
-
-let animationPlayId =
-  0;
-
-let state =
-  null;
-
-let appState =
-  loadAppState();
-
-let currentScreen =
-  "main";
-
-let mainMenuIndex =
-  0;
-
-let pickerIndex =
-  0;
-
-let pendingSlotIndex =
-  null;
-
-let selectedAction =
-  0;
-
-let interactionMode =
-  false;
-
-let statusCardVisible =
-  false;
-
-let currentAnimation =
-  "";
-
-let currentAnimationDirection =
-  "";
-
-let temporaryAnimation =
-  false;
-
-let animationTimer =
-  null;
-
-let sleepTimer =
-  null;
-
-let walking =
-  false;
-
-let walkTimer =
-  null;
-
-let ambientTimer =
-  null;
-
-let currentX =
-  0;
-
-let nextWalkDirection =
-  "right";
-
-let pointerStartX =
-  0;
-
-let pointerStartY =
-  0;
-
-let longPressTimer =
-  null;
-
-let longPressTriggered =
-  false;
-
-let messageTimer =
-  null;
-
-
-/* ============================================================
-   DEFAULT STATE
+   DEFAULT COMPANION STATE
 ============================================================ */
 
 function createDefaultState() {
   const now =
     Date.now();
 
+
   return {
-    hunger: 100,
-    happiness: 85,
-    energy: 100,
-    health: 100,
-    cleanliness: 100,
+    hunger:
+      100,
 
-    sleeping: false,
-    forcedSleep: false,
+    happiness:
+      85,
 
-    forcedSit: false,
-    sitStartedAt: null,
+    energy:
+      100,
+
+    health:
+      100,
+
+    cleanliness:
+      100,
+
+    sleeping:
+      false,
+
+    forcedSleep:
+      false,
+
+    forcedSit:
+      false,
+
+    sitStartedAt:
+      null,
 
     recoveryMood:
       "happy",
 
-    alive: true,
+    alive:
+      true,
 
     lastUpdate:
       now,
@@ -343,7 +364,7 @@ function createDefaultState() {
 
 
 /* ============================================================
-   APP SAVE DATA
+   APP / SLOT SAVE DATA
 ============================================================ */
 
 function blankAppState() {
@@ -358,33 +379,22 @@ function blankAppState() {
 }
 
 
-function getSlotSaveKey(
-  slotIndex,
-  characterId
-) {
-  return (
-    "pocketFurry_slot_" +
-    slotIndex +
-    "_" +
-    characterId +
-    "_v" +
-    SAVE_VERSION
-  );
-}
-
-
 function loadAppState() {
   const raw =
     localStorage.getItem(
       APP_SAVE_KEY
     );
 
+
   if (raw) {
+
     try {
+
       const parsed =
         JSON.parse(
           raw
         );
+
 
       const slots =
         Array.isArray(
@@ -396,21 +406,27 @@ function loadAppState() {
             )
           : [];
 
+
       while (
         slots.length <
         SLOT_COUNT
       ) {
+
         slots.push(
           null
         );
+
       }
+
 
       return {
         slots
       };
 
     } catch {
-      /* continue */
+
+      /* fall through */
+
     }
   }
 
@@ -418,22 +434,31 @@ function loadAppState() {
   const migrated =
     blankAppState();
 
+
   const legacyKey =
     `pocketFurry_noctis_v${SAVE_VERSION}`;
+
 
   const legacyState =
     localStorage.getItem(
       legacyKey
     );
 
-  if (legacyState) {
-    migrated.slots[0] = {
+
+  if (
+    legacyState
+  ) {
+
+    migrated.slots[
+      0
+    ] = {
       characterId:
         "noctis",
 
       createdAt:
         Date.now()
     };
+
 
     localStorage.setItem(
       getSlotSaveKey(
@@ -442,7 +467,9 @@ function loadAppState() {
       ),
       legacyState
     );
+
   }
+
 
   localStorage.setItem(
     APP_SAVE_KEY,
@@ -450,6 +477,7 @@ function loadAppState() {
       migrated
     )
   );
+
 
   return migrated;
 }
@@ -465,6 +493,19 @@ function saveAppState() {
 }
 
 
+function getSlotSaveKey(
+  slotIndex,
+  characterId
+) {
+  return (
+    `pocketFurry_slot_` +
+    `${slotIndex}_` +
+    `${characterId}_v` +
+    `${SAVE_VERSION}`
+  );
+}
+
+
 function saveState() {
   if (
     activeSlotIndex ===
@@ -475,8 +516,10 @@ function saveState() {
     return;
   }
 
+
   state.lastUpdate =
     Date.now();
+
 
   localStorage.setItem(
     getSlotSaveKey(
@@ -494,9 +537,6 @@ function loadSlotState(
   slotIndex,
   characterId
 ) {
-  const defaults =
-    createDefaultState();
-
   const raw =
     localStorage.getItem(
       getSlotSaveKey(
@@ -505,15 +545,25 @@ function loadSlotState(
       )
     );
 
-  if (!raw) {
+
+  const defaults =
+    createDefaultState();
+
+
+  if (
+    !raw
+  ) {
     return defaults;
   }
 
+
   try {
+
     const loaded =
       JSON.parse(
         raw
       );
+
 
     return {
       ...defaults,
@@ -529,7 +579,9 @@ function loadSlotState(
     };
 
   } catch {
+
     return defaults;
+
   }
 }
 
@@ -549,6 +601,7 @@ function createCompanion(
     return;
   }
 
+
   appState.slots[
     slotIndex
   ] = {
@@ -558,10 +611,13 @@ function createCompanion(
       Date.now()
   };
 
+
   saveAppState();
+
 
   const newState =
     createDefaultState();
+
 
   localStorage.setItem(
     getSlotSaveKey(
@@ -572,6 +628,7 @@ function createCompanion(
       newState
     )
   );
+
 
   openCompanion(
     slotIndex
@@ -612,6 +669,7 @@ const characterPickerList =
   document.getElementById(
     "characterPickerList"
   );
+
 
 const characterSprite =
   document.getElementById(
@@ -658,6 +716,7 @@ const moodEmoji =
     "moodEmoji"
   );
 
+
 const healthBar =
   document.getElementById(
     "healthBar"
@@ -677,6 +736,7 @@ const energyBar =
   document.getElementById(
     "energyBar"
   );
+
 
 const happinessValue =
   document.getElementById(
@@ -703,6 +763,7 @@ const cleanValue =
     "cleanValue"
   );
 
+
 const detailHappiness =
   document.getElementById(
     "detailHappiness"
@@ -728,81 +789,37 @@ const detailClean =
     "detailClean"
   );
 
+
 const actionButtons = [
   ...document.querySelectorAll(
     ".action"
   )
 ];
 
-const actions = [
-  "feed",
-  "play",
-  "pet",
-  "clean",
-  "sit",
-  "sleep",
-  "medicine"
-];
-
 
 /* ============================================================
-   HELPERS
+   SCREEN / MENU STATE
 ============================================================ */
 
-function clamp(
-  value
-) {
-  return Math.max(
-    0,
-    Math.min(
-      MAX_STAT,
-      value
-    )
-  );
-}
+let currentScreen =
+  "main";
 
+let mainMenuIndex =
+  0;
 
-function rounded(
-  value
-) {
-  return Math.round(
-    clamp(
-      value
-    )
-  );
-}
+let pickerIndex =
+  0;
 
+let pendingSlotIndex =
+  null;
 
-function randomBetween(
-  min,
-  max
-) {
-  return (
-    min +
-    Math.random() *
-    (max - min)
-  );
-}
-
-
-function getActiveCharacter() {
-  return activeCharacterId
-    ? characters[
-        activeCharacterId
-      ]
-    : null;
-}
-
-
-/* ============================================================
-   SCREEN HANDLING
-============================================================ */
 
 function showOnlyScreen(
   screenName
 ) {
   currentScreen =
     screenName;
+
 
   mainMenuScreen
     .classList
@@ -812,6 +829,7 @@ function showOnlyScreen(
         "main"
     );
 
+
   pickerScreen
     .classList
     .toggle(
@@ -819,6 +837,7 @@ function showOnlyScreen(
       screenName !==
         "picker"
     );
+
 
   gameScreen
     .classList
@@ -844,12 +863,17 @@ function getStateSummary(
       characterId
     );
 
-  if (!saved.alive) {
+
+  if (
+    !saved.alive
+  ) {
     return "Gone";
   }
 
+
   let mood =
     "Okay";
+
 
   if (
     saved.recoveryMood ===
@@ -857,6 +881,7 @@ function getStateSummary(
     saved.happiness <
       15
   ) {
+
     mood =
       "Upset";
 
@@ -866,6 +891,7 @@ function getStateSummary(
     saved.happiness <
       35
   ) {
+
     mood =
       "Sad";
 
@@ -873,6 +899,7 @@ function getStateSummary(
     saved.happiness >=
       85
   ) {
+
     mood =
       "Happy";
 
@@ -880,14 +907,18 @@ function getStateSummary(
     saved.happiness >=
       60
   ) {
+
     mood =
       "Content";
+
   }
+
 
   const sleep =
     saved.sleeping
       ? "Asleep"
       : "Awake";
+
 
   return (
     `${mood} • ${sleep}`
@@ -896,20 +927,18 @@ function getStateSummary(
 
 
 function getFirstEmptySlot() {
-  return appState.slots
-    .findIndex(
-      slot =>
-        !slot
-    );
+  return appState.slots.findIndex(
+    slot =>
+      !slot
+  );
 }
 
 
 function getMainMenuButtons() {
   return [
-    ...companionList
-      .querySelectorAll(
-        ".list-item"
-      )
+    ...companionList.querySelectorAll(
+      ".list-item"
+    )
   ];
 }
 
@@ -918,10 +947,6 @@ function renderMainMenu() {
   companionList.innerHTML =
     "";
 
-
-  /*
-     EXISTING COMPANIONS ONLY
-  */
 
   appState.slots.forEach(
     (
@@ -938,29 +963,36 @@ function renderMainMenu() {
         return;
       }
 
+
       const character =
         characters[
           slot.characterId
         ];
+
 
       const button =
         document.createElement(
           "button"
         );
 
+
       button.type =
         "button";
+
 
       button.className =
         "list-item focusable companion-entry";
 
+
       button.dataset.kind =
         "companion";
+
 
       button.dataset.slotIndex =
         String(
           slotIndex
         );
+
 
       button.innerHTML = `
         <span class="list-item-primary">
@@ -975,6 +1007,7 @@ function renderMainMenu() {
         </span>
       `;
 
+
       button.addEventListener(
         "focus",
         () => {
@@ -982,16 +1015,20 @@ function renderMainMenu() {
           const buttons =
             getMainMenuButtons();
 
+
           mainMenuIndex =
             buttons.indexOf(
               button
             );
 
+
           updateMainMenuSelection(
             false
           );
+
         }
       );
+
 
       button.addEventListener(
         "click",
@@ -1000,33 +1037,36 @@ function renderMainMenu() {
           openCompanion(
             slotIndex
           );
+
         }
       );
+
 
       companionList.appendChild(
         button
       );
+
     }
   );
 
 
-  /*
-     NEW COMPANION
-  */
-
   const emptySlot =
     getFirstEmptySlot();
+
 
   const newButton =
     document.createElement(
       "button"
     );
 
+
   newButton.type =
     "button";
 
+
   newButton.className =
     "list-item focusable new-companion";
+
 
   newButton.dataset.kind =
     "new";
@@ -1035,6 +1075,7 @@ function renderMainMenu() {
   if (
     emptySlot >= 0
   ) {
+
     newButton.innerHTML = `
       <span class="list-item-primary">
         ＋ NEW COMPANION
@@ -1045,6 +1086,7 @@ function renderMainMenu() {
       </span>
     `;
 
+
     newButton.addEventListener(
       "click",
       () => {
@@ -1052,20 +1094,26 @@ function renderMainMenu() {
         const slot =
           getFirstEmptySlot();
 
+
         if (
           slot >= 0
         ) {
+
           openCharacterPicker(
             slot
           );
+
         }
+
       }
     );
 
   } else {
+
     newButton.classList.add(
       "unavailable"
     );
+
 
     newButton.innerHTML = `
       <span class="list-item-primary">
@@ -1076,6 +1124,7 @@ function renderMainMenu() {
         NO EMPTY SLOTS
       </span>
     `;
+
   }
 
 
@@ -1086,14 +1135,17 @@ function renderMainMenu() {
       const buttons =
         getMainMenuButtons();
 
+
       mainMenuIndex =
         buttons.indexOf(
           newButton
         );
 
+
       updateMainMenuSelection(
         false
       );
+
     }
   );
 
@@ -1106,11 +1158,16 @@ function renderMainMenu() {
   const buttons =
     getMainMenuButtons();
 
-  if (!buttons.length) {
+
+  if (
+    !buttons.length
+  ) {
+
     mainMenuIndex =
       0;
 
     return;
+
   }
 
 
@@ -1137,7 +1194,10 @@ function updateMainMenuSelection(
   const buttons =
     getMainMenuButtons();
 
-  if (!buttons.length) {
+
+  if (
+    !buttons.length
+  ) {
     return;
   }
 
@@ -1161,6 +1221,7 @@ function updateMainMenuSelection(
         index ===
           mainMenuIndex
       );
+
     }
   );
 
@@ -1171,12 +1232,14 @@ function updateMainMenuSelection(
       mainMenuIndex
     ]
   ) {
+
     buttons[
       mainMenuIndex
     ].focus({
       preventScroll:
         true
     });
+
   }
 }
 
@@ -1187,7 +1250,10 @@ function moveMainMenu(
   const buttons =
     getMainMenuButtons();
 
-  if (!buttons.length) {
+
+  if (
+    !buttons.length
+  ) {
     return;
   }
 
@@ -1211,20 +1277,25 @@ function activateMainMenuSelection() {
   const buttons =
     getMainMenuButtons();
 
+
   const button =
     buttons[
       mainMenuIndex
     ];
 
-  if (!button) {
+
+  if (
+    !button
+  ) {
     return;
   }
 
 
   if (
     button.dataset.kind ===
-    "companion"
+      "companion"
   ) {
+
     openCompanion(
       Number(
         button.dataset.slotIndex
@@ -1232,15 +1303,18 @@ function activateMainMenuSelection() {
     );
 
     return;
+
   }
 
 
   if (
     button.dataset.kind ===
-    "new"
+      "new"
   ) {
+
     const emptySlot =
       getFirstEmptySlot();
+
 
     if (
       emptySlot < 0
@@ -1248,9 +1322,11 @@ function activateMainMenuSelection() {
       return;
     }
 
+
     openCharacterPicker(
       emptySlot
     );
+
   }
 }
 
@@ -1258,8 +1334,9 @@ function activateMainMenuSelection() {
 function openMainMenu() {
   if (
     currentScreen ===
-    "game"
+      "game"
   ) {
+
     saveState();
 
     pauseAmbient();
@@ -1273,6 +1350,7 @@ function openMainMenu() {
     hideStatusCard(
       false
     );
+
   }
 
 
@@ -1318,6 +1396,7 @@ function openCharacterPicker(
 
   pendingSlotIndex =
     slotIndex;
+
 
   pickerIndex =
     0;
@@ -1365,19 +1444,24 @@ function renderCharacterPicker() {
           characterId
         ];
 
+
       const button =
         document.createElement(
           "button"
         );
 
+
       button.type =
         "button";
+
 
       button.className =
         "list-item focusable";
 
+
       button.dataset.kind =
         "character";
+
 
       button.dataset.characterId =
         characterId;
@@ -1401,9 +1485,11 @@ function renderCharacterPicker() {
           pickerIndex =
             index;
 
+
           updatePickerSelection(
             false
           );
+
         }
       );
 
@@ -1415,7 +1501,9 @@ function renderCharacterPicker() {
           pickerIndex =
             index;
 
+
           activatePickerSelection();
+
         }
       );
 
@@ -1423,6 +1511,7 @@ function renderCharacterPicker() {
       characterPickerList.appendChild(
         button
       );
+
     }
   );
 
@@ -1436,11 +1525,14 @@ function renderCharacterPicker() {
       "button"
     );
 
+
   backButton.type =
     "button";
 
+
   backButton.className =
     "list-item focusable back";
+
 
   backButton.dataset.kind =
     "back";
@@ -1464,9 +1556,11 @@ function renderCharacterPicker() {
       pickerIndex =
         backIndex;
 
+
       updatePickerSelection(
         false
       );
+
     }
   );
 
@@ -1478,7 +1572,9 @@ function renderCharacterPicker() {
       pickerIndex =
         backIndex;
 
+
       activatePickerSelection();
+
     }
   );
 
@@ -1491,10 +1587,9 @@ function renderCharacterPicker() {
 
 function getPickerButtons() {
   return [
-    ...characterPickerList
-      .querySelectorAll(
-        ".list-item"
-      )
+    ...characterPickerList.querySelectorAll(
+      ".list-item"
+    )
   ];
 }
 
@@ -1506,7 +1601,10 @@ function updatePickerSelection(
   const buttons =
     getPickerButtons();
 
-  if (!buttons.length) {
+
+  if (
+    !buttons.length
+  ) {
     return;
   }
 
@@ -1530,6 +1628,7 @@ function updatePickerSelection(
         index ===
           pickerIndex
       );
+
     }
   );
 
@@ -1540,12 +1639,14 @@ function updatePickerSelection(
       pickerIndex
     ]
   ) {
+
     buttons[
       pickerIndex
     ].focus({
       preventScroll:
         true
     });
+
   }
 }
 
@@ -1556,7 +1657,10 @@ function movePicker(
   const buttons =
     getPickerButtons();
 
-  if (!buttons.length) {
+
+  if (
+    !buttons.length
+  ) {
     return;
   }
 
@@ -1580,33 +1684,41 @@ function activatePickerSelection() {
   const buttons =
     getPickerButtons();
 
+
   const button =
     buttons[
       pickerIndex
     ];
 
-  if (!button) {
+
+  if (
+    !button
+  ) {
     return;
   }
 
 
   if (
     button.dataset.kind ===
-    "back"
+      "back"
   ) {
+
     openMainMenu();
 
     return;
+
   }
 
 
   if (
     pendingSlotIndex ===
-    null
+      null
   ) {
+
     openMainMenu();
 
     return;
+
   }
 
 
@@ -1706,13 +1818,16 @@ function resetRuntimeState() {
     "true"
   );
 
+
   statusCard.classList.add(
     "hidden"
   );
 
+
   message.classList.add(
     "hidden"
   );
+
 
   setActionButtonsFocusable(
     false
@@ -1735,15 +1850,22 @@ function openCompanion(
       slot.characterId
     ]
   ) {
+
     return;
+
   }
 
 
   activeSlotIndex =
     slotIndex;
 
+
   activeCharacterId =
     slot.characterId;
+
+
+  characterSprite.dataset.character =
+    activeCharacterId;
 
 
   state =
@@ -1797,20 +1919,24 @@ function openCompanion(
   if (
     !state.alive
   ) {
+
     setAnimation(
       "death",
       activeDirection
     );
 
     return;
+
   }
 
 
   if (
     state.forcedSit
   ) {
+
     temporaryAnimation =
       false;
+
 
     setAnimation(
       "bored",
@@ -1818,14 +1944,17 @@ function openCompanion(
     );
 
     return;
+
   }
 
 
   if (
     state.sleeping
   ) {
+
     temporaryAnimation =
       false;
+
 
     setAnimation(
       "sleep",
@@ -1833,11 +1962,125 @@ function openCompanion(
     );
 
     return;
+
   }
 
 
   resumeAmbient(
     1800
+  );
+}
+
+
+/* ============================================================
+   GAME RUNTIME STATE
+============================================================ */
+
+const actions = [
+  "feed",
+  "play",
+  "pet",
+  "clean",
+  "sit",
+  "sleep",
+  "medicine"
+];
+
+
+let selectedAction =
+  0;
+
+let interactionMode =
+  false;
+
+let statusCardVisible =
+  false;
+
+
+let currentAnimation =
+  "";
+
+let currentAnimationDirection =
+  "";
+
+let temporaryAnimation =
+  false;
+
+let animationTimer =
+  null;
+
+let sleepTimer =
+  null;
+
+
+let walking =
+  false;
+
+let walkTimer =
+  null;
+
+let ambientTimer =
+  null;
+
+let currentX =
+  0;
+
+let nextWalkDirection =
+  "right";
+
+
+let pointerStartX =
+  0;
+
+let pointerStartY =
+  0;
+
+let longPressTimer =
+  null;
+
+let longPressTriggered =
+  false;
+
+let messageTimer =
+  null;
+
+
+/* ============================================================
+   UTILITIES
+============================================================ */
+
+function clamp(
+  value
+) {
+  return Math.max(
+    0,
+    Math.min(
+      MAX_STAT,
+      value
+    )
+  );
+}
+
+
+function rounded(
+  value
+) {
+  return Math.round(
+    clamp(
+      value
+    )
+  );
+}
+
+
+function randomBetween(
+  min,
+  max
+) {
+  return (
+    min +
+    Math.random() *
+      (max - min)
   );
 }
 
@@ -1855,7 +2098,9 @@ function getAnimationPath(
     getActiveCharacter();
 
 
-  if (!character) {
+  if (
+    !character
+  ) {
     return null;
   }
 
@@ -1866,7 +2111,9 @@ function getAnimationPath(
     ];
 
 
-  if (!animation) {
+  if (
+    !animation
+  ) {
     return null;
   }
 
@@ -1879,7 +2126,9 @@ function getAnimationPath(
     animation.left;
 
 
-  if (!filename) {
+  if (
+    !filename
+  ) {
     return null;
   }
 
@@ -1905,13 +2154,17 @@ function setAnimation(
     );
 
 
-  if (!path) {
+  if (
+    !path
+  ) {
+
     console.warn(
       "Missing animation:",
       name
     );
 
     return;
+
   }
 
 
@@ -1944,7 +2197,7 @@ function setAnimation(
 
 
 /* ============================================================
-   FOOD
+   FOOD / HEALTH
 ============================================================ */
 
 function getFoodAge() {
@@ -1995,10 +2248,6 @@ function updateFoodFromClock() {
 }
 
 
-/* ============================================================
-   HEALTH
-============================================================ */
-
 function areHealthNeedsMet() {
   return (
     state.hunger >=
@@ -2036,30 +2285,35 @@ function updateHealthFromClock(
     hungerStage ===
       "critical"
   ) {
+
     state.health =
       clamp(
         state.health -
         HEALTH_DRAIN_PER_MINUTE *
-        minutes
+          minutes
       );
 
   } else if (
     areHealthNeedsMet()
   ) {
+
     state.health =
       clamp(
         state.health +
         HEALTH_RECOVERY_PER_MINUTE *
-        minutes
+          minutes
       );
+
   }
 
 
   if (
     state.health <=
-    0
+      0
   ) {
+
     killCharacter();
+
   }
 }
 
@@ -2139,7 +2393,7 @@ function getMoodEmoji() {
 
   if (
     state.recoveryMood ===
-    "angry"
+      "angry"
   ) {
     return "😠";
   }
@@ -2147,7 +2401,7 @@ function getMoodEmoji() {
 
   if (
     state.recoveryMood ===
-    "sad"
+      "sad"
   ) {
     return "😢";
   }
@@ -2155,7 +2409,7 @@ function getMoodEmoji() {
 
   if (
     state.recoveryMood ===
-    "neutral"
+      "neutral"
   ) {
     return "😐";
   }
@@ -2163,7 +2417,7 @@ function getMoodEmoji() {
 
   if (
     state.happiness >=
-    85
+      85
   ) {
     return "🥰";
   }
@@ -2171,7 +2425,7 @@ function getMoodEmoji() {
 
   if (
     state.happiness >=
-    60
+      60
   ) {
     return "😊";
   }
@@ -2179,7 +2433,7 @@ function getMoodEmoji() {
 
   if (
     state.happiness >=
-    35
+      35
   ) {
     return "😐";
   }
@@ -2187,7 +2441,7 @@ function getMoodEmoji() {
 
   if (
     state.happiness >=
-    15
+      15
   ) {
     return "😢";
   }
@@ -2205,28 +2459,35 @@ function applyPositiveInteraction() {
   }
 
 
-  switch (
-    state.recoveryMood
+  if (
+    state.recoveryMood ===
+      "angry"
   ) {
-    case "angry":
-      state.recoveryMood =
-        "sad";
-      break;
 
-    case "sad":
-      state.recoveryMood =
-        "neutral";
-      break;
+    state.recoveryMood =
+      "sad";
 
-    case "neutral":
-      state.recoveryMood =
-        "happy";
-      break;
+  } else if (
+    state.recoveryMood ===
+      "sad"
+  ) {
 
-    default:
-      state.recoveryMood =
-        "happy";
-      break;
+    state.recoveryMood =
+      "neutral";
+
+  } else if (
+    state.recoveryMood ===
+      "neutral"
+  ) {
+
+    state.recoveryMood =
+      "happy";
+
+  } else {
+
+    state.recoveryMood =
+      "happy";
+
   }
 }
 
@@ -2290,10 +2551,12 @@ function applySitPenalty(
     elapsed >=
     SIT_ANGRY_MS
   ) {
+
     state.recoveryMood =
       "angry";
 
     return;
+
   }
 
 
@@ -2303,8 +2566,10 @@ function applySitPenalty(
     state.recoveryMood !==
       "angry"
   ) {
+
     state.recoveryMood =
       "sad";
+
   }
 }
 
@@ -2329,7 +2594,7 @@ function releaseForcedSit(
     Math.max(
       0,
       Date.now() -
-      startedAt
+        startedAt
     );
 
 
@@ -2364,24 +2629,28 @@ function releaseForcedSit(
 
   if (
     state.recoveryMood ===
-    "angry"
+      "angry"
   ) {
+
     showMessage(
       "Not happy."
     );
 
   } else if (
     state.recoveryMood ===
-    "sad"
+      "sad"
   ) {
+
     showMessage(
       "Feeling down."
     );
 
   } else {
+
     showMessage(
       "Free!"
     );
+
   }
 
 
@@ -2389,9 +2658,11 @@ function releaseForcedSit(
     resumeMovement &&
     interactionMode
   ) {
+
     closeInteractionTray();
 
     return;
+
   }
 
 
@@ -2400,9 +2671,11 @@ function releaseForcedSit(
     !state.sleeping &&
     state.alive
   ) {
+
     resumeAmbient(
       900
     );
+
   }
 }
 
@@ -2411,16 +2684,19 @@ function toggleForcedSit() {
   if (
     state.forcedSit
   ) {
+
     releaseForcedSit();
 
   } else {
+
     startForcedSit();
+
   }
 }
 
 
 /* ============================================================
-   TIME
+   PERSISTENT TIME
 ============================================================ */
 
 function updatePersistentTime() {
@@ -2439,7 +2715,7 @@ function updatePersistentTime() {
     Math.max(
       0,
       now -
-      state.lastUpdate
+        state.lastUpdate
     );
 
 
@@ -2451,30 +2727,35 @@ function updatePersistentTime() {
   if (
     !state.alive
   ) {
+
     state.lastUpdate =
       now;
+
 
     saveState();
 
     return;
+
   }
 
 
   if (
     state.sleeping
   ) {
+
     state.energy =
       clamp(
         state.energy +
         ENERGY_RECOVERY_PER_MINUTE *
-        minutes
+          minutes
       );
 
 
     if (
       state.energy >=
-      100
+        100
     ) {
+
       state.energy =
         100;
 
@@ -2483,21 +2764,24 @@ function updatePersistentTime() {
 
       state.forcedSleep =
         false;
+
     }
 
   } else {
+
     state.energy =
       clamp(
         state.energy -
         ENERGY_DRAIN_PER_MINUTE *
-        minutes
+          minutes
       );
 
 
     if (
       state.energy <=
-      0
+        0
     ) {
+
       state.energy =
         0;
 
@@ -2505,9 +2789,11 @@ function updatePersistentTime() {
       if (
         state.forcedSit
       ) {
+
         releaseForcedSit(
           false
         );
+
       }
 
 
@@ -2519,6 +2805,7 @@ function updatePersistentTime() {
 
 
       stopWalking();
+
     }
   }
 
@@ -2540,7 +2827,7 @@ function updatePersistentTime() {
 
 
 /* ============================================================
-   STATUS
+   STATUS DISPLAY
 ============================================================ */
 
 function updateStatusDisplay() {
@@ -2690,34 +2977,40 @@ function updateMoodAnimation() {
   if (
     !state.alive
   ) {
+
     setAnimation(
       "death"
     );
 
     return;
+
   }
 
 
   if (
     state.sleeping
   ) {
+
     setAnimation(
       "sleep"
     );
 
     return;
+
   }
 
 
   if (
     state.forcedSit
   ) {
+
     setAnimation(
       "bored",
       activeDirection
     );
 
     return;
+
   }
 
 
@@ -2731,11 +3024,13 @@ function updateMoodAnimation() {
     hungerStage ===
       "sick"
   ) {
+
     setAnimation(
       "sick"
     );
 
     return;
+
   }
 
 
@@ -2743,11 +3038,13 @@ function updateMoodAnimation() {
     state.hunger <
       20
   ) {
+
     setAnimation(
       "hungry"
     );
 
     return;
+
   }
 
 
@@ -2755,11 +3052,13 @@ function updateMoodAnimation() {
     state.energy <=
       EXHAUSTED_THRESHOLD
   ) {
+
     setAnimation(
       "angry"
     );
 
     return;
+
   }
 
 
@@ -2767,11 +3066,13 @@ function updateMoodAnimation() {
     state.happiness <
       25
   ) {
+
     setAnimation(
       "sad"
     );
 
     return;
+
   }
 
 
@@ -2834,9 +3135,11 @@ function playTemporaryAnimation(
           !state.sleeping &&
           state.alive
         ) {
+
           resumeAmbient(
             1500
           );
+
         }
 
       },
@@ -2862,9 +3165,9 @@ function getHorizontalLimits() {
     Math.max(
       0,
       stageWidth / 2 -
-      characterWidth *
-        0.28 -
-      WALK_MARGIN
+        characterWidth *
+          0.28 -
+        WALK_MARGIN
     );
 
 
@@ -2901,6 +3204,7 @@ function getNextRoamTarget() {
     ) <
     MIN_TRAVEL_DISTANCE
   ) {
+
     nextWalkDirection =
       nextWalkDirection ===
         "right"
@@ -2909,6 +3213,7 @@ function getNextRoamTarget() {
 
 
     return getNextRoamTarget();
+
   }
 
 
@@ -2962,15 +3267,18 @@ function chooseNextWalkDirection() {
     Math.random() <
       CONTINUE_DIRECTION_CHANCE
   ) {
+
     nextWalkDirection =
       activeDirection;
 
   } else {
+
     nextWalkDirection =
       activeDirection ===
         "right"
         ? "left"
         : "right";
+
   }
 }
 
@@ -3012,9 +3320,11 @@ function moveCharacter(
     ) <
     MIN_TRAVEL_DISTANCE
   ) {
+
     beginRestPeriod();
 
     return;
+
   }
 
 
@@ -3027,6 +3337,7 @@ function moveCharacter(
 
   walking =
     true;
+
 
   temporaryAnimation =
     special;
@@ -3081,6 +3392,7 @@ function moveCharacter(
 
         walking =
           false;
+
 
         temporaryAnimation =
           false;
@@ -3139,23 +3451,19 @@ function stopWalking() {
 
 
   const stageRect =
-    petStage
-      .getBoundingClientRect();
+    petStage.getBoundingClientRect();
 
 
   const moverRect =
-    characterMover
-      .getBoundingClientRect();
+    characterMover.getBoundingClientRect();
 
 
   currentX =
     moverRect.left +
-    moverRect.width /
-      2 -
+    moverRect.width / 2 -
     (
       stageRect.left +
-      stageRect.width /
-        2
+      stageRect.width / 2
     );
 
 
@@ -3175,8 +3483,10 @@ function stopWalking() {
     currentAnimation ===
       "bound"
   ) {
+
     temporaryAnimation =
       false;
+
   }
 }
 
@@ -3223,12 +3533,14 @@ function playAmbientReaction(
           !state.sleeping &&
           state.alive
         ) {
+
           resumeAmbient(
             randomBetween(
               800,
               1500
             )
           );
+
         }
 
       },
@@ -3268,6 +3580,7 @@ function beginRestPeriod() {
     state.happiness <
       25
   ) {
+
     updateMoodAnimation();
 
 
@@ -3277,6 +3590,7 @@ function beginRestPeriod() {
 
 
     return;
+
   }
 
 
@@ -3295,12 +3609,14 @@ function beginRestPeriod() {
     roll <
       positiveBehaviorEnd
   ) {
+
     playAmbientReaction(
       "angry",
       1700
     );
 
     return;
+
   }
 
 
@@ -3310,12 +3626,14 @@ function beginRestPeriod() {
     roll <
       positiveBehaviorEnd
   ) {
+
     playAmbientReaction(
       "sad",
       1700
     );
 
     return;
+
   }
 
 
@@ -3325,6 +3643,7 @@ function beginRestPeriod() {
     roll <
       positiveBehaviorEnd
   ) {
+
     setAnimation(
       "idleFront",
       activeDirection
@@ -3337,6 +3656,7 @@ function beginRestPeriod() {
 
 
     return;
+
   }
 
 
@@ -3346,6 +3666,7 @@ function beginRestPeriod() {
     roll <
       MOOD_REACTION_CHANCE
   ) {
+
     playAmbientReaction(
       state.happiness >=
         50
@@ -3356,6 +3677,7 @@ function beginRestPeriod() {
 
 
     return;
+
   }
 
 
@@ -3365,10 +3687,11 @@ function beginRestPeriod() {
     roll <
       positiveBehaviorEnd
   ) {
+
     boundAcrossScreen();
 
-
     return;
+
   }
 
 
@@ -3377,6 +3700,7 @@ function beginRestPeriod() {
     positiveBehaviorEnd +
       BORED_CHANCE
   ) {
+
     setAnimation(
       "bored",
       activeDirection
@@ -3389,6 +3713,7 @@ function beginRestPeriod() {
 
 
     return;
+
   }
 
 
@@ -3465,12 +3790,13 @@ function resumeAmbient(
           temporaryAnimation ||
           walking
         ) {
+
           resumeAmbient(
             800
           );
 
-
           return;
+
         }
 
 
@@ -3483,7 +3809,7 @@ function resumeAmbient(
 
 
 /* ============================================================
-   MESSAGE / STATUS
+   MESSAGE / STATUS CARD
 ============================================================ */
 
 function showMessage(
@@ -3530,7 +3856,6 @@ function showStatusCard() {
 
   pauseAmbient();
 
-
   stopWalking();
 
 
@@ -3564,7 +3889,9 @@ function hideStatusCard(
     currentScreen ===
       "game"
   ) {
+
     focusApp();
+
   }
 
 
@@ -3578,9 +3905,11 @@ function hideStatusCard(
     !state.forcedSit &&
     state.alive
   ) {
+
     resumeAmbient(
       1500
     );
+
   }
 }
 
@@ -3595,10 +3924,12 @@ function focusApp() {
     typeof app.focus ===
       "function"
   ) {
+
     app.focus({
       preventScroll:
         true
     });
+
   }
 }
 
@@ -3613,6 +3944,7 @@ function setActionButtonsFocusable(
         enabled
           ? 0
           : -1;
+
     }
   );
 }
@@ -3630,10 +3962,12 @@ function focusSelectedAction() {
     typeof button.focus ===
       "function"
   ) {
+
     button.focus({
       preventScroll:
         true
     });
+
   }
 }
 
@@ -3654,9 +3988,7 @@ function openInteractionTray() {
 
   pauseAmbient();
 
-
   stopWalking();
-
 
   hideStatusCard(
     false
@@ -3689,10 +4021,12 @@ function openInteractionTray() {
     !state.forcedSit &&
     !temporaryAnimation
   ) {
+
     setAnimation(
       "idleFront",
       activeDirection
     );
+
   }
 
 
@@ -3745,9 +4079,11 @@ function closeInteractionTray(
     currentScreen ===
       "game"
   ) {
+
     requestAnimationFrame(
       focusApp
     );
+
   }
 
 
@@ -3760,9 +4096,11 @@ function closeInteractionTray(
     !state.forcedSit &&
     state.alive
   ) {
+
     resumeAmbient(
       900
     );
+
   }
 }
 
@@ -3795,6 +4133,7 @@ function selectAction(
         i ===
           selectedAction
       );
+
     }
   );
 
@@ -3803,7 +4142,9 @@ function selectAction(
     interactionMode &&
     moveFocus
   ) {
+
     focusSelectedAction();
+
   }
 }
 
@@ -3842,14 +4183,12 @@ function putCharacterToSleep(
 
   pauseAmbient();
 
-
   stopWalking();
 
 
   clearTimeout(
     sleepTimer
   );
-
 
   clearTimeout(
     animationTimer
@@ -3859,9 +4198,11 @@ function putCharacterToSleep(
   if (
     state.forcedSit
   ) {
+
     releaseForcedSit(
       false
     );
+
   }
 
 
@@ -3954,12 +4295,13 @@ function wakeCharacter() {
     state.energy <
       20
   ) {
+
     showMessage(
       "Too tired"
     );
 
-
     return;
+
   }
 
 
@@ -4048,6 +4390,7 @@ function performAction(
     action !==
       "sit"
   ) {
+
     showMessage(
       "Still sitting."
     );
@@ -4060,6 +4403,7 @@ function performAction(
 
 
     return;
+
   }
 
 
@@ -4072,10 +4416,11 @@ function performAction(
       if (
         state.sleeping
       ) {
+
         wakeCharacter();
 
-
         return;
+
       }
 
 
@@ -4134,6 +4479,7 @@ function performAction(
         state.energy <=
           EXHAUSTED_THRESHOLD
       ) {
+
         playTemporaryAnimation(
           "angry",
           1500
@@ -4146,6 +4492,7 @@ function performAction(
 
 
         break;
+
       }
 
 
@@ -4232,7 +4579,6 @@ function performAction(
 
       toggleForcedSit();
 
-
       break;
 
 
@@ -4241,12 +4587,15 @@ function performAction(
       if (
         state.sleeping
       ) {
+
         wakeCharacter();
 
       } else {
+
         putCharacterToSleep(
           false
         );
+
       }
 
 
@@ -4259,12 +4608,14 @@ function performAction(
         state.health >=
           95
       ) {
+
         showMessage(
           "Healthy"
         );
 
 
         break;
+
       }
 
 
@@ -4312,11 +4663,14 @@ actionButtons.forEach(
         if (
           interactionMode
         ) {
+
           selectAction(
             index,
             false
           );
+
         }
+
       }
     );
 
@@ -4346,14 +4700,16 @@ actionButtons.forEach(
             index
           ]
         );
+
       }
     );
+
   }
 );
 
 
 /* ============================================================
-   POINTER / TOUCH
+   POINTER / TOUCH INPUT
 ============================================================ */
 
 document.addEventListener(
@@ -4363,8 +4719,10 @@ document.addEventListener(
     pointerStartX =
       event.clientX;
 
+
     pointerStartY =
       event.clientY;
+
 
     longPressTriggered =
       false;
@@ -4382,6 +4740,7 @@ document.addEventListener(
         characterSprite &&
       !interactionMode
     ) {
+
       longPressTimer =
         setTimeout(
           () => {
@@ -4395,7 +4754,9 @@ document.addEventListener(
           },
           LONG_PRESS_TIME
         );
+
     }
+
   }
 );
 
@@ -4424,10 +4785,13 @@ document.addEventListener(
       dy >
         12
     ) {
+
       clearTimeout(
         longPressTimer
       );
+
     }
+
   }
 );
 
@@ -4484,22 +4848,28 @@ document.addEventListener(
       ax >
         ay
     ) {
+
       if (
         interactionMode
       ) {
+
         if (
           dx >
             0
         ) {
+
           previousAction();
 
         } else {
+
           nextAction();
+
         }
       }
 
 
       return;
+
     }
 
 
@@ -4509,34 +4879,44 @@ document.addEventListener(
       ay >
         ax
     ) {
+
       if (
         dy >
           0
       ) {
+
         if (
           !interactionMode
         ) {
+
           openInteractionTray();
+
         }
 
       } else {
+
         if (
           interactionMode
         ) {
+
           closeInteractionTray();
 
         } else if (
           statusCardVisible
         ) {
+
           hideStatusCard();
 
         } else {
+
           openMainMenu();
+
         }
       }
 
 
       return;
+
     }
 
 
@@ -4546,12 +4926,15 @@ document.addEventListener(
         ".action"
       )
     ) {
+
       performAction(
         actions[
           selectedAction
         ]
       );
+
     }
+
   }
 );
 
@@ -4656,12 +5039,14 @@ function focusedNativeButtonForCurrentScreen() {
     currentScreen ===
       "game"
   ) {
+
     return (
       interactionMode &&
       active.classList.contains(
         "action"
       )
     );
+
   }
 
 
@@ -4671,9 +5056,11 @@ function focusedNativeButtonForCurrentScreen() {
     currentScreen ===
       "picker"
   ) {
+
     return active.classList.contains(
       "list-item"
     );
+
   }
 
 
@@ -4699,8 +5086,8 @@ function handleNavigationInput(
 
 
   /*
-     Focused buttons handle their
-     own Enter / Space activation.
+     Native focused buttons are
+     allowed to handle Enter/Space.
   */
 
   if (
@@ -4722,10 +5109,12 @@ function handleNavigationInput(
     currentScreen ===
       "main"
   ) {
+
     if (
       input ===
         "up"
     ) {
+
       moveMainMenu(
         -1
       );
@@ -4734,6 +5123,7 @@ function handleNavigationInput(
       input ===
         "down"
     ) {
+
       moveMainMenu(
         1
       );
@@ -4742,11 +5132,14 @@ function handleNavigationInput(
       input ===
         "activate"
     ) {
+
       activateMainMenuSelection();
+
     }
 
 
     return;
+
   }
 
 
@@ -4754,10 +5147,12 @@ function handleNavigationInput(
     currentScreen ===
       "picker"
   ) {
+
     if (
       input ===
         "up"
     ) {
+
       movePicker(
         -1
       );
@@ -4766,6 +5161,7 @@ function handleNavigationInput(
       input ===
         "down"
     ) {
+
       movePicker(
         1
       );
@@ -4774,17 +5170,21 @@ function handleNavigationInput(
       input ===
         "left"
     ) {
+
       openMainMenu();
 
     } else if (
       input ===
         "activate"
     ) {
+
       activatePickerSelection();
+
     }
 
 
     return;
+
   }
 
 
@@ -4805,7 +5205,9 @@ function handleNavigationInput(
       if (
         interactionMode
       ) {
+
         previousAction();
+
       }
 
       break;
@@ -4816,7 +5218,9 @@ function handleNavigationInput(
       if (
         interactionMode
       ) {
+
         nextAction();
+
       }
 
       break;
@@ -4827,7 +5231,9 @@ function handleNavigationInput(
       if (
         !interactionMode
       ) {
+
         openInteractionTray();
+
       }
 
       break;
@@ -4838,16 +5244,21 @@ function handleNavigationInput(
       if (
         interactionMode
       ) {
+
         closeInteractionTray();
 
       } else if (
         statusCardVisible
       ) {
+
         hideStatusCard();
 
       } else {
+
         openMainMenu();
+
       }
+
 
       break;
 
@@ -4857,12 +5268,15 @@ function handleNavigationInput(
       if (
         interactionMode
       ) {
+
         performAction(
           actions[
             selectedAction
           ]
         );
+
       }
+
 
       break;
   }
@@ -4900,6 +5314,7 @@ function gameTick() {
   if (
     !state.alive
   ) {
+
     updateStatusDisplay();
 
 
@@ -4907,6 +5322,7 @@ function gameTick() {
 
 
     return;
+
   }
 
 
@@ -4916,9 +5332,11 @@ function gameTick() {
     state.energy <=
       0
   ) {
+
     putCharacterToSleep(
       true
     );
+
   }
 
 
@@ -4947,21 +5365,23 @@ document.addEventListener(
       document.visibilityState ===
         "hidden"
     ) {
+
       if (
         currentScreen ===
           "game"
       ) {
-        pauseAmbient();
 
+        pauseAmbient();
 
         stopWalking();
 
-
         saveState();
+
       }
 
 
       return;
+
     }
 
 
@@ -4969,6 +5389,7 @@ document.addEventListener(
       currentScreen ===
         "game"
     ) {
+
       updatePersistentTime();
 
 
@@ -4981,14 +5402,17 @@ document.addEventListener(
       if (
         interactionMode
       ) {
+
         requestAnimationFrame(
           focusSelectedAction
         );
 
       } else {
+
         requestAnimationFrame(
           focusApp
         );
+
       }
 
 
@@ -4997,15 +5421,18 @@ document.addEventListener(
         !state.forcedSit &&
         state.alive
       ) {
+
         resumeAmbient(
           1500
         );
+
       }
 
     } else if (
       currentScreen ===
         "main"
     ) {
+
       renderMainMenu();
 
 
@@ -5023,6 +5450,7 @@ document.addEventListener(
       currentScreen ===
         "picker"
     ) {
+
       requestAnimationFrame(
         () => {
 
@@ -5032,7 +5460,9 @@ document.addEventListener(
 
         }
       );
+
     }
+
   }
 );
 
@@ -5045,23 +5475,28 @@ window.addEventListener(
       currentScreen ===
         "game"
     ) {
+
       if (
         interactionMode
       ) {
+
         requestAnimationFrame(
           focusSelectedAction
         );
 
       } else {
+
         requestAnimationFrame(
           focusApp
         );
+
       }
 
     } else if (
       currentScreen ===
         "main"
     ) {
+
       requestAnimationFrame(
         () => {
 
@@ -5076,6 +5511,7 @@ window.addEventListener(
       currentScreen ===
         "picker"
     ) {
+
       requestAnimationFrame(
         () => {
 
@@ -5085,7 +5521,9 @@ window.addEventListener(
 
         }
       );
+
     }
+
   }
 );
 
@@ -5126,6 +5564,7 @@ function preloadAnimations() {
 
         }
       );
+
     }
   );
 
@@ -5140,6 +5579,7 @@ function preloadAnimations() {
       img.src =
         character.path +
         filename;
+
     }
   );
 }
@@ -5149,7 +5589,10 @@ function preloadAnimations() {
    INIT
 ============================================================ */
 
-function init() {
+async function init() {
+  await loadCharacterPacks();
+
+
   setActionButtonsFocusable(
     false
   );
