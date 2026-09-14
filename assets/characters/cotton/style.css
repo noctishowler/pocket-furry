@@ -1,0 +1,5 @@
+/* Cotton-specific presentation */
+
+#character[data-character="cotton"] {
+  height: min(72vh, 210px);
+}
