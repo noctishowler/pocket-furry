@@ -102,6 +102,41 @@ window.PocketFurryCharacters.noctis = {
     death: {
       right: "death.gif",
       left: "death-left.gif"
+    },
+
+    fishingFail: {
+      right: "fishing-fail.gif",
+      left: "fishing-fail.gif"
+    },
+
+    motorcycleDisaster: {
+      right: "motorcycle-disaster.gif",
+      left: "motorcycle-disaster.gif"
+    },
+
+    officeWorkerEnter: {
+      right: "office-worker-enter.gif",
+      left: "office-worker-enter.gif"
+    },
+
+    officeWorker: {
+      right: "office-worker.gif",
+      left: "office-worker.gif"
+    },
+
+    officeWorkerExit: {
+      right: "office-worker-exit.gif",
+      left: "office-worker-exit.gif"
+    },
+
+    phoneDistraction: {
+      right: "phone-distraction.gif",
+      left: "phone-distraction.gif"
+    },
+
+    sunglassesEntrance: {
+      right: "sunglasses-entrance.gif",
+      left: "sunglasses-entrance.gif"
     }
   }
 };
