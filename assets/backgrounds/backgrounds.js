@@ -126,21 +126,25 @@
 
 
     /*
-       Only the active companion screen
-       receives the selected background.
+       Keep the whole scene visible.
 
-       main.PNG remains the main-menu
-       background handled by style.css.
+       "contain" preserves the original
+       image proportions as the screen
+       changes size.
+
+       Bottom-center anchoring also keeps
+       the ground/floor aligned with the
+       companion.
     */
 
     gameScreen.style.backgroundImage =
       `url("${path}")`;
 
     gameScreen.style.backgroundSize =
-      "cover";
+      "contain";
 
     gameScreen.style.backgroundPosition =
-      "center center";
+      "center bottom";
 
     gameScreen.style.backgroundRepeat =
       "no-repeat";
@@ -476,15 +480,8 @@
 
 
   /* ==========================================================
-     PATCH CHARACTER PICKER TITLE
+     RESTORE CHARACTER PICKER TITLE
   ========================================================== */
-
-  /*
-     The background selector reuses the existing picker screen.
-
-     Restore its normal title whenever New Companion opens
-     the actual character picker.
-  */
 
   const originalOpenCharacterPicker =
     openCharacterPicker;
@@ -519,15 +516,8 @@
 
 
   /* ==========================================================
-     PATCH MAIN MENU RENDER
+     PATCH MAIN MENU
   ========================================================== */
-
-  /*
-     app.js rebuilds the main menu whenever we return to it.
-
-     Wrap that function so the Background row is automatically
-     added again each time.
-  */
 
   const originalRenderMainMenu =
     renderMainMenu;
@@ -545,15 +535,8 @@
 
 
   /* ==========================================================
-     META / KEYBOARD FALLBACK
+     MENU ACTIVATION
   ========================================================== */
-
-  /*
-     Normally Enter / Space fires the focused button directly.
-
-     This fallback also allows the existing menu activation
-     function to understand the Background row.
-  */
 
   const originalActivateMainMenuSelection =
     activateMainMenuSelection;
@@ -591,6 +574,32 @@
 
 
   /* ==========================================================
+     HANDLE SCREEN RESIZE
+  ========================================================== */
+
+  /*
+     Reapply the selected background when
+     the viewport changes dimensions.
+
+     This helps when switching orientation,
+     resizing a browser, or moving between
+     different Meta/mobile display sizes.
+  */
+
+  window.addEventListener(
+    "resize",
+    () => {
+
+      applyBackground(
+        activeBackgroundId,
+        false
+      );
+
+    }
+  );
+
+
+  /* ==========================================================
      INITIALIZE
   ========================================================== */
 
@@ -599,11 +608,6 @@
     false
   );
 
-
-  /*
-     app.js may already have rendered the menu by the time this
-     file executes, so add the button once immediately as well.
-  */
 
   if (
     typeof currentScreen !==
