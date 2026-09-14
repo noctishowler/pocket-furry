@@ -493,10 +493,10 @@ body {
     auto;
 
   height:
-    min(72vh, 210px);
+    min(78vh, 420px);
 
   max-width:
-    42vw;
+    70vw;
 
   object-fit:
     contain;
