@@ -297,6 +297,100 @@ body {
 
 
 /* ============================================================
+   DISCORD LINK
+============================================================ */
+
+.discord-link {
+  display: block;
+
+  width:
+    fit-content;
+
+  margin:
+    11px auto 0;
+
+  font-family:
+    inherit;
+
+  text-align:
+    center;
+
+  text-decoration:
+    none;
+
+  -webkit-tap-highlight-color:
+    transparent;
+}
+
+.discord-link-label {
+  display: block;
+
+  color:
+    var(--purple-soft);
+
+  font-size:
+    7px;
+
+  letter-spacing:
+    0.8px;
+}
+
+.discord-link-label::before {
+  content:
+    "◆ ";
+
+  color:
+    var(--purple);
+}
+
+.discord-link-url {
+  display: block;
+
+  margin-top:
+    3px;
+
+  color:
+    var(--dim);
+
+  font-size:
+    6px;
+
+  letter-spacing:
+    0.2px;
+}
+
+.discord-link:hover
+.discord-link-label,
+.discord-link:active
+.discord-link-label,
+.discord-link:focus
+.discord-link-label,
+.discord-link:focus-visible
+.discord-link-label {
+  color:
+    var(--white);
+}
+
+.discord-link:hover
+.discord-link-url,
+.discord-link:active
+.discord-link-url,
+.discord-link:focus
+.discord-link-url,
+.discord-link:focus-visible
+.discord-link-url {
+  color:
+    var(--purple-soft);
+}
+
+.discord-link:focus,
+.discord-link:focus-visible {
+  outline:
+    none;
+}
+
+
+/* ============================================================
    SCREEN HINT
 ============================================================ */
 
