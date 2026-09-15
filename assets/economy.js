@@ -15,6 +15,10 @@
     1;
 
 
+  const FOOD_HUNGER_RESTORE =
+    25;
+
+
   const MEDICINE_COST =
     100;
 
@@ -282,10 +286,14 @@
 
 
     /*
-       The existing game reaches zero
-       hunger at FOOD_DURATION_MS.
+       Hunger reaches zero at
+       FOOD_DURATION_MS.
 
-       Crossing that point causes illness.
+       Reaching zero causes persistent
+       sickness.
+
+       Feeding restores hunger, but once
+       sick, only medicine cures sickness.
     */
 
     if (
@@ -303,9 +311,6 @@
 
   /* ==========================================================
      HEALTH
-
-     Replace the original health update
-     with persistent sickness behavior.
   ========================================================== */
 
   updateHealthFromClock =
@@ -1916,13 +1921,18 @@
       /* ------------------------------------------------------
          FOOD
 
-         Food costs one coin and restores hunger.
+         Each feeding:
+         - costs 1 coin
+         - restores exactly 25 hunger
+         - does NOT cure sickness
+         - does NOT heal health
+         - does NOT improve happiness
+         - does NOT improve recovery mood
 
-         It does NOT:
-         - cure sickness
-         - heal health
-         - improve happiness
-         - improve recovery mood
+         lastMealAt is recalculated so the
+         existing clock-based hunger system
+         stays synchronized with the new
+         partial hunger value.
       ------------------------------------------------------ */
 
       if (
@@ -1950,55 +1960,92 @@
         }
 
 
-        const healthBeforeFood =
-          state.health;
+        /*
+           First reconcile hunger with the
+           current clock. This matters if the
+           player has been away from the app.
+        */
+
+        updateFoodFromClock();
 
 
-        const happinessBeforeFood =
-          state.happiness;
+        const now =
+          Date.now();
 
 
-        const recoveryMoodBeforeFood =
-          state.recoveryMood;
+        const newHunger =
+          clamp(
+            state.hunger +
+            FOOD_HUNGER_RESTORE
+          );
 
 
         state.coins -=
           FOOD_COST;
 
 
-        originalPerformAction(
-          action
-        );
+        state.hunger =
+          newHunger;
 
 
         /*
-           app.js currently gives food:
-           - +25 health
-           - +5 happiness
-           - positive mood recovery
+           Hunger normally derives from:
 
-           Restore those values so food only
-           affects hunger.
+             hunger =
+               100 -
+               foodAge / FOOD_DURATION_MS * 100
+
+           Convert the new hunger value back
+           into an equivalent timestamp so
+           future offline decay continues
+           correctly.
+
+           Example:
+
+             25 hunger =
+             last meal equivalent to
+             75% of FOOD_DURATION_MS ago.
         */
 
-        state.health =
-          healthBeforeFood;
+        const hungerFraction =
+          newHunger /
+          100;
 
 
-        state.happiness =
-          happinessBeforeFood;
+        state.lastMealAt =
+          now -
+          (
+            1 -
+            hungerFraction
+          ) *
+          FOOD_DURATION_MS;
 
 
-        state.recoveryMood =
-          recoveryMoodBeforeFood;
+        state.lastInteraction =
+          now;
 
 
-        syncPersistentSickness(
-          state
+        /*
+           Persistent sickness intentionally
+           remains unchanged.
+
+           Feeding removes starvation by
+           restoring hunger, but medicine is
+           still required to cure sickness.
+        */
+
+        updateStatusDisplay();
+
+
+        playTemporaryAnimation(
+          "eat",
+          2200
         );
 
 
-        updateStatusDisplay();
+        showMessage(
+          "Eating"
+        );
 
 
         saveState();
