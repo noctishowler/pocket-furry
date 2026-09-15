@@ -27,6 +27,48 @@
     25;
 
 
+  /* ==========================================================
+     ENERGY BALANCE
+
+     Normal awake energy:
+     100 → 0 over 18 hours.
+
+     Sleeping:
+     0 → 100 over 8 hours.
+
+     This allows a normal daily schedule without
+     passive energy loss exhausting the companion
+     before bedtime.
+  ========================================================== */
+
+  const BASE_ENERGY_DRAIN_PER_MINUTE =
+    100 /
+    (
+      18 *
+      60
+    );
+
+
+  const SLEEP_ENERGY_RECOVERY_PER_MINUTE =
+    100 /
+    (
+      8 *
+      60
+    );
+
+
+  /*
+     Work has an additional energy cost.
+
+     A full 8-hour shift consumes 10 extra
+     energy on top of normal awake drain.
+  */
+
+  const WORK_EXTRA_ENERGY_DRAIN_PER_HOUR =
+    10 /
+    8;
+
+
   /*
      Natural healing is deliberately slow.
 
@@ -42,6 +84,10 @@
       60
     );
 
+
+  /* ==========================================================
+     WORK BALANCE
+  ========================================================== */
 
   const WORK_PAY_INTERVAL_MS =
     15 *
@@ -59,13 +105,6 @@
     60 *
     1000;
 
-
-  /*
-     Work uses the normal awake energy
-     drain already handled by app.js.
-
-     Happiness is the additional work cost.
-  */
 
   const WORK_HAPPINESS_DRAIN_PER_HOUR =
     8;
@@ -126,13 +165,6 @@
           : STARTING_COINS,
 
 
-      /*
-         Sickness is persistent.
-
-         Once true, feeding alone does not
-         clear it. Medicine is required.
-      */
-
       sick:
         companionState.sick ===
           true,
@@ -175,6 +207,18 @@
         )
           ? Number(
               companionState.workHappinessUpdatedAt
+            )
+          : null,
+
+
+      workEnergyUpdatedAt:
+        Number.isFinite(
+          Number(
+            companionState.workEnergyUpdatedAt
+          )
+        )
+          ? Number(
+              companionState.workEnergyUpdatedAt
             )
           : null,
 
@@ -286,14 +330,11 @@
 
 
     /*
-       Hunger reaches zero at
-       FOOD_DURATION_MS.
-
-       Reaching zero causes persistent
+       Reaching zero hunger causes persistent
        sickness.
 
-       Feeding restores hunger, but once
-       sick, only medicine cures sickness.
+       Feeding restores hunger but does not
+       cure sickness.
     */
 
     if (
@@ -339,7 +380,7 @@
 
       /*
          Continued starvation still causes
-         health damage at the original rate.
+         health damage.
       */
 
       if (
@@ -362,11 +403,10 @@
       ) {
 
         /*
-           Healthy companions recover very
-           slowly when every need is met.
+           Sick companions cannot naturally
+           regenerate health.
 
-           Sick companions do NOT naturally
-           recover until medicine cures them.
+           Medicine must cure sickness first.
         */
 
         state.health =
@@ -392,7 +432,7 @@
 
 
   /* ==========================================================
-     WORK STATE
+     WORK DURATION
   ========================================================== */
 
   function getMaximumWorkDurationMs(
@@ -417,11 +457,24 @@
           );
 
 
+    /*
+       While working, both normal awake drain
+       and the additional work drain apply.
+    */
+
+    const totalWorkDrainPerMinute =
+      BASE_ENERGY_DRAIN_PER_MINUTE +
+      (
+        WORK_EXTRA_ENERGY_DRAIN_PER_HOUR /
+        60
+      );
+
+
     const minutesUntilEmpty =
-      ENERGY_DRAIN_PER_MINUTE >
+      totalWorkDrainPerMinute >
         0
         ? startEnergy /
-          ENERGY_DRAIN_PER_MINUTE
+          totalWorkDrainPerMinute
         : Number.POSITIVE_INFINITY;
 
 
@@ -437,6 +490,10 @@
 
   }
 
+
+  /* ==========================================================
+     WORK RECONCILIATION
+  ========================================================== */
 
   function reconcileWorkState(
     companionState,
@@ -491,6 +548,11 @@
       maxDuration;
 
 
+    /*
+       Work-specific effects only count until
+       the scheduled end of the shift.
+    */
+
     const effectiveNow =
       Math.min(
         now,
@@ -501,6 +563,10 @@
     let coinsEarned =
       0;
 
+
+    /* --------------------------------------------------------
+       PAY
+    -------------------------------------------------------- */
 
     const paidThrough =
       Math.max(
@@ -550,6 +616,55 @@
 
     }
 
+
+    /* --------------------------------------------------------
+       EXTRA WORK ENERGY DRAIN
+    -------------------------------------------------------- */
+
+    const energyUpdatedAt =
+      Math.max(
+        startedAt,
+        Number(
+          companionState.workEnergyUpdatedAt
+        ) ||
+        startedAt
+      );
+
+
+    if (
+      effectiveNow >
+        energyUpdatedAt
+    ) {
+
+      const hoursWorkedForEnergy =
+        (
+          effectiveNow -
+          energyUpdatedAt
+        ) /
+        (
+          60 *
+          60 *
+          1000
+        );
+
+
+      companionState.energy =
+        clamp(
+          companionState.energy -
+          WORK_EXTRA_ENERGY_DRAIN_PER_HOUR *
+          hoursWorkedForEnergy
+        );
+
+
+      companionState.workEnergyUpdatedAt =
+        effectiveNow;
+
+    }
+
+
+    /* --------------------------------------------------------
+       WORK HAPPINESS DRAIN
+    -------------------------------------------------------- */
 
     const happinessUpdatedAt =
       Math.max(
@@ -619,15 +734,10 @@
           0,
           Math.floor(
             (
-              (
-                Math.min(
-                  scheduledEnd,
-                  effectiveNow
-                ) -
-                startedAt
-              ) /
-              WORK_PAY_INTERVAL_MS
-            )
+              effectiveNow -
+              startedAt
+            ) /
+            WORK_PAY_INTERVAL_MS
           ) *
           WORK_PAY_PER_INTERVAL
         );
@@ -642,6 +752,10 @@
 
 
       companionState.workHappinessUpdatedAt =
+        null;
+
+
+      companionState.workEnergyUpdatedAt =
         null;
 
 
@@ -662,6 +776,10 @@
 
   }
 
+
+  /* ==========================================================
+     SAVE / LOAD
+  ========================================================== */
 
   function saveSlotEconomyState(
     slotIndex,
@@ -965,12 +1083,8 @@
     }
 
 
-    const animation =
-      getWorkAnimation();
-
-
     setAnimation(
-      animation,
+      getWorkAnimation(),
       "right"
     );
 
@@ -1015,7 +1129,7 @@
 
 
   /* ==========================================================
-     MAIN MENU COIN / SICK / WORK STATUS
+     MAIN MENU STATUS
   ========================================================== */
 
   const originalGetStateSummary =
@@ -1547,6 +1661,10 @@
       now;
 
 
+    state.workEnergyUpdatedAt =
+      now;
+
+
     state.workStartEnergy =
       state.energy;
 
@@ -1634,7 +1752,7 @@
             Math.min(
               endedAt,
               shiftStartedAt +
-                WORK_SHIFT_MAX_MS
+              WORK_SHIFT_MAX_MS
             ) -
             shiftStartedAt
           ) /
@@ -1653,6 +1771,10 @@
 
 
     state.workHappinessUpdatedAt =
+      null;
+
+
+    state.workEnergyUpdatedAt =
       null;
 
 
@@ -1696,39 +1818,59 @@
 
 
   /* ==========================================================
-     IDLE / OFFLINE WORK PROGRESSION
+     PERSISTENT TIME / DAILY ENERGY SYSTEM
+
+     This replaces the original app.js
+     energy timing so the new 18h / 8h
+     schedule remains timestamp-driven
+     while the app is closed.
   ========================================================== */
-
-  const originalUpdatePersistentTime =
-    updatePersistentTime;
-
 
   updatePersistentTime =
     function () {
 
       if (
-        state
+        !state
       ) {
 
-        state =
-          addEconomyDefaults(
-            state
-          );
-
-
-        syncPersistentSickness(
-          state
-        );
+        return;
 
       }
 
 
-      originalUpdatePersistentTime();
+      state =
+        addEconomyDefaults(
+          state
+        );
+
+
+      const now =
+        Date.now();
+
+
+      const elapsed =
+        Math.max(
+          0,
+          now -
+          state.lastUpdate
+        );
+
+
+      const minutes =
+        elapsed /
+        60000;
 
 
       if (
-        !state
+        !state.alive
       ) {
+
+        state.lastUpdate =
+          now;
+
+
+        saveState();
+
 
         return;
 
@@ -1744,9 +1886,109 @@
         state.working;
 
 
+      /* ------------------------------------------------------
+         NORMAL ENERGY / SLEEP
+      ------------------------------------------------------ */
+
+      if (
+        state.sleeping
+      ) {
+
+        state.energy =
+          clamp(
+            state.energy +
+            SLEEP_ENERGY_RECOVERY_PER_MINUTE *
+            minutes
+          );
+
+
+        if (
+          state.energy >=
+            100
+        ) {
+
+          state.energy =
+            100;
+
+
+          state.sleeping =
+            false;
+
+
+          state.forcedSleep =
+            false;
+
+        }
+
+      } else {
+
+        state.energy =
+          clamp(
+            state.energy -
+            BASE_ENERGY_DRAIN_PER_MINUTE *
+            minutes
+          );
+
+
+        if (
+          state.energy <=
+            0
+        ) {
+
+          state.energy =
+            0;
+
+
+          if (
+            state.forcedSit
+          ) {
+
+            releaseForcedSit(
+              false
+            );
+
+          }
+
+
+          state.sleeping =
+            true;
+
+
+          state.forcedSleep =
+            true;
+
+
+          stopWalking();
+
+        }
+
+      }
+
+
+      /* ------------------------------------------------------
+         FOOD / HEALTH
+      ------------------------------------------------------ */
+
+      updateFoodFromClock();
+
+
+      updateHealthFromClock(
+        minutes
+      );
+
+
+      /* ------------------------------------------------------
+         WORK
+
+         Reconcile wages, happiness and the
+         extra work energy cost using elapsed
+         real-world time.
+      ------------------------------------------------------ */
+
       const result =
         reconcileWorkState(
-          state
+          state,
+          now
         );
 
 
@@ -1755,8 +1997,46 @@
 
 
       /*
-         If normal energy handling forces
-         sleep, the work shift ends too.
+         Extra work drain can also push energy
+         to zero between updates.
+      */
+
+      if (
+        state.energy <=
+          0 &&
+        !state.sleeping
+      ) {
+
+        state.energy =
+          0;
+
+
+        if (
+          state.forcedSit
+        ) {
+
+          releaseForcedSit(
+            false
+          );
+
+        }
+
+
+        state.sleeping =
+          true;
+
+
+        state.forcedSleep =
+          true;
+
+
+        stopWalking();
+
+      }
+
+
+      /*
+         Sleeping automatically ends work.
       */
 
       if (
@@ -1769,7 +2049,7 @@
 
 
         state.lastWorkEndedAt =
-          Date.now();
+          now;
 
 
         state.workStartedAt =
@@ -1784,10 +2064,18 @@
           null;
 
 
+        state.workEnergyUpdatedAt =
+          null;
+
+
         state.workStartEnergy =
           null;
 
       }
+
+
+      state.lastUpdate =
+        now;
 
 
       saveState();
@@ -1924,15 +2212,9 @@
          Each feeding:
          - costs 1 coin
          - restores exactly 25 hunger
-         - does NOT cure sickness
-         - does NOT heal health
-         - does NOT improve happiness
-         - does NOT improve recovery mood
-
-         lastMealAt is recalculated so the
-         existing clock-based hunger system
-         stays synchronized with the new
-         partial hunger value.
+         - does not cure sickness
+         - does not heal
+         - does not increase happiness
       ------------------------------------------------------ */
 
       if (
@@ -1960,12 +2242,6 @@
         }
 
 
-        /*
-           First reconcile hunger with the
-           current clock. This matters if the
-           player has been away from the app.
-        */
-
         updateFoodFromClock();
 
 
@@ -1989,22 +2265,10 @@
 
 
         /*
-           Hunger normally derives from:
-
-             hunger =
-               100 -
-               foodAge / FOOD_DURATION_MS * 100
-
-           Convert the new hunger value back
-           into an equivalent timestamp so
-           future offline decay continues
-           correctly.
-
-           Example:
-
-             25 hunger =
-             last meal equivalent to
-             75% of FOOD_DURATION_MS ago.
+           Convert the new hunger percentage
+           back into its equivalent timestamp
+           so offline hunger decay stays
+           accurate.
         */
 
         const hungerFraction =
@@ -2024,15 +2288,6 @@
         state.lastInteraction =
           now;
 
-
-        /*
-           Persistent sickness intentionally
-           remains unchanged.
-
-           Feeding removes starvation by
-           restoring hunger, but medicine is
-           still required to cure sickness.
-        */
 
         updateStatusDisplay();
 
@@ -2058,9 +2313,6 @@
 
       /* ------------------------------------------------------
          MEDICINE
-
-         Medicine is the ONLY cure for the
-         persistent sickness state.
       ------------------------------------------------------ */
 
       if (
@@ -2120,14 +2372,6 @@
             MEDICINE_HEAL
           );
 
-
-        /*
-           Medicine cures sickness but does
-           not refill hunger.
-
-           If starvation continues, sickness
-           can return.
-        */
 
         updateStatusDisplay();
 
