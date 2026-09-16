@@ -31,9 +31,9 @@
      Hunger reaches zero after the core
      FOOD_DURATION_MS period.
 
-     The companion must then remain at zero
-     hunger for another 10 hours before
-     becoming sick.
+     A healthy companion must then remain
+     at zero hunger for another 10 hours
+     before becoming sick.
   */
 
   const HUNGRY_BEFORE_SICK_MS =
@@ -388,7 +388,7 @@
        Hunger reaches zero after
        FOOD_DURATION_MS.
 
-       The companion then gets a full
+       A healthy companion then gets a full
        10-hour hungry grace period.
 
        Only after that grace period expires
@@ -431,24 +431,72 @@
       }
 
 
+      /*
+         Remember whether the companion was
+         already sick before this update.
+
+         Already-sick companions do NOT get
+         another hunger grace period.
+      */
+
+      const wasAlreadySick =
+        state.sick ===
+        true;
+
+
+      const foodAge =
+        getCompanionFoodAge(
+          state
+        );
+
+
+      const hungerIsEmpty =
+        foodAge >=
+        FOOD_DURATION_MS;
+
+
+      const passedInitialSicknessThreshold =
+        foodAge >=
+        SICKNESS_THRESHOLD_MS;
+
+
+      /*
+         A healthy companion gets the normal
+         10-hour grace period after hunger
+         reaches zero.
+
+         Once that period expires, sickness
+         becomes persistent.
+      */
+
       syncPersistentSickness(
         state
       );
 
 
       /*
-         Simply reaching zero hunger does
-         NOT cause health damage.
+         STARVATION DAMAGE
 
+         Already sick:
+         As soon as hunger reaches zero,
+         health damage begins immediately.
+
+         Not previously sick:
          Health damage begins only after the
-         companion has remained hungry for
-         the full 10-hour grace period.
+         initial 10-hour hungry grace period
+         has expired.
       */
 
+      const takingStarvationDamage =
+        (
+          wasAlreadySick &&
+          hungerIsEmpty
+        ) ||
+        passedInitialSicknessThreshold;
+
+
       if (
-        isPastSicknessThreshold(
-          state
-        )
+        takingStarvationDamage
       ) {
 
         state.health =
@@ -464,10 +512,13 @@
       ) {
 
         /*
-           Sick companions cannot naturally
-           regenerate health.
+           Natural recovery only occurs when
+           the companion is not sick and all
+           health needs are satisfied.
 
-           Medicine must cure sickness first.
+           Sick companions must be treated
+           with medicine before healing can
+           resume.
         */
 
         state.health =
