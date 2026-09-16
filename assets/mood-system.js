@@ -5,61 +5,34 @@
    POCKET FURRY UNIFIED MOOD SYSTEM
 ============================================================
 
-   Keeps the HUD emoji, main-menu mood text, and character
-   animation synchronized from one shared mood calculation.
+   Keeps the HUD emoji, main-menu mood text, character
+   animation, and hunger-state interpretation synchronized.
+
+   IMPORTANT:
+   Persistent sickness is controlled by state.sick.
+
+   Reaching zero hunger by itself does NOT mean sick.
+   economy.js controls when a healthy companion becomes sick
+   after the hunger grace period expires.
 
 ============================================================ */
 
 (() => {
 
-  function getCompanionMood(
+  /* ==========================================================
+     FOOD / SICKNESS STATE
+  ========================================================== */
+
+  function getCompanionFoodAge(
     companionState
   ) {
 
     if (
       !companionState
     ) {
-      return {
-        label: "Unknown",
-        emoji: "😐",
-        animation: "idleFront"
-      };
-    }
 
+      return 0;
 
-    if (
-      !companionState.alive
-    ) {
-      return {
-        label: "Gone",
-        emoji: "😵",
-        animation: "death"
-      };
-    }
-
-
-    if (
-      companionState.sleeping
-    ) {
-      return {
-        label: companionState.forcedSleep
-          ? "Exhausted"
-          : "Resting",
-
-        emoji: "😴",
-        animation: "sleep"
-      };
-    }
-
-
-    if (
-      companionState.forcedSit
-    ) {
-      return {
-        label: "Bored",
-        emoji: "😐",
-        animation: "bored"
-      };
     }
 
 
@@ -70,57 +43,269 @@
     const lastMealAt =
       Number(
         companionState.lastMealAt
-      ) || now;
+      ) ||
+      now;
 
 
-    const foodAge =
-      Math.max(
-        0,
-        now -
-        lastMealAt
+    return Math.max(
+      0,
+      now -
+      lastMealAt
+    );
+
+  }
+
+
+  function isCompanionHungry(
+    companionState
+  ) {
+
+    return (
+      getCompanionFoodAge(
+        companionState
+      ) >=
+      FOOD_DURATION_MS
+    );
+
+  }
+
+
+  /*
+     Shared hunger-stage interpretation.
+
+     NORMAL:
+     Companion is not persistently sick.
+
+     SICK:
+     Companion has persistent sickness,
+     but currently has food remaining.
+
+     CRITICAL:
+     Companion is persistently sick AND
+     hunger has reached zero.
+
+     A healthy companion at zero hunger
+     remains "normal" here because hunger
+     itself is represented separately by
+     the Hungry mood below.
+
+     This prevents the old app.js logic from
+     treating zero hunger as instant sickness.
+  */
+
+  function getSharedHungerStage(
+    companionState =
+      state
+  ) {
+
+    if (
+      !companionState ||
+      !companionState.alive
+    ) {
+
+      return "normal";
+
+    }
+
+
+    if (
+      companionState.sick ===
+        true
+    ) {
+
+      return isCompanionHungry(
+        companionState
+      )
+        ? "critical"
+        : "sick";
+
+    }
+
+
+    return "normal";
+
+  }
+
+
+  /*
+     Replace the older app.js hunger-stage
+     interpretation.
+
+     Existing app.js systems that call
+     getHungerStage() will now follow the
+     persistent state.sick value instead of
+     declaring sickness after four hours.
+  */
+
+  getHungerStage =
+    function () {
+
+      return getSharedHungerStage(
+        state
+      );
+
+    };
+
+
+  /* ==========================================================
+     MOOD CALCULATION
+  ========================================================== */
+
+  function getCompanionMood(
+    companionState
+  ) {
+
+    if (
+      !companionState
+    ) {
+
+      return {
+        label:
+          "Unknown",
+
+        emoji:
+          "😐",
+
+        animation:
+          "idleFront"
+      };
+
+    }
+
+
+    if (
+      !companionState.alive
+    ) {
+
+      return {
+        label:
+          "Gone",
+
+        emoji:
+          "😵",
+
+        animation:
+          "death"
+      };
+
+    }
+
+
+    if (
+      companionState.sleeping
+    ) {
+
+      return {
+        label:
+          companionState.forcedSleep
+            ? "Exhausted"
+            : "Resting",
+
+        emoji:
+          "😴",
+
+        animation:
+          "sleep"
+      };
+
+    }
+
+
+    if (
+      companionState.forcedSit
+    ) {
+
+      return {
+        label:
+          "Bored",
+
+        emoji:
+          "😐",
+
+        animation:
+          "bored"
+      };
+
+    }
+
+
+    const hungry =
+      isCompanionHungry(
+        companionState
       );
 
 
     /*
-       Match the existing food-state rules:
-       - hunger drains to zero over FOOD_DURATION_MS
-       - FOOD_DURATION_MS and above is sick
-       - SICK_HUNGER_MS and above is critical
+       Persistent sickness always takes
+       priority over ordinary hunger.
+
+       Sick + zero hunger is Critical.
+
+       Sick + food remaining is Sick.
     */
 
     if (
-      foodAge >=
-        SICK_HUNGER_MS
+      companionState.sick ===
+        true
     ) {
+
+      if (
+        hungry
+      ) {
+
+        return {
+          label:
+            "Critical",
+
+          emoji:
+            "🤢",
+
+          animation:
+            "sick"
+        };
+
+      }
+
+
       return {
-        label: "Critical",
-        emoji: "🤢",
-        animation: "sick"
+        label:
+          "Sick",
+
+        emoji:
+          "🤢",
+
+        animation:
+          "sick"
       };
+
     }
 
 
-    if (
-      foodAge >=
-        FOOD_DURATION_MS
-    ) {
-      return {
-        label: "Sick",
-        emoji: "🤢",
-        animation: "sick"
-      };
-    }
+    /*
+       Zero hunger while otherwise healthy
+       means Hungry, not Sick.
 
+       economy.js supplies the 10-hour grace
+       period before persistent sickness.
+    */
 
     if (
+      hungry ||
       companionState.hunger <
         20
     ) {
+
       return {
-        label: "Hungry",
-        emoji: "😟",
-        animation: "hungry"
+        label:
+          "Hungry",
+
+        emoji:
+          "😟",
+
+        animation:
+          "hungry"
       };
+
     }
 
 
@@ -128,11 +313,18 @@
       companionState.energy <=
         EXHAUSTED_THRESHOLD
     ) {
+
       return {
-        label: "Exhausted",
-        emoji: "😫",
-        animation: "angry"
+        label:
+          "Exhausted",
+
+        emoji:
+          "😫",
+
+        animation:
+          "angry"
       };
+
     }
 
 
@@ -140,11 +332,18 @@
       companionState.recoveryMood ===
         "angry"
     ) {
+
       return {
-        label: "Upset",
-        emoji: "😠",
-        animation: "angry"
+        label:
+          "Upset",
+
+        emoji:
+          "😠",
+
+        animation:
+          "angry"
       };
+
     }
 
 
@@ -152,11 +351,18 @@
       companionState.recoveryMood ===
         "sad"
     ) {
+
       return {
-        label: "Sad",
-        emoji: "😢",
-        animation: "sad"
+        label:
+          "Sad",
+
+        emoji:
+          "😢",
+
+        animation:
+          "sad"
       };
+
     }
 
 
@@ -164,11 +370,18 @@
       companionState.recoveryMood ===
         "neutral"
     ) {
+
       return {
-        label: "Okay",
-        emoji: "😐",
-        animation: "idleFront"
+        label:
+          "Okay",
+
+        emoji:
+          "😐",
+
+        animation:
+          "idleFront"
       };
+
     }
 
 
@@ -176,11 +389,18 @@
       companionState.happiness >=
         85
     ) {
+
       return {
-        label: "Happy",
-        emoji: "🥰",
-        animation: "idleFront"
+        label:
+          "Happy",
+
+        emoji:
+          "🥰",
+
+        animation:
+          "idleFront"
       };
+
     }
 
 
@@ -188,11 +408,18 @@
       companionState.happiness >=
         60
     ) {
+
       return {
-        label: "Content",
-        emoji: "😊",
-        animation: "idleFront"
+        label:
+          "Content",
+
+        emoji:
+          "😊",
+
+        animation:
+          "idleFront"
       };
+
     }
 
 
@@ -200,11 +427,18 @@
       companionState.happiness >=
         35
     ) {
+
       return {
-        label: "Okay",
-        emoji: "😐",
-        animation: "idleFront"
+        label:
+          "Okay",
+
+        emoji:
+          "😐",
+
+        animation:
+          "idleFront"
       };
+
     }
 
 
@@ -212,30 +446,47 @@
       companionState.happiness >=
         15
     ) {
+
       return {
-        label: "Sad",
-        emoji: "😢",
-        animation: "sad"
+        label:
+          "Sad",
+
+        emoji:
+          "😢",
+
+        animation:
+          "sad"
       };
+
     }
 
 
     return {
-      label: "Upset",
-      emoji: "😠",
-      animation: "sad"
+      label:
+        "Upset",
+
+      emoji:
+        "😠",
+
+      animation:
+        "sad"
     };
 
   }
 
 
   /*
-     Expose this so other Pocket Furry modules can use the
-     exact same mood interpretation later if needed.
+     Expose shared interpretations so other
+     Pocket Furry modules can use the same
+     state rules later.
   */
 
   window.getCompanionMood =
     getCompanionMood;
+
+
+  window.getPocketFurryHungerStage =
+    getSharedHungerStage;
 
 
   /* ==========================================================
@@ -278,9 +529,11 @@
       if (
         !saved.alive
       ) {
+
         return (
           `${mood.emoji} ${mood.label}`
         );
+
       }
 
 
@@ -311,7 +564,9 @@
         temporaryAnimation ||
         walking
       ) {
+
         return;
+
       }
 
 
@@ -325,11 +580,14 @@
         mood.animation ===
           "death"
       ) {
+
         setAnimation(
           "death"
         );
 
+
         return;
+
       }
 
 
@@ -337,11 +595,14 @@
         mood.animation ===
           "sleep"
       ) {
+
         setAnimation(
           "sleep"
         );
 
+
         return;
+
       }
 
 
@@ -354,12 +615,12 @@
 
 
   /*
-     If this module loads while a companion is already open,
-     immediately refresh the HUD and animation.
+     If this module loads while a companion
+     is already open, immediately refresh the
+     HUD and animation.
 
-     If the main menu is open, rebuild it so the emoji appears
-     beside the mood text. companion-management.js will then
-     re-add the age row when it loads after this module.
+     If the main menu is open, rebuild it so
+     the correct mood appears immediately.
   */
 
   if (
@@ -369,6 +630,7 @@
   ) {
 
     updateStatusDisplay();
+
 
     updateMoodAnimation();
 
