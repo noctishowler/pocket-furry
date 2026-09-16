@@ -27,6 +27,27 @@
     25;
 
 
+  /*
+     Hunger reaches zero after the core
+     FOOD_DURATION_MS period.
+
+     The companion must then remain at zero
+     hunger for another 10 hours before
+     becoming sick.
+  */
+
+  const HUNGRY_BEFORE_SICK_MS =
+    10 *
+    60 *
+    60 *
+    1000;
+
+
+  const SICKNESS_THRESHOLD_MS =
+    FOOD_DURATION_MS +
+    HUNGRY_BEFORE_SICK_MS;
+
+
   /* ==========================================================
      ENERGY BALANCE
 
@@ -296,6 +317,55 @@
 
 
   /* ==========================================================
+     HUNGER / SICKNESS HELPERS
+  ========================================================== */
+
+  function getCompanionFoodAge(
+    companionState =
+      state
+  ) {
+
+    if (
+      !companionState
+    ) {
+
+      return 0;
+
+    }
+
+
+    const lastMealAt =
+      Number(
+        companionState.lastMealAt
+      ) ||
+      Date.now();
+
+
+    return Math.max(
+      0,
+      Date.now() -
+      lastMealAt
+    );
+
+  }
+
+
+  function isPastSicknessThreshold(
+    companionState =
+      state
+  ) {
+
+    return (
+      getCompanionFoodAge(
+        companionState
+      ) >=
+      SICKNESS_THRESHOLD_MS
+    );
+
+  }
+
+
+  /* ==========================================================
      PERSISTENT SICKNESS
   ========================================================== */
 
@@ -314,32 +384,24 @@
     }
 
 
-    const lastMealAt =
-      Number(
-        companionState.lastMealAt
-      ) ||
-      Date.now();
-
-
-    const foodAge =
-      Math.max(
-        0,
-        Date.now() -
-        lastMealAt
-      );
-
-
     /*
-       Reaching zero hunger causes persistent
-       sickness.
+       Hunger reaches zero after
+       FOOD_DURATION_MS.
+
+       The companion then gets a full
+       10-hour hungry grace period.
+
+       Only after that grace period expires
+       does persistent sickness begin.
 
        Feeding restores hunger but does not
-       cure sickness.
+       cure sickness once sickness exists.
     */
 
     if (
-      foodAge >=
-        FOOD_DURATION_MS
+      isPastSicknessThreshold(
+        companionState
+      )
     ) {
 
       companionState.sick =
@@ -374,20 +436,19 @@
       );
 
 
-      const hungerStage =
-        getHungerStage();
-
-
       /*
-         Continued starvation still causes
-         health damage.
+         Simply reaching zero hunger does
+         NOT cause health damage.
+
+         Health damage begins only after the
+         companion has remained hungry for
+         the full 10-hour grace period.
       */
 
       if (
-        hungerStage ===
-          "sick" ||
-        hungerStage ===
-          "critical"
+        isPastSicknessThreshold(
+          state
+        )
       ) {
 
         state.health =
