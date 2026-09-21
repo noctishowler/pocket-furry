@@ -1,0 +1,5 @@
+/* Griff-specific presentation */
+
+#character[data-character="griff"] {
+  height: min(72vh, 210px);
+}
