@@ -2,5 +2,6 @@
 
 window.PocketFurryCharacterPacks = [
   "noctis",
-  "cotton"
+  "cotton",
+    "griff"
 ];
